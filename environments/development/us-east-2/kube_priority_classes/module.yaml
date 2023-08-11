@@ -1,0 +1,3 @@
+source: live/kube_priority_classes
+providers:
+  kubernetes: true

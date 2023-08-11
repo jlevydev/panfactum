@@ -1,0 +1,7 @@
+source: /live/terraform_bootstrap_resources
+providers:
+  aws: true
+  aws_secondary: true
+overrides:
+  aws_profile: operations-superuser
+  aws_account_id: 487780594448

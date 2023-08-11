@@ -1,0 +1,49 @@
+load('../tilt/common.tiltfile', 'REGISTRY', 'NAMESPACE', 'TF_ROOT_DIR')
+load('../tilt/podman.tiltfile', 'podman_build')
+
+LABELS = ['api']
+TF_DIR = "{}/panfactum_primary_api_deployment".format(TF_ROOT_DIR)
+IMAGE = "{}/primary-api".format(REGISTRY)
+
+podman_build(
+  IMAGE,
+  "../..",
+  extra_flags=[
+    "-f", "./Containerfile",
+     "--target", "development"
+   ],
+  deps=  [
+     "src",
+     "scripts",
+     "package.json",
+     "pnpm-lock.yaml",
+     "tsconfig.json",
+     "Containerfile"
+   ],
+   live_update = [
+     sync('src', '/code/packages/primary-api/src')
+   ]
+)
+
+k8s_custom_deploy(
+  "primary-api",
+  ["bash", "-c", "terragrunt apply -auto-approve -no-color --terragrunt-non-interactive 1>&2 && kubectl get -n {}-primary-api deployment/primary-api -o yaml".format(NAMESPACE)],
+  "terragrunt destroy -auto-approve -no-color --terragrunt-non-interactive",
+  [
+    TF_DIR,
+    '../infrastructure/live/panfactum_primary_api_deployment',
+    '../infrastructure/modules/kube_deployment',
+    '../infrastructure/modules/kube_ingress',
+    '../infrastructure/modules/kube_pg_cluster'
+  ],
+  apply_dir=TF_DIR,
+  delete_dir=TF_DIR,
+  image_deps = [IMAGE]
+)
+
+k8s_resource(
+  workload='primary-api',
+  new_name="primary-api",
+  labels=LABELS,
+  links = ["api.{}.dev.panfactum.com".format(NAMESPACE)]
+)

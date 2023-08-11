@@ -1,0 +1,7 @@
+source: /live/kube_prometheus_stack
+providers:
+  kubernetes: true
+  helm: true
+  time: true
+  random: true
+  azuread: true

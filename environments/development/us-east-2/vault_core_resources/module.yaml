@@ -1,0 +1,7 @@
+source: live/vault_core_resources
+providers:
+  kubernetes: true
+  vault: true
+  aws: true
+  azuread: true
+  time: true

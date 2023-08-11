@@ -1,0 +1,8 @@
+# Kubernetes cert-manager
+
+This module provides our standard set up for [cert-manager](https://cert-manager.io/). It includes:
+
+- The cert-manager Helm chart
+- Monitoring and alerting
+
+See the [vars file](./vars.tf) for descriptions of the input parameters.

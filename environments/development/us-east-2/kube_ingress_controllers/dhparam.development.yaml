@@ -1,0 +1,20 @@
+dhparam: ENC[AES256_GCM,data:YIL8pXznwdm27CveqmAwkjMsEk1XqrqkEiW6+Lm926xkZplSOXiikPhtMQm2HL97Et1aIHWHqsxRPEK5mf51eEiwPQOWax3dVD76VhDuButRlOQYVeoEcRWmVPayv/0pTAXhvJNNnr2xUN44E2m0R2/8SQ4HYFHN7KL4NLVKQdOVj7mtDhfjN61KCH0RdE6uw2BJfsvzV7gHKVpR3HkfuHl53vJTzaKo3CycwgvMUoX1OKbiZAK6C38PGt5aoaSqBnhyjUG+O+Y3+MjW9WfV9Ojg0A2FVuWqpoJd9F7xsqPfssvxxnc7tE2srMKwaT4aTvyDKALUDIwF4mCGrJkXxvCoQTwaRkIQGriN5ShnRpmFzYW4G6MATfL3QyYLG/1gNm9UdFdtszIar8HIByoNUtfhb50eUsAUJyhNBBPiDOiUagl+6fVNU9d2DoErnZBx236DUaJNdg4lmF5g4HyKpYvvT5iPmxKLz36cMtiVW19kiiQ42DbAqA6mc8AO0qnHEru6UF8pMgtC71CyJcJ+qUfblEofj/kvFqRxYcZpDauMgV8UckFoEIwpts4bTpPCVVOmjut7npYY7sbQ92xnKeaR+WMrhkl22LEPthLvEqeQ9y+msk7qRZV9HndUxUCu7/MwOKgaHE5cb8ri0EwPUDot/qgg6QDXF4gh13iWYs9cuIgx/nDp1zTEK7eUIHf0aZ60dK5Qrux1UniyA7MG5/PHUGnM2b1Zdi8Nb9AdAEEF5D+9smQjauSwP29pp87q+0Xb61+IICDrqlgPYjW1Bjk4VSj+wGP0EEy/23N4C2UTG5YWKEFigahqB/0DbFMCkT2dZmSgR+ZOZztrOr+x5hhm5E7ciCPFNsm+Ec9GnA2BcyPYHEKR7ghU97Kczd6RnRv5Td9OU8N9c4CYcR5yflIz+/aVCvMmkbCqTcVKwu95T7EQHkUk2MqV96lxGrcbpkQROIvOpih+7KeSxu5nvsZi0GQ+wxIEX0KNv2f6/HmzsCQMXvT9HIogLOKKvyIVVA==,iv:syMH0y0H999jzW4z3suUboxD25V2/8jg4F3asx6iab8=,tag:+vacVl03UYVq1ySAbH5bNw==,type:str]
+sops:
+    kms:
+        - arn: arn:aws:kms:us-east-2:938942960544:key/mrk-05fc737c1cbc4d128727fe4f50cf45c2
+          created_at: "2023-08-02T21:25:18Z"
+          enc: AQICAHhI/aacXd/XBKsSCmhXsmuqVujIDtRAri9RbAZyCWFjPwFtGACZii4uQq+WjxC0efOaAAAAfjB8BgkqhkiG9w0BBwagbzBtAgEAMGgGCSqGSIb3DQEHATAeBglghkgBZQMEAS4wEQQMUByyr0EW9vQVNwEJAgEQgDuxoIID4NjGajBq7303phf7OV6Qmr9acmUnWsAlcEu8WIb2yCgmtCagFskzmfmh/avyWqHZxBElqnjDBg==
+          aws_profile: development-superuser
+        - arn: arn:aws:kms:us-west-2:938942960544:key/mrk-05fc737c1cbc4d128727fe4f50cf45c2
+          created_at: "2023-08-02T21:25:18Z"
+          enc: AQICAHhI/aacXd/XBKsSCmhXsmuqVujIDtRAri9RbAZyCWFjPwEN7/nURJn0zWw+e8LB6SrBAAAAfjB8BgkqhkiG9w0BBwagbzBtAgEAMGgGCSqGSIb3DQEHATAeBglghkgBZQMEAS4wEQQMmGI0Jqn069ELt55kAgEQgDvugThT1HlLDqrPFF6iMLJ1viwddoJmQDcwQmyrN8WZlcpyjouzk8STm1F7HKtrUcEGLZ/kzSUiHM8BPQ==
+          aws_profile: development-superuser
+    gcp_kms: []
+    azure_kv: []
+    hc_vault: []
+    age: []
+    lastmodified: "2023-08-02T22:10:14Z"
+    mac: ENC[AES256_GCM,data:zrS9qiFPpmbuD69qOc15UBb9Wer2WSZ6R1IjEyGtHILIL87D+Y/v/Mly7jpHiBsk9EqStK833rwwRQFw+Kj+rqA4wAARcSPSEIWL8VCr/+XQr0VwSTXQ2TixuoBZQ5oGyMnYVPN5hmKwFhuMbIjTMihc4Vmt4V7W2kjKAgPaSQo=,iv:jtBk9PRmJIUG4CTKnLqP7pK6fE+6klO+nuPmGt7WV+U=,tag:JEyFBFxqRDi0uM8gM1Hzkw==,type:str]
+    pgp: []
+    unencrypted_suffix: _unencrypted
+    version: 3.7.3

@@ -1,0 +1,3 @@
+source: live/kube_rbac
+providers:
+  kubernetes: true

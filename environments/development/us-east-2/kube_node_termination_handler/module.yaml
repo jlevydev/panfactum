@@ -1,0 +1,5 @@
+source: live/kube_node_termination_handler
+providers:
+  kubernetes: true
+  helm: true
+  aws: true

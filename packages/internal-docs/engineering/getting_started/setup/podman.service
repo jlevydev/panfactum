@@ -1,0 +1,13 @@
+[Unit]
+After=podman.socket
+Description=Podman API Service
+Documentation=man:podman-system-service(1)
+Requires=podman.socket
+StartLimitIntervalSec=0
+
+[Service]
+Environment=LOGGING="--log-level=info"
+ExecStart=/usr/local/bin/podman $LOGGING system service -t 0
+KillMode=process
+Type=exec
+Restart=always

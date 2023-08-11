@@ -1,0 +1,3 @@
+source: /live/aws_ecr_repos
+providers:
+  aws: true

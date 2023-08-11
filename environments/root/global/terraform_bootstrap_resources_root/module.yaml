@@ -1,0 +1,4 @@
+source: /live/terraform_bootstrap_resources
+providers:
+  aws: true
+  aws_secondary: true

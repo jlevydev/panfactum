@@ -1,0 +1,8 @@
+{
+  "extends": "@panfactum/build/tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "./src",
+    "outDir": "./out",
+    "sourceMap": true
+  },
+}

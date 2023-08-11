@@ -1,0 +1,6 @@
+################################################
+# Constants
+################################################
+REGISTRY="938942960544.dkr.ecr.us-east-2.amazonaws.com"
+NAMESPACE=os.getenv("LOCAL_DEV_NAMESPACE")
+TF_ROOT_DIR=os.path.realpath("../../environments/local/us-east-2")

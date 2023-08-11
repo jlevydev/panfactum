@@ -1,0 +1,3 @@
+source: live/panfactum_public_site_deployment
+providers:
+  kubernetes: true

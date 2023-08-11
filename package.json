@@ -1,0 +1,8 @@
+{
+  "name": "panfactum",
+  "private": true,
+  "engines": {
+    "node": ">=18",
+    "pnpm": ">=7"
+  }
+}

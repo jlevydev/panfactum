@@ -1,0 +1,4 @@
+source: live/kube_metrics_server
+providers:
+  kubernetes: true
+  helm: true

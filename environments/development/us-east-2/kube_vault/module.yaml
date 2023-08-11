@@ -1,0 +1,6 @@
+source: live/kube_vault
+providers:
+  kubernetes: true
+  helm: true
+  aws: true
+  aws_secondary: true

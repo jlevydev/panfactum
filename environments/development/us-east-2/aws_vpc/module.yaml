@@ -1,0 +1,3 @@
+source: /live/aws_vpc
+providers:
+  aws: true

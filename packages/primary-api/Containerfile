@@ -1,0 +1,22 @@
+FROM node:18-bullseye-slim as production
+
+# Install package manager
+RUN npm i -g pnpm@8.6.12
+
+# Install Dependencies
+WORKDIR /code
+COPY package.json pnpm-lock.yaml .npmrc pnpm-workspace.yaml .
+COPY packages/primary-api/package.json packages/primary-api/pnpm-lock.yaml packages/primary-api/
+COPY packages/eslint/ packages/eslint/
+COPY packages/build/ packages/build/
+RUN --mount=type=cache,target=/code/.pnp pnpm install --frozen-lockfile
+
+# Execute the build
+# TODO: We need to implement rollup or another bundler in order to improve image sizes
+COPY packages/primary-api/ packages/primary-api/
+WORKDIR packages/primary-api
+RUN npx tsc -p tsconfig.json
+
+
+FROM production as development
+RUN apt-get update -y && apt-get install -y rsync inotify-tools

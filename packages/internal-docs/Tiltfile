@@ -1,0 +1,55 @@
+load('../tilt/common.tiltfile', 'REGISTRY', 'NAMESPACE', 'TF_ROOT_DIR')
+load('../tilt/podman.tiltfile', 'podman_build')
+
+LABELS = ['docs']
+TF_DIR = "{}/panfactum_internal_docs_deployment".format(TF_ROOT_DIR)
+IMAGE = "{}/internal-docs".format(REGISTRY)
+
+podman_build(
+  IMAGE,
+  "../..",
+  extra_flags=[
+    "-f", "./Containerfile",
+     "--target", "builder"
+   ],
+  deps=  [
+     "src",
+     "static",
+     "package.json",
+     "pnpm-lock.yaml",
+     "tsconfig.json",
+     "docusaurus.config.js",
+     "babel.config.js",
+     "Containerfile",
+     "business",
+     "engineering"
+   ],
+   live_update = [
+     sync('business', '/code/packages/internal-docs/business'),
+     sync('engineering', '/code/packages/internal-docs/engineering'),
+     sync('src', '/code/packages/internal-docs/src'),
+     sync('static', '/code/packages/internal-docs/static')
+   ]
+)
+
+k8s_custom_deploy(
+  "internal-docs",
+  ["bash", "-c", "terragrunt apply -auto-approve -no-color --terragrunt-non-interactive 1>&2 && kubectl get -n {}-internal-docs deployment/internal-docs -o yaml".format(NAMESPACE)],
+  "terragrunt destroy -auto-approve -no-color --terragrunt-non-interactive",
+  [
+    TF_DIR,
+    '../infrastructure/live/panfactum_internal_docs_deployment',
+    '../infrastructure/modules/kube_deployment',
+    '../infrastructure/modules/kube_ingress'
+  ],
+  apply_dir=TF_DIR,
+  delete_dir=TF_DIR,
+  image_deps = [IMAGE]
+)
+
+k8s_resource(
+  workload='internal-docs',
+  new_name="internal-docs",
+  labels=LABELS,
+  links = ["internal.{}.dev.panfactum.com".format(NAMESPACE)]
+)

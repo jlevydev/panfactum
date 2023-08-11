@@ -1,0 +1,5 @@
+source: /live/kube_cert_issuers
+providers:
+  kubernetes: true
+  aws: true
+  vault: true

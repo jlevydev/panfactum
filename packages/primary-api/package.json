@@ -1,0 +1,32 @@
+{
+  "name": "@panfactum/primary-api",
+  "main": "src/index.ts",
+  "private": true,
+  "dependencies": {
+    "@faker-js/faker": "^7.6.0",
+    "@fastify/cookie": "^8.3.0",
+    "@fastify/cors": "^8.2.0",
+    "@fastify/swagger": "^8.3.1",
+    "@fastify/swagger-ui": "^1.3.0",
+    "@fastify/type-provider-typebox": "^2.4.0",
+    "@panfactum/build": "workspace:*",
+    "@panfactum/eslint-config": "workspace:*",
+    "@sinclair/typebox": "^0.25.21",
+    "@tsconfig/node18-strictest-esm": "^1.0.1",
+    "@types/node": "^18.11.18",
+    "@types/pg": "^8.6.6",
+    "@typescript-eslint/eslint-plugin": "^5.50.0",
+    "@typescript-eslint/parser": "^5.50.0",
+    "eslint": "8.33.0",
+    "eslint-config-next": "13.1.6",
+    "eslint-plugin-import": "^2.27.5",
+    "eslint-plugin-n": "^15.6.1",
+    "eslint-plugin-promise": "^6.1.1",
+    "eslint-plugin-react": "^7.32.2",
+    "fastify": "^4.12.0",
+    "kysely": "^0.23.4",
+    "nodemon": "^3.0.0",
+    "pg": "^8.9.0",
+    "typescript": "^4.9.5"
+  }
+}

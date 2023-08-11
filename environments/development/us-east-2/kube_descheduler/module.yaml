@@ -1,0 +1,4 @@
+source: /live/kube_descheduler
+providers:
+  kubernetes: true
+  helm: true

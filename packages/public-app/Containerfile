@@ -1,0 +1,20 @@
+FROM node:18-bullseye-slim as production
+
+# Install package manager
+RUN npm i -g pnpm@8.6.12
+
+# Install Dependencies
+WORKDIR /code
+COPY package.json pnpm-lock.yaml .npmrc pnpm-workspace.yaml .
+COPY packages/public-app/package.json packages/public-app/pnpm-lock.yaml packages/public-app/
+COPY packages/eslint/ packages/eslint/
+COPY packages/build/ packages/build/
+COPY packages/primary-api/ packages/primary-api/
+RUN --mount=type=cache,target=/code/.pnp pnpm install --frozen-lockfile
+
+# Build
+COPY packages/public-app/ packages/public-app/
+WORKDIR packages/public-app
+RUN npx next build
+
+# TODO: Create an actual production build without all the dev dependencies

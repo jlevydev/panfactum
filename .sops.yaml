@@ -1,0 +1,17 @@
+creation_rules:
+
+  - path_regex: \.root\.yaml$
+    aws_profile: root-superuser
+    kms: 'arn:aws:kms:us-east-2:143003111016:key/mrk-7d92988531c04fa797edf85aea2b4f13,arn:aws:kms:us-west-2:143003111016:key/mrk-7d92988531c04fa797edf85aea2b4f13'
+
+  - path_regex: \.operations\.yaml$
+    aws_profile: operations-superuser
+    kms: 'arn:aws:kms:us-east-2:487780594448:key/mrk-8f1488c05d124696a6185055d2474e25,arn:aws:kms:us-west-2:487780594448:key/mrk-8f1488c05d124696a6185055d2474e25'
+    
+  - path_regex: \.development\.yaml$
+    aws_profile: development-superuser
+    kms: 'arn:aws:kms:us-east-2:938942960544:key/mrk-05fc737c1cbc4d128727fe4f50cf45c2,arn:aws:kms:us-west-2:938942960544:key/mrk-05fc737c1cbc4d128727fe4f50cf45c2'
+
+  - path_regex: \.production\.yaml$
+    aws_profile: production-superuser
+    kms: 'arn:aws:kms:us-east-2:682349599426:key/mrk-6a3d6abadd8d4c9c815fe281e724ea22,arn:aws:kms:us-west-2:682349599426:key/mrk-6a3d6abadd8d4c9c815fe281e724ea22'
