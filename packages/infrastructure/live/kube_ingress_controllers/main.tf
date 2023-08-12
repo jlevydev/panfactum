@@ -565,7 +565,7 @@ resource "helm_release" "nginx_ingress" {
             [for directive, config in local.csp_config: "${directive} ${join(" ", config)}"],
             ["upgrade-insecure-requests"]
           ))
-          "Cross-Origin-Opener-Policy" =  "same-origin"
+          "Cross-Origin-Opener-Policy" =  "same-origin-allow-popups"
           "Cross-Origin-Resource-Policy" = "cross-origin"
         }
 
