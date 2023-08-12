@@ -384,6 +384,8 @@ resource "vault_database_secret_backend_connection" "postgres" {
   name          = var.pg_cluster_name
   allowed_roles = [
     "reader-${var.pg_cluster_namespace}-${var.pg_cluster_name}",
+    "writer-${var.pg_cluster_namespace}-${var.pg_cluster_name}",
+    "admin-${var.pg_cluster_namespace}-${var.pg_cluster_name}"
   ]
 
   postgresql {
