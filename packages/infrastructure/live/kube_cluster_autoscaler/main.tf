@@ -142,10 +142,13 @@ resource "helm_release" "cluster_autoscaler" {
         balance-similar-node-groups = true
         skip-nodes-with-system-pods = false
         skip-nodes-with-local-storage = false
+        skip-nodes-with-custom-controller-pods = false
+        cordon-node-before-terminating = true
         scale-down-utilization-threshold = 70
         scale-down-delay-after-add = "5m0s"
         scale-down-unneeded-time = "2m0s"
         scale-down-unready-time = "5m0s"
+        unremovable-node-recheck-timeout = "2m0s"
         scale-down-candidates-pool-ratio = "1.0"
         max-graceful-termination-sec = "120"
         v = "5"

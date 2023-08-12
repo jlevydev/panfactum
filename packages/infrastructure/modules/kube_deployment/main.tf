@@ -607,7 +607,7 @@ resource "kubernetes_pod_disruption_budget_v1" "pdb" {
     selector {
       match_labels = local.match_labels
     }
-    min_available = var.min_replicas
+    max_unavailable = "50%" // Rounds up
   }
 }
 
