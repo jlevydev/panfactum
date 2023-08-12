@@ -83,8 +83,17 @@ resource "helm_release" "vpa" {
         affinity = module.constants.spot_node_affinity_helm
 
         extraArgs = {
+          // Better packing
           "pod-recommendation-min-cpu-millicores" = 2
           "pod-recommendation-min-memory-mb" = 10
+
+          // Make very responsive if OOM occurs
+          "oom-bump-up-ratio" = "2.0"
+
+          // Lower half-life so we have better intra-day scaling
+          "cpu-histogram-decay-half-life" = "2h0m0s"
+          "memory-histogram-decay-half-life" = "2h0m0s"
+
           v = 2
         }
       }
