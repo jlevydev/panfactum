@@ -71,13 +71,11 @@ resource "helm_release" "vpa" {
   values = [
     yamlencode({
 
-      podLabels = local.labels
+      podLabels = merge(local.labels, {
+        customizationHash = md5(join("", [for filename in fileset(path.module, "vpa_kustomize/*"): filesha256(filename)]))
+      })
 
       priorityClassName = "system-cluster-critical"
-
-      commonAnnotations = {
-        "reloader.stakater.com/auto" = "true"
-      }
 
       recommender = {
         replicaCount = 1
@@ -160,6 +158,13 @@ resource "helm_release" "vpa" {
       }
     })
   ]
+
+  // We need to add the reloader annotation to the admission controller deployment
+  // so that it restarts when the webhook cert is rotated
+  postrender {
+    binary_path = "${path.module}/vpa_kustomize/kustomize.sh"
+  }
+
   depends_on = [module.webhook_cert]
 }
 
