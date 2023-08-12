@@ -295,30 +295,30 @@ resource "kubernetes_manifest" "scheduled_backup" {
   depends_on = [kubernetes_manifest.postgres_cluster]
 }
 
-resource "kubernetes_manifest" "vpa_dbs" {
-  count = var.vpa_enabled ? 1: 0
-  manifest = {
-    apiVersion = "autoscaling.k8s.io/v1"
-    kind  = "VerticalPodAutoscaler"
-    metadata = {
-      name = var.pg_cluster_name
-      namespace = var.pg_cluster_namespace
-      labels = var.kube_labels
-    }
-    spec = {
-      targetRef = {
-        apiVersion = "postgresql.cnpg.io/v1"
-        kind = "Cluster"
-        name = var.pg_cluster_name
-      }
-      updatePolicy = {
-        updateMode = "Auto"
-      }
-    }
-  }
-  depends_on = [kubernetes_manifest.postgres_cluster]
-}
-
+# TODO: Re-enable once https://github.com/cloudnative-pg/cloudnative-pg/issues/2574 is addressed
+#resource "kubernetes_manifest" "vpa_dbs" {
+#  count = var.vpa_enabled ? 1: 0
+#  manifest = {
+#    apiVersion = "autoscaling.k8s.io/v1"
+#    kind  = "VerticalPodAutoscaler"
+#    metadata = {
+#      name = var.pg_cluster_name
+#      namespace = var.pg_cluster_namespace
+#      labels = var.kube_labels
+#    }
+#    spec = {
+#      targetRef = {
+#        apiVersion = "postgresql.cnpg.io/v1"
+#        kind = "Cluster"
+#        name = var.pg_cluster_name
+#      }
+#      updatePolicy = {
+#        updateMode = "Auto"
+#      }
+#    }
+#  }
+#  depends_on = [kubernetes_manifest.postgres_cluster]
+#}
 
 /***************************************
 * Vault Authentication
