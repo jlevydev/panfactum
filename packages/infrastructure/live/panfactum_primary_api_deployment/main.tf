@@ -189,6 +189,8 @@ module "deployment" {
   max_replicas = var.max_replicas
   vpa_enabled = var.vpa_enabled
   ha_enabled = var.ha_enabled
+
+  depends_on = [module.db_access]
 }
 
 module "ingress" {
