@@ -17,9 +17,9 @@ locals {
   namespace = module.namespace.namespace
 
   // Extract values from the enforced kubernetes labels
-  environment = var.kube_labels["environment"]
-  module      = var.kube_labels["module"]
-  version     = var.kube_labels["version_tag"]
+  environment = var.environment
+  module      = var.module
+  version     = var.version_tag
 
   labels = merge(var.kube_labels, {
     service = local.name

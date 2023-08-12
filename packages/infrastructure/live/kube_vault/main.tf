@@ -21,10 +21,9 @@ locals {
   name = "vault"
   namespace = module.namespace.namespace
 
-  // Extract values from the enforced kubernetes labels
-  environment = var.kube_labels["environment"]
-  module      = var.kube_labels["module"]
-  version     = var.kube_labels["version_tag"]
+  environment = var.environment
+  module      = var.module
+  version     = var.version_tag
 
   labels = merge(var.kube_labels, {
     service = local.name
@@ -138,7 +137,7 @@ resource "kubernetes_service_account" "vault" {
 }
 
 module "aws_permissions" {
-  source = "../../modules/kube_irsa"
+  source = "../../modules/kube_sa_auth_aws"
   service_account = kubernetes_service_account.vault.metadata[0].name
   service_account_namespace = local.namespace
   eks_cluster_name = var.eks_cluster_name
@@ -167,16 +166,25 @@ resource "helm_release" "vault" {
         tlsDisable = true // we use a service mesh for this
       }
 
+      // The injector will not work b/c it creates init
+      // sidecar containers which means that the linkerd proxy won't
+      // be running yet and thus the sidecar cannot communicate with vault.
+      // Instead, we utilize secrets-store-csi-driver-provider-vault
       injector = {
+        enabled = false
+      }
+
+      csi = {
         enabled = true
-        extraLabels = local.labels
-
-        // Does not need to be highly available
-        replicaCount = 1
-        tolerations = module.constants.spot_node_toleration_helm
-        affinity = module.constants.spot_node_affinity_helm
-
-        priorityClassName = "system-cluster-critical"
+        daemonSet = {
+          annotations = {
+            "reloader.stakater.com/auto" = "true"
+          }
+        }
+        pod = {
+          priorityClassName = "system-cluster-critical"
+          tolerations = module.constants.spot_node_toleration_helm
+        }
       }
 
       ui = {
@@ -250,21 +258,21 @@ resource "helm_release" "vault" {
 * Vault Autoscaling
 ***************************************/
 
-resource "kubernetes_manifest" "vpa_injector" {
+resource "kubernetes_manifest" "vpa_csi" {
   count = var.vpa_enabled ? 1: 0
   manifest = {
     apiVersion = "autoscaling.k8s.io/v1"
     kind  = "VerticalPodAutoscaler"
     metadata = {
-      name = "vault-agent-injector"
+      name = "vault-csi-provider"
       namespace = local.namespace
       labels = local.injector_labels
     }
     spec = {
       targetRef = {
         apiVersion = "apps/v1"
-        kind = "Deployment"
-        name = "vault-agent-injector"
+        kind = "DaemonSet"
+        name = "vault-csi-provider"
       }
     }
   }

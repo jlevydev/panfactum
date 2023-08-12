@@ -13,8 +13,7 @@ terraform {
 
 locals {
 
-  name = "cloudnative-pg"
-  namespace = module.namespace.namespace
+  service = "secrets-csi"
 
   // Extract values from the enforced kubernetes labels
   environment = var.environment
@@ -22,9 +21,10 @@ locals {
   version     = var.version_tag
 
   labels = merge(var.kube_labels, {
-    service = local.name,
-    test = "t"
+    service = local.service
   })
+
+  namespace = module.namespace.namespace
 }
 
 module "constants" {
@@ -32,24 +32,29 @@ module "constants" {
 }
 
 /***************************************
-* Kubernetes Resources
+* Namespace
 ***************************************/
 
 module "namespace" {
   source = "../../modules/kube_namespace"
-  namespace = local.name
+  namespace = local.service
   admin_groups = ["system:admins"]
   reader_groups = ["system:readers"]
   bot_reader_groups = ["system:bot-readers"]
   kube_labels = local.labels
+  linkerd_inject = false
 }
 
-resource "helm_release" "cnpg" {
+/***************************************
+* CSI Driver
+***************************************/
+
+resource "helm_release" "secrets_csi_driver" {
   namespace       = local.namespace
-  name            = local.name
-  repository      = "https://cloudnative-pg.github.io/charts"
-  chart           = "cloudnative-pg"
-  version         = var.cloudnative_pg_helm_version
+  name            = local.service
+  repository      = "https://kubernetes-sigs.github.io/secrets-store-csi-driver/charts"
+  chart           = "secrets-store-csi-driver"
+  version         = var.secrets_store_csi_helm_version
   recreate_pods   = true
   cleanup_on_fail = true
   wait            = true
@@ -57,30 +62,25 @@ resource "helm_release" "cnpg" {
 
   values = [
     yamlencode({
-      fullnameOverride = local.name
-
-      crds = {
-        create = true
-      }
-
-      priorityClassName = "system-cluster-critical"
-
-      // Does not need to be highly available
-      replicaCount = 1
-      tolerations = module.constants.spot_node_toleration_helm
-      affinity = module.constants.spot_node_affinity_helm
-
-      podAnnotations = {
-        "reloader.stakater.com/auto" = "true"
-      }
-
-      config = {
-        data = {
-          INHERITED_ANNOTATIONS = "linkerd.io/*"
-          INHERITED_LABELS = "region, service, version_tag, module, app"
+      linux = {
+        enabled = true
+        crds = {
+          enabled = true
+        }
+        tolerations = module.constants.spot_node_toleration_helm
+        daemonsetAnnotations = {
+          "reloader.stakater.com/auto" = "true"
+        }
+        podAnnotations = {
+          "linkerd.io/inject" = "enabled"
         }
       }
-      podLabels = local.labels
+      logVerbosity = 2
+      logFormatJSON = true
+      enableSecretRotation = true
+      syncSecret = {
+        enabled = true
+      }
     })
   ]
 }
@@ -91,16 +91,18 @@ resource "kubernetes_manifest" "vpa" {
     apiVersion = "autoscaling.k8s.io/v1"
     kind  = "VerticalPodAutoscaler"
     metadata = {
-      name = local.name
+      name = "secrets-csi-secrets-store-csi-driver"
       namespace = local.namespace
       labels = var.kube_labels
     }
     spec = {
       targetRef = {
         apiVersion = "apps/v1"
-        kind = "Deployment"
-        name = local.name
+        kind = "DaemonSet"
+        name = "secrets-csi-secrets-store-csi-driver"
       }
     }
   }
 }
+
+

@@ -19,9 +19,9 @@ locals {
 
 
   // Extract values from the enforced kubernetes labels
-  environment = var.kube_labels["environment"]
-  module      = var.kube_labels["module"]
-  version     = var.kube_labels["version_tag"]
+  environment = var.environment
+  module      = var.module
+  version     = var.version_tag
 
   labels = merge(var.kube_labels, {
     service = "cert-manager"
@@ -49,7 +49,7 @@ data "aws_iam_policy_document" "permissions" {
 }
 
 module "aws_permissions" {
-  source = "../../modules/kube_irsa"
+  source = "../../modules/kube_sa_auth_aws"
   service_account = var.service_account
   service_account_namespace = var.namespace
   eks_cluster_name = var.eks_cluster_name

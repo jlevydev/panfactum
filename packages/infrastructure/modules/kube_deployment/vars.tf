@@ -141,8 +141,19 @@ variable "pod_annotations" {
   default = {}
 }
 
-variable "service_account_name" {
+variable "service_account" {
   description = "The name of the service account to use for this deployment"
   type = string
-  default = null
+}
+
+variable "dynamic_env_secrets" {
+  description = "Dynamic environment variable secrets"
+  type = list(object({ // key is the secret provider class
+    secret_provider_class = string // name of the secret provider class
+    secret_name = string // name of the kubernetes secret created by the secret provider class
+    env = map(object({ // key is the ENV variable name
+      secret_key = string // name of the key on the secret that contains the value for the ENV variable
+    }))
+  }))
+  default = []
 }

@@ -16,10 +16,9 @@ locals {
   name = "vertical-pod-autoscaler"
   namespace = module.namespace.namespace
 
-  // Extract values from the enforced kubernetes labels
-  environment = var.kube_labels["environment"]
-  module      = var.kube_labels["module"]
-  version     = var.kube_labels["version_tag"]
+  environment = var.environment
+  module      = var.module
+  version     = var.version_tag
 
   labels = merge(var.kube_labels, {
     service = local.name
@@ -189,7 +188,7 @@ resource "kubernetes_manifest" "vpa_controller" {
     metadata = {
       name = "vertical-pod-autoscaler-vpa-admission-controller"
       namespace = local.namespace
-      labels = var.kube_labels
+      labels = local.labels
     }
     spec = {
       targetRef = {
@@ -209,7 +208,7 @@ resource "kubernetes_manifest" "vpa_recommender" {
     metadata = {
       name = "vertical-pod-autoscaler-vpa-recommender"
       namespace = local.namespace
-      labels = var.kube_labels
+      labels = local.labels
     }
     spec = {
       targetRef = {
@@ -229,7 +228,7 @@ resource "kubernetes_manifest" "vpa_updater" {
     metadata = {
       name = "vertical-pod-autoscaler-vpa-updater"
       namespace = local.namespace
-      labels = var.kube_labels
+      labels = local.labels
     }
     spec = {
       targetRef = {

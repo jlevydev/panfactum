@@ -63,7 +63,7 @@ data "aws_iam_policy_document" "s3_access" {
 }
 
 module "irsa" {
-  source = "../kube_irsa"
+  source = "../kube_sa_auth_aws"
   eks_cluster_name = var.eks_cluster_name
   service_account = var.pg_cluster_name
   service_account_namespace = var.pg_cluster_namespace
@@ -330,7 +330,12 @@ resource "vault_database_secret_backend_role" "read_only" {
   db_name             = vault_database_secret_backend_connection.postgres.name
   creation_statements = [
     "CREATE ROLE \"{{name}}\" NOINHERIT LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}';",
-    "GRANT pg_read_all_data TO \"{{name}}\";"
+    "GRANT pg_read_all_data TO \"{{name}}\";",
+    "GRANT USAGE ON SCHEMA public TO \"{{name}}\";",
+    "GRANT SELECT ON ALL TABLES IN SCHEMA public TO \"{{name}}\";",
+    "GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO \"{{name}}\";",
+    "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO \"{{name}}\";",
+    "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON SEQUENCES TO \"{{name}}\";"
   ]
   renew_statements = [
     "ALTER ROLE \"{{name}}\" VALID UNTIL '{{expiration}}'"
@@ -348,7 +353,12 @@ resource "vault_database_secret_backend_role" "writer" {
   db_name             = vault_database_secret_backend_connection.postgres.name
   creation_statements = [
     "CREATE ROLE \"{{name}}\" NOINHERIT LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}';",
-    "GRANT pg_write_all_data TO \"{{name}}\";"
+    "GRANT pg_write_all_data, pg_read_all_data TO \"{{name}}\";",
+    "GRANT ALL PRIVILEGES ON SCHEMA public TO \"{{name}}\";",
+    "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO \"{{name}}\";",
+    "GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO \"{{name}}\";",
+    "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON TABLES TO \"{{name}}\";",
+    "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON SEQUENCES TO \"{{name}}\";"
   ]
   renew_statements = [
     "ALTER ROLE \"{{name}}\" VALID UNTIL '{{expiration}}'"
@@ -389,7 +399,7 @@ resource "vault_database_secret_backend_connection" "postgres" {
   ]
 
   postgresql {
-    connection_url = "postgres://postgres:${random_password.superuser_password.result}@${var.pg_cluster_name}-rw.${var.pg_cluster_namespace}:5432/postgres"
+    connection_url = "postgres://postgres:${random_password.superuser_password.result}@${var.pg_cluster_name}-rw.${var.pg_cluster_namespace}:5432/app"
   }
 
   verify_connection = false

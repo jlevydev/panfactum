@@ -197,5 +197,11 @@ in
     # Host Management
     ####################################
     ansible
+
+    ####################################
+    # Postgres Management
+    ####################################
+    pgadmin4-desktopmode
+    pgcli
   ];
 }

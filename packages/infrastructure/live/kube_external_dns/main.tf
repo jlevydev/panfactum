@@ -24,10 +24,9 @@ locals {
   name = "external-dns"
   namespace = module.namespace.namespace
 
-  // Extract values from the enforced kubernetes labels
-  environment = var.kube_labels["environment"]
-  module      = var.kube_labels["module"]
-  version     = var.kube_labels["version_tag"]
+  environment = var.environment
+  module      = var.module
+  version     = var.version_tag
 
   labels = merge(var.kube_labels, {
     service = local.name
@@ -76,7 +75,7 @@ resource "kubernetes_service_account" "external_dns" {
 
 module "aws_permissions" {
   for_each = local.config
-  source = "../../modules/kube_irsa"
+  source = "../../modules/kube_sa_auth_aws"
   service_account = kubernetes_service_account.external_dns[each.key].metadata[0].name
   service_account_namespace = local.namespace
   eks_cluster_name = var.eks_cluster_name

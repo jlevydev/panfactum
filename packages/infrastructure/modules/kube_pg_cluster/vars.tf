@@ -46,3 +46,12 @@ variable "vpa_enabled" {
   type = bool
   default = true
 }
+
+variable "service_accounts" {
+  description = "Service accounts that should be allowed access to the database"
+  type = map(object({ // key is the service account name
+    role = string // admin, reader, writer
+    namespace = string
+  }))
+  default = {}
+}

@@ -38,6 +38,8 @@ locals {
 
   namespace = module.namespace.namespace
 
+  is_local = var.is_local
+
   port = 8080
   healthcheck_route = "/v1/healthz"
 
@@ -58,7 +60,7 @@ module "namespace" {
   admin_groups = ["system:admins"]
   reader_groups = ["system:readers"]
   bot_reader_groups = ["system:bot-readers"]
-  kube_labels = var.kube_labels
+  kube_labels = local.labels
 }
 
 /***************************************
@@ -74,76 +76,109 @@ module "postgres" {
   pg_instances = var.pg_instances
   pg_storage_gb = 5
   ha_enabled = var.ha_enabled
+  service_accounts = {
+    "${kubernetes_service_account.service.metadata[0].name}" = {
+      role = "writer"
+      namespace = local.namespace
+    }
+  }
 }
 
 /***************************************
 * Deployment
 ***************************************/
 
+resource "kubernetes_service_account" "service" {
+  metadata {
+    name = local.service
+    namespace = local.namespace
+    labels = local.labels
+  }
+}
+
+module "db_access" {
+  source = "../../modules/kube_sa_auth_pg"
+  namespace = local.namespace
+  service_account = kubernetes_service_account.service.metadata[0].name
+  database_role = module.postgres.db_writer_role
+  kube_labels = local.labels
+}
+
 module "deployment" {
   source = "../../modules/kube_deployment"
-  is_local = var.is_local
+  is_local = local.is_local
 
+  kube_labels = local.labels
   namespace = local.namespace
   service_name = local.service
+  service_account = kubernetes_service_account.service.metadata[0].name
 
   tolerations = module.constants.spot_node_toleration
 
-  kube_labels = var.kube_labels
-  service_account_name = local.service
-
   environment_variables = {
-    NODE_ENV = var.is_local ? "development" : "production"
+    NODE_ENV = local.is_local ? "development" : "production"
     PG_HOSTNAME = "${local.service}-pg-rw.${local.namespace}"
     PG_PORT = "5432"
-    PG_USERNAME = module.postgres.superuser_username
-    PG_PASSWORD = module.postgres.superuser_password
     PG_DATABASE = "app"
   }
-  init_containers = var.is_local ? {
+
+  dynamic_env_secrets = [{
+    secret_provider_class = module.db_access.secret_provider_class
+    secret_name = module.db_access.secret_name
+    env = {
+      PG_PASSWORD = {
+        secret_key = "password"
+      }
+      PG_USERNAME = {
+        secret_key = "username"
+      }
+    }
+  }]
+
+  init_containers = local.is_local ? {
     init-compile = {
       image = var.image_repo
-      version = var.version_tag
+      version = local.version
       command = ["scripts/compile-dev.sh", "./out", "./tsconfig.json"]
       minimum_memory = 500
     }
   } : {
     migrate = {
       image = var.image_repo
-      version = var.version_tag
+      version = local.version
       command = ["node", "out/migrate.js"]
       minimum_memory = 100
     }
   }
-  containers = var.is_local ? {
+  containers = local.is_local ? {
     migrate = {
       image = var.image_repo
-      version = var.version_tag
+      version = local.version
       command = ["node_modules/.bin/nodemon", "--delay", "0.25", "out/migrate.js"]
       minimum_memory = 100
     }
     server = {
       image = var.image_repo
-      version = var.version_tag
+      version = local.version
       command = ["node_modules/.bin/nodemon", "--delay", "0.25", "out/index.js"]
       minimum_memory = 100
     }
     compiler = {
       image = var.image_repo
-      version = var.version_tag
+      version = local.version
       command = ["node_modules/.bin/nodemon", "-x", "/bin/bash", "-w", "./src", "-w", "./scripts", "-e", "ts json sh js", "scripts/compile-dev.sh", "./out", "./tsconfig.json"]
       minimum_memory = 500
     }
   } : {
     server = {
       image = var.image_repo
-      version = var.version_tag
+      version = local.version
       command = ["node", "out/index.js"]
       minimum_memory = 100
     }
   }
 
-  tmp_directories = var.is_local ? [
+  tmp_directories = local.is_local ? [
     "/code/packages/primary-api/out",
     "/tmp/build"
   ]: []
@@ -160,7 +195,7 @@ module "ingress" {
   source = "../../modules/kube_ingress"
 
   namespace = local.namespace
-  kube_labels = var.kube_labels
+  kube_labels = local.labels
   ingress_name = local.service
 
   ingress_configs = [{

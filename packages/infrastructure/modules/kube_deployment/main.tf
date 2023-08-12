@@ -32,6 +32,14 @@ locals {
     var.environment_variables,
     module.env_vars.env_vars
   )
+
+  dynamic_env_secrets_by_provider = {for config in var.dynamic_env_secrets: config.secret_provider_class => config}
+  dynamic_env_secrets_flat = flatten([for config in var.dynamic_env_secrets: [for env, env_config in config.env: {
+    env = env
+    secret_key = env_config.secret_key
+    secret_name = config.secret_name
+  }]])
+  dynamic_env_secrets = {for config in local.dynamic_env_secrets_flat: config.env => config}
 }
 
 resource "random_id" "deployment_id" {
@@ -76,7 +84,7 @@ resource "kubernetes_deployment" "deployment" {
       }
       spec {
         priority_class_name = var.priority_class_name
-        service_account_name = kubernetes_service_account.service_account.metadata[0].name
+        service_account_name = var.service_account
 
         dynamic toleration {
           for_each = var.tolerations
@@ -157,7 +165,7 @@ resource "kubernetes_deployment" "deployment" {
               }
             }
 
-            // Environment Variable Set Up
+            // Static env variables (non-secret)
             dynamic "env" {
               for_each = local.scrubbed_env
               content {
@@ -166,7 +174,7 @@ resource "kubernetes_deployment" "deployment" {
               }
             }
 
-            // Secrets Set Up
+            // Static env variables (secret)
             dynamic "env" {
               for_each = var.secrets
               content {
@@ -175,6 +183,21 @@ resource "kubernetes_deployment" "deployment" {
                   secret_key_ref {
                     name = kubernetes_secret.secrets.metadata[0].name
                     key = env.key
+                    optional = false
+                  }
+                }
+              }
+            }
+
+            // Dynamic env variables (secret)
+            dynamic "env" {
+              for_each = local.dynamic_env_secrets
+              content {
+                name = env.key
+                value_from {
+                  secret_key_ref {
+                    name = env.value.secret_name
+                    key = env.value.secret_key
                     optional = false
                   }
                 }
@@ -253,46 +276,16 @@ resource "kubernetes_deployment" "deployment" {
                 read_only = true
               }
             }
-          }
-        }
-
-        dynamic "volume" {
-          for_each = var.tmp_directories
-          content {
-            empty_dir {
-              size_limit = "1Gi"
-            }
-            name = replace(volume.value, "/[^a-z0-9]/", "")
-          }
-        }
-        dynamic "volume" {
-          for_each = var.secret_mounts
-          content {
-            name = volume.key
-            secret {
-              secret_name = volume.key
-              optional = false
+            dynamic "volume_mount" {
+              for_each = local.dynamic_env_secrets_by_provider
+              content {
+                name = volume_mount.key
+                mount_path = "/mnt/vault/${volume_mount.key}"
+                read_only = true
+              }
             }
           }
         }
-        
-        topology_spread_constraint {
-          max_skew = 1
-          topology_key = "topology.kubernetes.io/zone"
-          when_unsatisfiable = "ScheduleAnyway"
-          label_selector {
-            match_labels = local.match_labels
-          }
-        }
-        topology_spread_constraint {
-          max_skew = 1
-          topology_key = "kubernetes.io/hostname"
-          when_unsatisfiable = var.ha_enabled ? "DoNotSchedule" : "ScheduleAnyway"
-          label_selector {
-            match_labels = local.match_labels
-          }
-        }
-
         dynamic init_container {
           for_each = var.init_containers
           content {
@@ -339,7 +332,7 @@ resource "kubernetes_deployment" "deployment" {
               }
             }
 
-            // Environment Variable Set Up
+            // Static env variables (non-secret)
             dynamic "env" {
               for_each = local.scrubbed_env
               content {
@@ -348,7 +341,7 @@ resource "kubernetes_deployment" "deployment" {
               }
             }
 
-            // Secrets Set Up
+            // Static env variables (secret)
             dynamic "env" {
               for_each = var.secrets
               content {
@@ -362,6 +355,23 @@ resource "kubernetes_deployment" "deployment" {
                 }
               }
             }
+
+            // Dynamic env variables (secret)
+            dynamic "env" {
+              for_each = local.dynamic_env_secrets
+              content {
+                name = env.key
+                value_from {
+                  secret_key_ref {
+                    name = env.value.secret_name
+                    key = env.value.secret_key
+                    optional = false
+                  }
+                }
+              }
+            }
+
+
             resources {
               requests = {
                 cpu = "${init_container.value.minimum_cpu}m"
@@ -401,8 +411,66 @@ resource "kubernetes_deployment" "deployment" {
                 read_only = true
               }
             }
+            dynamic "volume_mount" {
+              for_each = local.dynamic_env_secrets_by_provider
+              content {
+                name = volume_mount.key
+                mount_path = "/mnt/vault/${volume_mount.key}"
+                read_only = true
+              }
+            }
           }
         }
+
+        dynamic "volume" {
+          for_each = var.tmp_directories
+          content {
+            empty_dir {
+              size_limit = "1Gi"
+            }
+            name = replace(volume.value, "/[^a-z0-9]/", "")
+          }
+        }
+        dynamic "volume" {
+          for_each = var.secret_mounts
+          content {
+            name = volume.key
+            secret {
+              secret_name = volume.key
+              optional = false
+            }
+          }
+        }
+        dynamic "volume" {
+          for_each = local.dynamic_env_secrets_by_provider
+          content {
+            name = volume.key
+            csi {
+              driver = "secrets-store.csi.k8s.io"
+              read_only = true
+              volume_attributes = {
+                secretProviderClass = volume.key
+              }
+            }
+          }
+        }
+        topology_spread_constraint {
+          max_skew = 1
+          topology_key = "topology.kubernetes.io/zone"
+          when_unsatisfiable = "ScheduleAnyway"
+          label_selector {
+            match_labels = local.match_labels
+          }
+        }
+        topology_spread_constraint {
+          max_skew = 1
+          topology_key = "kubernetes.io/hostname"
+          when_unsatisfiable = var.ha_enabled ? "DoNotSchedule" : "ScheduleAnyway"
+          label_selector {
+            match_labels = local.match_labels
+          }
+        }
+
       }
     }
   }
@@ -410,14 +478,6 @@ resource "kubernetes_deployment" "deployment" {
   timeouts {
     create = "5m"
     update = "5m"
-  }
-}
-
-resource "kubernetes_service_account" "service_account" {
-  metadata {
-    name = var.service_account_name == null ? var.service_name : var.service_account_name
-    namespace = var.namespace
-    labels = local.service_labels
   }
 }
 

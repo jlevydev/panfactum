@@ -22,10 +22,9 @@ locals {
   alb_name = "alb-controller"
   namespace = module.namespace.namespace
 
-  // Extract values from the enforced kubernetes labels
-  environment = var.kube_labels["environment"]
-  module      = var.kube_labels["module"]
-  version     = var.kube_labels["version_tag"]
+  environment = var.environment
+  module      = var.module
+  version     = var.version_tag
 
   nginx_labels = merge(var.kube_labels, {
     test = "1"
@@ -316,7 +315,7 @@ resource "kubernetes_service_account" "alb_controller" {
 }
 
 module "aws_permissions" {
-  source = "../../modules/kube_irsa"
+  source = "../../modules/kube_sa_auth_aws"
   service_account = kubernetes_service_account.alb_controller.metadata[0].name
   service_account_namespace = local.namespace
   eks_cluster_name = var.eks_cluster_name

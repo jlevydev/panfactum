@@ -63,7 +63,7 @@ resource "kubernetes_cluster_role_binding" "reloader" {
   }
   subject {
     kind = "ServiceAccount"
-    name = module.deployment.service_account
+    name = kubernetes_service_account.reloader.metadata[0].name
     namespace = local.service
   }
 }
@@ -94,7 +94,14 @@ resource "kubernetes_role_binding" "reloader" {
   }
   subject {
     kind = "ServiceAccount"
-    name = module.deployment.service_account
+    name = kubernetes_service_account.reloader.metadata[0].name
+    namespace = module.namespace.namespace
+  }
+}
+
+resource "kubernetes_service_account" "reloader" {
+  metadata {
+    name = local.service
     namespace = module.namespace.namespace
   }
 }
@@ -103,6 +110,7 @@ module "deployment" {
   source = "../../modules/kube_deployment"
   namespace = module.namespace.namespace
   service_name = local.service
+  service_account = kubernetes_service_account.reloader.metadata[0].name
   http_port = 9090
 
   // does not need to be highly available
@@ -125,8 +133,6 @@ module "deployment" {
     }
   }
 
-  memory_limit = 100
-  cpu_request = 50
   kube_labels = var.kube_labels
   vpa_enabled = var.vpa_enabled
 }

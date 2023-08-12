@@ -11,7 +11,6 @@ locals {
 
   service = "internal-docs"
 
-  // Extract values from the enforced kubernetes labels
   environment = var.environment
   module      = var.module
   version     = var.version_tag
@@ -21,6 +20,8 @@ locals {
   })
 
   namespace = module.namespace.namespace
+
+  is_local = var.is_local
 
   port = var.is_local ? 443 : 3000
   healthcheck_route = var.is_local ? "/" : "/healthz"
@@ -40,26 +41,34 @@ module "namespace" {
   admin_groups = ["system:admins"]
   reader_groups = ["system:readers"]
   bot_reader_groups = ["system:bot-readers"]
-  kube_labels = var.kube_labels
+  kube_labels = local.labels
 }
 
 /***************************************
 * Deployment
 ***************************************/
 
+resource "kubernetes_service_account" "main" {
+  metadata {
+    name = local.service
+    namespace = module.namespace.namespace
+  }
+}
+
 module "deployment" {
   source = "../../modules/kube_deployment"
-  is_local = var.is_local
+  is_local = local.is_local
 
   namespace = local.namespace
   service_name = local.service
+  service_account = kubernetes_service_account.main.metadata[0].name
   tolerations = module.constants.spot_node_toleration
-  kube_labels = var.kube_labels
+  kube_labels = local.labels
   containers = {
     server = {
       image = var.image_repo
-      version = var.version_tag
-      command = var.is_local ? [
+      version = local.version
+      command = local.is_local ? [
         "node_modules/.bin/docusaurus",
         "start",
         "-p",
@@ -69,7 +78,7 @@ module "deployment" {
       ] : []
     }
   }
-  tmp_directories = var.is_local ? [
+  tmp_directories = local.is_local ? [
     "/home/node/.npm",
     "/code/packages/internal-docs/.docusaurus"
   ]: [
@@ -89,7 +98,7 @@ module "ingress" {
   source = "../../modules/kube_ingress"
 
   namespace = local.namespace
-  kube_labels = var.kube_labels
+  kube_labels = local.labels
   ingress_name = local.service
 
   ingress_configs = [{
