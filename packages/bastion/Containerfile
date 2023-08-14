@@ -1,0 +1,11 @@
+FROM registry.hub.docker.com/library/debian:12-slim as production
+
+RUN apt-get update && \
+    apt-get -y upgrade && \
+    apt-get -y install --no-install-recommends ca-certificates openssh-server
+
+# Create the user that we use to login to
+# and unlock their account
+RUN useradd panfactum && usermod -p '*' panfactum
+
+COPY packages/bastion/sshd_config /etc/ssh/sshd_config

@@ -16,9 +16,6 @@ terraform {
 }
 
 locals {
-
-
-  // Extract values from the enforced kubernetes labels
   environment = var.environment
   module      = var.module
   version     = var.version_tag
@@ -31,8 +28,6 @@ locals {
   ci_internal_name = "internal"
 
 }
-
-
 
 /***************************************
 * Cluster Issuer - Public

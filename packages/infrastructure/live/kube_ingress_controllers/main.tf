@@ -12,6 +12,10 @@ terraform {
       source  = "hashicorp/aws"
       version = "5.10"
     }
+    tls = {
+      source = "hashicorp/tls"
+      version = "4.0.4"
+    }
   }
 }
 
@@ -20,6 +24,7 @@ locals {
   name = "ingress"
   nginx_name = "ingress-nginx"
   alb_name = "alb-controller"
+  bastion_name = "bastion"
   namespace = module.namespace.namespace
 
   environment = var.environment
@@ -27,12 +32,13 @@ locals {
   version     = var.version_tag
 
   nginx_labels = merge(var.kube_labels, {
-    test = "1"
-    service = local.nginx_name
+    submodule = local.nginx_name
   })
   alb_labels = merge(var.kube_labels, {
-    test = "1"
-    service = local.alb_name
+    submodule = local.alb_name
+  })
+  bastion_labels = merge(var.kube_labels, {
+    submodule = local.bastion_name
   })
 
   nginx_selector = {
@@ -42,6 +48,10 @@ locals {
   }
   alb_selector = {
     "app.kubernetes.io/name" = "aws-load-balancer-controller"
+  }
+  bastion_selector = {
+    module = local.module
+    submodule = local.bastion_name
   }
 
   // This has to be THIS name in order for it to
@@ -79,6 +89,33 @@ locals {
       "'unsafe-eval'"  # Added for grafana
     ]
     style-src = ["'self'", "https:", "'unsafe-inline'"]
+  }
+
+  nlb_common_annotations = {
+    "service.beta.kubernetes.io/aws-load-balancer-type" = "external"
+    "service.beta.kubernetes.io/aws-load-balancer-backend-protocol" = "tcp"
+    "service.beta.kubernetes.io/aws-load-balancer-scheme" = "internet-facing"
+    "service.beta.kubernetes.io/aws-load-balancer-nlb-target-type" = "ip"
+    "service.beta.kubernetes.io/aws-load-balancer-healthcheck-unhealthy-threshold" = "2"
+    "service.beta.kubernetes.io/aws-load-balancer-healthcheck-healthy-threshold" = "2"
+    "service.beta.kubernetes.io/aws-load-balancer-healthcheck-timeout" = "2"
+    "service.beta.kubernetes.io/aws-load-balancer-healthcheck-interval" = "5"
+    "service.beta.kubernetes.io/aws-load-balancer-target-group-attributes" = join(",", [
+
+      // Ensures a client always connects to the same backing server; important
+      // for both performance and rate-limiting
+      "stickiness.enabled=true",
+      "stickiness.type=source_ip",
+
+      // Preserve the client IP even when routing through the LB
+      "preserve_client_ip.enabled=true",
+
+      // This needs to be SHORTER than it takes for the NGINX pod to terminate as incoming connections
+      // will only be stopped when this delay is met
+      "deregistration_delay.timeout_seconds=${local.deregistration_delay}",
+      "deregistration_delay.connection_termination.enabled=true"
+    ])
+    //TODO: "service.beta.kubernetes.io/aws-load-balancer-attributes" = "access_logs.s3.enabled=true,access_logs.s3.bucket=my-access-log-bucket,access_logs.s3.prefix=my-app"
   }
 }
 
@@ -377,7 +414,7 @@ resource "helm_release" "alb_controller" {
         "linkerd.io/inject" = "enabled"
       }
 
-      // The ONLY alb ingress in our system should be the NGINX LB service;
+      // The ONLY alb ingress in our system should be the LB services in the repo;
       // EVERYTHING else should go through NGINX.
       // That means we can scope this controller to this namespace which will
       // limit the blast radius if the webhooks in this chart go down
@@ -447,9 +484,9 @@ resource "kubernetes_manifest" "vpa_alb" {
   }
 }
 
-/********************************************************************************************************************
+/***********************************************
 * NGINX
-*********************************************************************************************************************/
+************************************************/
 
 module "webhook_cert" {
   source = "../../modules/kube_internal_cert"
@@ -654,33 +691,10 @@ resource "helm_release" "nginx_ingress" {
         service = {
           name = local.nginx_name
           loadBalancerClass = "service.k8s.aws/nlb"
-          annotations = {
-            "service.beta.kubernetes.io/aws-load-balancer-name" = "ingress-nginx"
-            "service.beta.kubernetes.io/aws-load-balancer-type" = "external"
-            "service.beta.kubernetes.io/aws-load-balancer-backend-protocol" = "tcp"
-            "service.beta.kubernetes.io/aws-load-balancer-scheme" = "internet-facing"
-            "service.beta.kubernetes.io/aws-load-balancer-nlb-target-type" = "ip"
+          annotations = merge(local.nlb_common_annotations, {
+            "service.beta.kubernetes.io/aws-load-balancer-name" = "ingress-nginx",
             "service.beta.kubernetes.io/aws-load-balancer-proxy-protocol" = "*"
-            "service.beta.kubernetes.io/aws-load-balancer-healthcheck-unhealthy-threshold" = "2"
-            "service.beta.kubernetes.io/aws-load-balancer-healthcheck-healthy-threshold" = "2"
-            "service.beta.kubernetes.io/aws-load-balancer-healthcheck-timeout" = "2"
-            "service.beta.kubernetes.io/aws-load-balancer-healthcheck-interval" = "5"
-            "service.beta.kubernetes.io/aws-load-balancer-target-group-attributes" = join(",", [
-
-              // Ensures a client always connects to the same NGINX backing server; important
-              // for both performance and rate-limiting
-              "stickiness.enabled=true",
-              "stickiness.type=source_ip",
-
-              // Preserve the client IP even when routing through the LB
-              "preserve_client_ip.enabled=true",
-
-              // This needs to be SHORTER than it takes for the NGINX pod to terminate as incoming connections
-              // will only be stopped when this delay is met
-              "deregistration_delay.timeout_seconds=${local.deregistration_delay}",
-            ])
-            //TODO: "service.beta.kubernetes.io/aws-load-balancer-attributes" = "access_logs.s3.enabled=true,access_logs.s3.bucket=my-access-log-bucket,access_logs.s3.prefix=my-app"
-          }
+          })
         }
         metrics = {
           enabled = true
@@ -884,4 +898,142 @@ resource "kubernetes_manifest" "vpa_nginx" {
       }
     }
   }
+}
+
+/***********************************************
+* Bastion
+************************************************/
+
+resource "kubernetes_service_account" "bastion" {
+  metadata {
+    name = local.bastion_name
+    namespace = local.namespace
+    labels = local.bastion_labels
+  }
+}
+
+resource "kubernetes_secret" "bastion_ca" {
+  metadata {
+    name = "${local.bastion_name}-ca"
+    namespace = local.namespace
+    labels = local.bastion_labels
+  }
+  data = {
+    "trusted-user-ca-keys.pem" = var.bastion_ca_keys
+  }
+}
+
+// This doesn't get rotated so no need to use cert-manager
+resource "tls_private_key" "host" {
+  algorithm = "RSA"
+  rsa_bits = 4096
+}
+
+resource "kubernetes_secret" "bastion_host" {
+  metadata {
+    name = "${local.bastion_name}-host"
+    namespace = local.namespace
+    labels = local.bastion_labels
+  }
+  data = {
+    id_rsa = tls_private_key.host.private_key_openssh
+    "id_rsa.pub" = tls_private_key.host.public_key_openssh
+  }
+}
+
+module "bastion" {
+  source = "../../modules/kube_deployment"
+  namespace = module.namespace.namespace
+  service_name = local.bastion_name
+  service_account = kubernetes_service_account.bastion.metadata[0].name
+  kube_labels = local.bastion_labels
+
+  min_replicas = 1
+  max_replicas = 1
+  tolerations = module.constants.spot_node_toleration
+  priority_class_name = "system-cluster-critical"
+
+  healthcheck_port = var.bastion_port
+  healthcheck_type = "TCP"
+
+  init_containers = {
+    // SSHD requires that root be the only
+    // writer to /run/sshd and the private host key
+    permissions = {
+      image = var.bastion_image
+      version = var.version_tag
+      command = [
+        "/usr/bin/bash",
+        "-c",
+        "cp /etc/ssh/host/id_rsa /run/sshd/id_rsa && chmod -R 700 /run/sshd"
+      ]
+      run_as_root = true
+    }
+  }
+
+  containers = {
+    bastion = {
+      image = var.bastion_image
+      version = var.version_tag
+      command = [
+        "/usr/sbin/sshd",
+        "-D", // run in foreground
+        "-e",  // print logs to stderr
+      #  "-o", "LogLevel=INFO",
+      #  "-q", // Don't log connections (we do that at the NLB level and these logs are polluted by healthchecks)
+        "-o", "TrustedUserCAKeys=/etc/ssh/vault/trusted-user-ca-keys.pem",
+        "-o", "HostKey=/run/sshd/id_rsa",
+        "-o", "PORT=${var.bastion_port}"
+      ]
+      run_as_root = true // SSHD requires root to run
+      linux_capabilities = ["SYS_CHROOT", "SETGID", "SETUID"] // capabilities to allow sshd's sandboxing functionality
+    }
+  }
+
+  secret_mounts = {
+    "${kubernetes_secret.bastion_ca.metadata[0].name}" = "/etc/ssh/vault"
+    "${kubernetes_secret.bastion_host.metadata[0].name}" = "/etc/ssh/host"
+  }
+
+  tmp_directories = ["/run/sshd"]
+  mount_owner = 0
+
+  ports = {
+    ssh = {
+      service_port = var.bastion_port
+      pod_port = var.bastion_port
+    }
+  }
+
+  ha_enabled = var.ha_enabled
+  vpa_enabled = var.vpa_enabled
+}
+
+
+resource "kubernetes_service" "bastion" {
+  metadata {
+    name = "${local.bastion_name}-ingress"
+    namespace = local.namespace
+    labels = local.bastion_labels
+    annotations = merge(local.nlb_common_annotations, {
+      "service.beta.kubernetes.io/aws-load-balancer-name" = "bastion",
+      "external-dns.alpha.kubernetes.io/hostname" = var.bastion_domain
+    })
+  }
+  spec {
+    type = "LoadBalancer"
+    load_balancer_class = "service.k8s.aws/nlb"
+    external_traffic_policy = "Cluster"
+    internal_traffic_policy = "Cluster"
+    ip_families = ["IPv4"]
+    ip_family_policy = "SingleStack"
+    selector = local.bastion_selector
+    port {
+      name = "ssh"
+      port = var.bastion_port
+      target_port = var.bastion_port
+      protocol = "TCP"
+    }
+  }
+  depends_on = [module.bastion]
 }

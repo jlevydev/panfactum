@@ -75,6 +75,7 @@ module "deployment" {
         "-h",
         "0.0.0.0"
       ] : []
+      minimum_memory = local.is_local ? 200 : 25
     }
   }
   tmp_directories = local.is_local ? [
@@ -84,8 +85,15 @@ module "deployment" {
     "/var/cache/nginx",
     "/var/run"
   ]
-  http_port = local.port
+  healthcheck_port = local.port
   healthcheck_route = local.is_local ? "/" : "/healthz"
+
+  ports = {
+    http = {
+      service_port = local.port
+      pod_port = local.port
+    }
+  }
 
   min_replicas = var.min_replicas
   max_replicas = var.max_replicas

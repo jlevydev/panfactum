@@ -24,6 +24,9 @@ yarn-error.log
 
 devenv.local.nix
 
-.ssh
+.ssh/*
+!.ssh/known_hosts
 
 .azure
+
+**/tilt.trigger

@@ -115,7 +115,7 @@ resource "kubernetes_deployment" "deployment" {
         }
 
         security_context {
-          fs_group = 1000
+          fs_group = var.mount_owner
         }
 
         dynamic "container" {
@@ -204,38 +204,65 @@ resource "kubernetes_deployment" "deployment" {
               }
             }
 
-            startup_probe {
-              http_get {
-                path = var.healthcheck_route
-                port = var.http_port
-                scheme = "HTTP"
-              }
-              failure_threshold = 120
-              period_seconds = 1
-              timeout_seconds = 3
-            }
-            liveness_probe {
-              http_get {
-                path = var.healthcheck_route
-                port = var.http_port
-                scheme = "HTTP"
-              }
-              success_threshold = 1
-              failure_threshold = 15
-              period_seconds = 1
-              timeout_seconds = 3
-            }
-            readiness_probe {
-              http_get {
-                path = var.readycheck_route != "" ? var.readycheck_route : var.healthcheck_route
-                port = var.http_port
-                scheme = "HTTP"
-              }
-              success_threshold = 1
-              failure_threshold = 3
-              period_seconds = 1
-              timeout_seconds = 3
-            }
+#            startup_probe {
+#              dynamic http_get {
+#                for_each = var.healthcheck_type == "HTTP" ? [1] : []
+#                content {
+#                  path = var.healthcheck_route
+#                  port = var.healthcheck_port
+#                  scheme = "HTTP"
+#                }
+#              }
+#              dynamic tcp_socket {
+#                for_each = var.healthcheck_type == "TCP" ? [1] : []
+#                content {
+#                  port = var.healthcheck_port
+#                }
+#              }
+#              failure_threshold = 120
+#              period_seconds = 1
+#              timeout_seconds = 3
+#            }
+#            liveness_probe {
+#              dynamic http_get {
+#                for_each = var.healthcheck_type == "HTTP" ? [1] : []
+#                content {
+#                  path = var.healthcheck_route
+#                  port = var.healthcheck_port
+#                  scheme = "HTTP"
+#                }
+#              }
+#              dynamic tcp_socket {
+#                for_each = var.healthcheck_type == "TCP" ? [1] : []
+#                content {
+#                  port = var.healthcheck_port
+#                }
+#              }
+#              success_threshold = 1
+#              failure_threshold = 15
+#              period_seconds = 1
+#              timeout_seconds = 3
+#            }
+#            readiness_probe {
+#              dynamic http_get {
+#                for_each = var.healthcheck_type == "HTTP" ? [1] : []
+#                content {
+#                  path = var.healthcheck_route
+#                  port = var.healthcheck_port
+#                  scheme = "HTTP"
+#                }
+#              }
+#              dynamic tcp_socket {
+#                for_each = var.healthcheck_type == "TCP" ? [1] : []
+#                content {
+#                  port = var.healthcheck_port
+#                }
+#              }
+#              success_threshold = 1
+#              failure_threshold = 3
+#              period_seconds = 1
+#              timeout_seconds = 3
+#            }
 
             resources {
               requests = {
@@ -247,16 +274,18 @@ resource "kubernetes_deployment" "deployment" {
               }
             }
 
+            // Unless otherwise specified, lock down permissions.
             // For local dev, we allow running
             // as a privileged user as this
             // is sometimes required for development utilities
             security_context {
-              run_as_group = var.is_local ? 0 : 1000
-              run_as_user = var.is_local ? 0 : 1000
-              run_as_non_root = !var.is_local
-              allow_privilege_escalation = var.is_local
+              run_as_group = container.value.run_as_root ? 0 : var.is_local ? 0 : 1000
+              run_as_user = container.value.run_as_root ? 0 :var.is_local ? 0 : 1000
+              run_as_non_root = !container.value.run_as_root && !var.is_local
+              allow_privilege_escalation = container.value.run_as_root || var.is_local
               read_only_root_filesystem = !var.is_local
               capabilities {
+                add = container.value.linux_capabilities
                 drop = var.is_local ? [] : ["ALL"]
               }
             }
@@ -382,16 +411,18 @@ resource "kubernetes_deployment" "deployment" {
               }
             }
 
+            // Unless otherwise specified, lock down permissions.
             // For local dev, we allow running
             // as a privileged user as this
             // is sometimes required for development utilities
             security_context {
-              run_as_group = var.is_local ? 0 : 1000
-              run_as_user = var.is_local ? 0 : 1000
-              run_as_non_root = !var.is_local
-              allow_privilege_escalation = var.is_local
+              run_as_group = init_container.value.run_as_root ? 0 : var.is_local ? 0 : 1000
+              run_as_user = init_container.value.run_as_root ? 0 :var.is_local ? 0 : 1000
+              run_as_non_root = !init_container.value.run_as_root && !var.is_local
+              allow_privilege_escalation = init_container.value.run_as_root || var.is_local
               read_only_root_filesystem = !var.is_local
               capabilities {
+                add = init_container.value.linux_capabilities
                 drop = var.is_local ? [] : ["ALL"]
               }
             }
@@ -588,10 +619,14 @@ resource "kubernetes_service" "service" {
   }
   spec {
     type = "ClusterIP"
-    port {
-      port = 80
-      target_port = var.http_port
-      protocol = "TCP"
+    dynamic port {
+      for_each = var.ports
+      content {
+        port = port.value.service_port
+        target_port = port.value.pod_port
+        protocol = "TCP"
+        name = port.key
+      }
     }
     selector = local.match_labels
   }

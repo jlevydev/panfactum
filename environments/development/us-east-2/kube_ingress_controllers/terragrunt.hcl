@@ -26,6 +26,10 @@ dependency "linkerd" {
   config_path = "../kube_linkerd"
 }
 
+dependency "vault_core_resources" {
+  config_path = "../vault_core_resources"
+}
+
 inputs = {
   eks_cluster_name            = dependency.aws_eks.outputs.cluster_name
   vpc_id                      = dependency.aws_vpc.outputs.vpc_id
@@ -34,4 +38,6 @@ inputs = {
   min_replicas                = 2 // having less than two is disruptive to dns + development workflows when updates occur
   ha_enabled                  = false
   vpa_enabled                 = true
+  bastion_ca_keys             = dependency.vault_core_resources.outputs.vault_ssh_ca_public_key
+  bastion_domain              = "bastion.dev.panfactum.com"
 }

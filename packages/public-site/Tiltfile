@@ -45,6 +45,14 @@ k8s_custom_deploy(
   image_deps = [IMAGE]
 )
 
+load('ext://uibutton', 'cmd_button')
+cmd_button('force-apply-public-site',
+          argv=["bash", "-c", "echo $RANDOM > {}/tilt.trigger".format(TF_DIR)],
+          resource='public-site',
+          icon_name='arrow_circle_up',
+          text='force apply',
+)
+
 k8s_resource(
   workload='public-site',
   new_name="public-site",

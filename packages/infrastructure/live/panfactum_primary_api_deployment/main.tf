@@ -74,14 +74,24 @@ module "postgres" {
   pg_cluster_name = "${local.service}-pg"
   pg_cluster_namespace = local.namespace
   pg_instances = var.pg_instances
-  pg_storage_gb = 5
+  pg_storage_gb = var.pg_storage_gb
   ha_enabled = var.ha_enabled
-  service_accounts = {
-    "${kubernetes_service_account.service.metadata[0].name}" = {
-      role = "writer"
-      namespace = local.namespace
-    }
-  }
+}
+
+module "db_access" {
+  source = "../../modules/kube_sa_auth_pg"
+  namespace = local.namespace
+  service_account = kubernetes_service_account.service.metadata[0].name
+  database_role = module.postgres.db_writer_role
+  kube_labels = local.labels
+}
+
+module "db_access_admin" {
+  source = "../../modules/kube_sa_auth_pg"
+  namespace = local.namespace
+  service_account = kubernetes_service_account.service.metadata[0].name
+  database_role = module.postgres.db_admin_role
+  kube_labels = local.labels
 }
 
 /***************************************
@@ -94,14 +104,6 @@ resource "kubernetes_service_account" "service" {
     namespace = local.namespace
     labels = local.labels
   }
-}
-
-module "db_access" {
-  source = "../../modules/kube_sa_auth_pg"
-  namespace = local.namespace
-  service_account = kubernetes_service_account.service.metadata[0].name
-  database_role = module.postgres.db_writer_role
-  kube_labels = local.labels
 }
 
 module "deployment" {
@@ -123,9 +125,11 @@ module "deployment" {
   }
 
   dynamic_env_secrets = [{
-    secret_provider_class = module.db_access.secret_provider_class
-    secret_name = module.db_access.secret_name
+    secret_provider_class = module.db_access_admin.secret_provider_class
+    secret_name = module.db_access_admin.secret_name
     env = {
+      // TODO: Separate init secrets from main container runtime
+      // for privileged migrations
       PG_PASSWORD = {
         secret_key = "password"
       }
@@ -182,13 +186,20 @@ module "deployment" {
     "/code/packages/primary-api/out",
     "/tmp/build"
   ]: []
-  http_port = local.port
+  healthcheck_port = local.port
   healthcheck_route = local.healthcheck_route
 
   min_replicas = var.min_replicas
   max_replicas = var.max_replicas
   vpa_enabled = var.vpa_enabled
   ha_enabled = var.ha_enabled
+
+  ports = {
+    http = {
+      pod_port = local.port
+      service_port = 80
+    }
+  }
 
   depends_on = [module.db_access]
 }

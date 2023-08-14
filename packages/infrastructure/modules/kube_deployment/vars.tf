@@ -37,7 +37,7 @@ variable "node_preferences" {
 }
 
 variable "secrets" {
-  description = "The secrets to add to the container"
+  description = "Key pair values of secrets to add to the containers as environment variables"
   type        = map(string)
   default = {}
 }
@@ -72,21 +72,31 @@ variable "vpa_enabled" {
   default = true
 }
 
-variable "http_port" {
+
+variable "ports" {
   description = "The port the application is listening on inside the container"
+  type = map(object({
+    service_port = number
+    pod_port = number
+  }))
+  default = {}
+}
+
+variable "healthcheck_port" {
+  description = "The port for healthchecks"
   type = number
 }
 
 variable "healthcheck_route" {
-  description = "The route to use for http/https healthchecks"
+  description = "The route to use for http healthchecks"
   type = string
   default = "/health-check"
 }
 
-variable "readycheck_route" {
-  description = "The route to use for http/https readychecks"
+variable "healthcheck_type" {
+  description = "The type of healthcheck to use (TCP or HTTP)"
   type = string
-  default = ""
+  default = "HTTP"
 }
 
 variable "containers" {
@@ -97,6 +107,8 @@ variable "containers" {
     command = list(string)
     minimum_memory = optional(number, 100) #The minimum amount of memory in megabytes
     minimum_cpu = optional(number, 10) # The minimum amount of cpu millicores
+    run_as_root = optional(bool, false) # Whether to run the container as root
+    linux_capabilities = optional(list(string), []) # Default is drop ALL
   }))
 }
 
@@ -108,6 +120,8 @@ variable "init_containers" {
     command = list(string)
     minimum_memory = optional(number, 50) #The minimum amount of memory in megabytes
     minimum_cpu = optional(number, 10) # The minimum amount of cpu millicores
+    run_as_root = optional(bool, false) # Whether to run the container as root
+    linux_capabilities = optional(list(string), []) # Default is drop ALL
   }))
   default = {}
 }
@@ -121,6 +135,12 @@ variable "tmp_directories" {
   description = "A list of paths that contain empty temporary directories"
   type = list(string)
   default = [ ]
+}
+
+variable "mount_owner" {
+  description = "The ID of the group that owns the mounted volumes"
+  type = number
+  default = 1000
 }
 
 variable "secret_mounts" {

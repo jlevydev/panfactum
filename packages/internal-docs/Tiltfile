@@ -47,6 +47,14 @@ k8s_custom_deploy(
   image_deps = [IMAGE]
 )
 
+load('ext://uibutton', 'cmd_button')
+cmd_button('force-apply-internal-docs',
+          argv=["bash", "-c", "echo $RANDOM > {}/tilt.trigger".format(TF_DIR)],
+          resource='internal-docs',
+          icon_name='arrow_circle_up',
+          text='force apply',
+)
+
 k8s_resource(
   workload='internal-docs',
   new_name="internal-docs",

@@ -81,6 +81,9 @@ in
     # We use pnpm instead of npm
     npm.exec = "pnpm $@";
 
+    # Used for establishing tunnels to private network resources
+    tunnel.exec = "$DEVENV_ROOT/scripts/tunnel.sh $@";
+
     # Used to allow easier ECR login
     # TODO: Make nix module in order to ensure rebuilds are triggered
     docker-credential-aws.exec = "$DEVENV_ROOT/scripts/docker-credential-aws.sh $@";

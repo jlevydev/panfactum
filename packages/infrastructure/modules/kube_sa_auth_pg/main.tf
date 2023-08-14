@@ -12,7 +12,7 @@ terraform {
 }
 
 locals {
-  role_name = "${var.namespace}-${var.service_account}-pg-auth"
+  role_name = "pg-auth-${md5("${var.namespace}${var.service_account}${var.database_role}")}"
 }
 
 module "constants" {

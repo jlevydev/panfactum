@@ -5,7 +5,7 @@
 
 set -eo pipefail
 
-export VAULT_ADDR="$1"
+export VAULT_ADDR="${1:-$VAULT_ADDR}"
 
 function login() {
 

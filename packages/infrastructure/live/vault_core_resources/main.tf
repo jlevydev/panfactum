@@ -132,6 +132,16 @@ data "vault_policy_document" "admins" {
     capabilities = ["create", "read", "update", "delete", "list"]
     description  = "allow all on db infrastructure"
   }
+  rule {
+    path         = "transit/*"
+    capabilities = ["create", "read", "update", "delete", "list"]
+    description  = "allows interacting with the transit secrets engine"
+  }
+  rule {
+    path         = "ssh/*"
+    capabilities = ["create", "read", "update", "delete", "list"]
+    description  = "allows management of ssh signing for bastion authentication"
+  }
 }
 
 resource "vault_policy" "admins" {
@@ -178,6 +188,11 @@ data "vault_policy_document" "readers" {
     path         = "db/creds/reader*"
     capabilities = ["read", "list"]
     description  = "allows getting credentials for read-only database roles"
+  }
+  rule {
+    path         = "ssh/*"
+    capabilities = ["read", "list"]
+    description  = "allows getting ssh keys signed for bastion authentication"
   }
 }
 
@@ -262,3 +277,65 @@ resource "vault_mount" "db" {
   path = "db"
   type = "database"
 }
+
+/***************************************
+* Vault Transit Encryption
+***************************************/
+
+resource "vault_mount" "transit" {
+  path                      = "transit"
+  type                      = "transit"
+  description               = "Configured to allow vault to act as a kms"
+  default_lease_ttl_seconds = 60 * 60 * 24
+  max_lease_ttl_seconds     = 60 * 60 * 24
+}
+
+/***************************************
+* SSH Signing (Bastion Authentication)
+***************************************/
+
+resource "vault_mount" "ssh" {
+  path                      = "ssh"
+  type                      = "ssh"
+  description               = "Configured to sign ssh keys for bastion authentication"
+  default_lease_ttl_seconds = 60 * 60 * 24
+  max_lease_ttl_seconds     = 60 * 60 * 24
+}
+
+resource "vault_ssh_secret_backend_ca" "ssh" {
+  backend = vault_mount.ssh.path
+  generate_signing_key = true
+}
+
+resource "vault_ssh_secret_backend_role" "ssh" {
+  backend  = vault_mount.ssh.path
+  key_type = "ca"
+  name     = "default"
+
+  // For users, not hosts
+  allow_user_certificates = true
+  allow_host_certificates = false
+
+  // Only allow high security ciphers
+  algorithm_signer = "rsa-sha2-512"
+  allowed_user_key_config {
+    lengths = [0]
+    type    = "ed25519"
+  }
+
+  // We only do port forwarding through the bastions
+  default_extensions = {
+    permit-port-forwarding = ""
+  }
+  allowed_extensions = "permit-port-forwarding"
+
+  // Everyone must login with the panfactum user
+  allowed_users = "panfactum"
+  default_user = "panfactum"
+
+  // They are only valid for a single day
+  ttl = 60 * 60 * 24
+  max_ttl = 60 * 60 * 24
+}
+
+

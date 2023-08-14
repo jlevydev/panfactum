@@ -9,5 +9,6 @@ ecr_repository_names:
   - internal-docs
   - primary-api
   - public-app
+  - bastion
 
 

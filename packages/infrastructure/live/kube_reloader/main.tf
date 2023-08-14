@@ -111,7 +111,6 @@ module "deployment" {
   namespace = module.namespace.namespace
   service_name = local.service
   service_account = kubernetes_service_account.reloader.metadata[0].name
-  http_port = 9090
 
   // does not need to be highly available
   min_replicas = 1
@@ -120,6 +119,8 @@ module "deployment" {
   node_preferences = module.constants.spot_node_preferences
 
   healthcheck_route = "/metrics"
+  healthcheck_port = 9090
+
   containers = {
     "reloader" = {
       command = [
@@ -130,6 +131,13 @@ module "deployment" {
       ]
       image = "stakater/reloader"
       version = var.reloader_version
+    }
+  }
+
+  ports = {
+    http = {
+      service_port = 9090
+      pod_port = 9090
     }
   }
 
