@@ -2,8 +2,12 @@ import { useAuth } from '../../lib/hooks/useAuth'
 import { COPYWRITE } from '../../lib/constants'
 import Link from 'next/link'
 import type { ReactElement } from 'react'
+import { postLogout } from '../../clients/api/postLogout'
 
 export function Header () {
+  const onLogout = async (): Promise<void> => {
+    await postLogout()
+  }
   return (
     <div
       className={'fixed w-full flex items-center justify-between h-header-height-lg text-white z-10 bg-primary px-5'}
@@ -33,6 +37,7 @@ export function Header () {
         <a
           href="#"
           className="flex items-center mr-4 hover:text-blue-100"
+          onClick={onLogout}
         >
           <span
             className="inline-flex mr-1"

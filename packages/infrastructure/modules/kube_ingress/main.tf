@@ -53,6 +53,7 @@ locals {
     "nginx.ingress.kubernetes.io/cors-allow-origin" = join(", ", tolist(toset(flatten([
       [for config in var.ingress_configs: [for domain in config.domains: [
         "https://${domain}",
+        "https://*.${domain}",
 
         // This allows any sibling domains of the ingress
         // For example, api.jack.panfactum.com would allow requests from *.jack.panfactum.com

@@ -49,7 +49,7 @@ k8s_custom_deploy(
 
 load('ext://uibutton', 'cmd_button')
 cmd_button('force-apply-internal-docs',
-          argv=["bash", "-c", "echo $RANDOM > {}/tilt.trigger".format(TF_DIR)],
+          argv=["bash", "-c", "cd {}; terragrunt init".format(TF_DIR)],
           resource='internal-docs',
           icon_name='arrow_circle_up',
           text='force apply',

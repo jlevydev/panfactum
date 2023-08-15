@@ -19,6 +19,11 @@ variable "ingress_domains" {
   type = list(string)
 }
 
+variable "ingress_path_prefix" {
+  description = "The route on the public domain which should route to the server"
+  type = string
+}
+
 variable "ha_enabled" {
   description = "Whether high availability parameters should be used at the tradeoff of increased cost"
   type = bool

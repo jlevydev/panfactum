@@ -88,8 +88,7 @@ server.decorateRequest('userId', '')
 server.decorateRequest('loginSessionId', '')
 server.addHook('onRequest', async (req, res) => {
   const rawCookie = req.cookies[AUTH_COOKIE_NAME]
-  console.log(req.cookies)
-  console.log(rawCookie)
+
   // If the cookie isn't present on the request,
   // nothing needed to be done
   if (typeof rawCookie !== 'string') {

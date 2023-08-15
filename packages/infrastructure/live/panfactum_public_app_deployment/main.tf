@@ -102,7 +102,7 @@ module "deployment" {
         "start",
         "-p", local.port
       ]
-      minimum_memory = 500
+      minimum_memory = 1000
     }
   }
 

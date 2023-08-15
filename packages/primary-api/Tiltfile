@@ -42,8 +42,8 @@ k8s_custom_deploy(
 )
 
 load('ext://uibutton', 'cmd_button')
-cmd_button('force-apply-primary-pai',
-          argv=["bash", "-c", "echo $RANDOM > {}/tilt.trigger".format(TF_DIR)],
+cmd_button('force-apply-primary-api',
+          argv=["bash", "-c", "cd {}; terragrunt init".format(TF_DIR)],
           resource='primary-api',
           icon_name='arrow_circle_up',
           text='force apply',
@@ -54,7 +54,7 @@ k8s_resource(
   new_name="primary-api",
   labels=LABELS,
   links = [
-    "api.{}.dev.panfactum.com".format(NAMESPACE),
-    "api.{}.dev.panfactum.com/docs".format(NAMESPACE)
+    "{}.dev.panfactum.com/api".format(NAMESPACE),
+    "{}.dev.panfactum.com/api/docs".format(NAMESPACE)
   ]
 )

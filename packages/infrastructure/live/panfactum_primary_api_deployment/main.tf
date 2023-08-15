@@ -207,5 +207,7 @@ module "ingress" {
     domains = var.ingress_domains
     service = module.deployment.service
     service_port = local.port
+    path_prefix = var.ingress_path_prefix
+    remove_prefix = true
   }]
 }

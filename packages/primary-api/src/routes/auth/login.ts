@@ -85,8 +85,7 @@ export const AuthLoginRoute: RouteOptions = {
         signed: true,
         secure: true,
         maxAge: AUTH_COOKIE_MAX_AGE,
-        httpOnly: true,
-        sameSite: "none"
+        httpOnly: true
       }
     )
 

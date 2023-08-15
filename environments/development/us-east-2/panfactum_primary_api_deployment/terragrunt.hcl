@@ -18,14 +18,15 @@ inputs = {
   pg_instances = 2
 
   // Scaling + HA
-  ha_enabled = false
+  ha_enabled = true
   vpa_enabled = true
   min_repliacs = 2
   max_replicas = 2
 
 
   // Public Access
-  ingress_domains = ["api.dev.panfactum.com"]
+  ingress_domains = ["dev.panfactum.com"]
+  ingress_path_prefix = "/api"
 
   eks_cluster_name = dependency.cluster.outputs.cluster_name
 }

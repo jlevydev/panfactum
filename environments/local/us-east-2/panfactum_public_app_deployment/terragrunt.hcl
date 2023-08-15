@@ -10,6 +10,10 @@ locals {
   image_version = split(":", local.image)[1]
 }
 
+dependency "api" {
+  config_path = "../panfactum_primary_api_deployment"
+}
+
 inputs = {
   namespace = "${local.namespace}-public-app"
   image_repo =  local.image_repo
@@ -22,8 +26,8 @@ inputs = {
   max_replicas = 1 // We can only have 1 so we don't have competing migration scripts
 
   // Public Access
-  ingress_domains = ["app.${local.namespace}.dev.panfactum.com"]
+  ingress_domains = ["${local.namespace}.dev.panfactum.com"]
 
   // App Config
-  primary_api_url = "https://api.${local.namespace}.dev.panfactum.com"
+  primary_api_url = dependency.api.outputs.public_url
 }

@@ -15,4 +15,5 @@ update_settings ( max_parallel_updates = 3 , k8s_upsert_timeout_secs = 300 , sup
 include('./packages/public-site/Tiltfile')
 include('./packages/internal-docs/Tiltfile')
 include('./packages/primary-api/Tiltfile')
+include('./packages/public-app/Tiltfile')
 

@@ -34,6 +34,12 @@ locals {
   )
 
   dynamic_env_secrets_by_provider = {for config in var.dynamic_secrets: config.secret_provider_class => config}
+
+  tolerations = merge(var.tolerations, module.constants.spot_node_toleration)
+}
+
+module "constants" {
+  source = "../constants"
 }
 
 resource "random_id" "deployment_id" {
@@ -81,7 +87,7 @@ resource "kubernetes_deployment" "deployment" {
         service_account_name = var.service_account
 
         dynamic toleration {
-          for_each = var.tolerations
+          for_each = local.tolerations
           content {
             key = toleration.key
             operator = toleration.value.operator
