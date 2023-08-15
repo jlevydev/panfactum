@@ -7,8 +7,3 @@ output "service" {
   description = "The name of the kubernetes service created for this deployment."
   value = kubernetes_service.service.metadata[0].name
 }
-
-output "service_port" {
-  description = "The port number of the kubernetes service created for this deployment."
-  value = 80
-}

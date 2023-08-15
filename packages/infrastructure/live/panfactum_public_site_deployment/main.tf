@@ -111,6 +111,6 @@ module "ingress" {
   ingress_configs = [{
     domains = var.ingress_domains
     service = module.deployment.service
-    service_port = module.deployment.service_port
+    service_port = local.port
   }]
 }

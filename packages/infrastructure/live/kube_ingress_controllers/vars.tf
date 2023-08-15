@@ -34,12 +34,6 @@ variable "min_replicas" {
   default = 2
 }
 
-variable "ha_enabled" {
-  description = "Whether to enabled high-availability parameters at the tradeoff of increased cost"
-  type = bool
-  default = true
-}
-
 variable "vpc_id" {
   description = "The ID of the VPC to use for AWS networked resources"
   type = string

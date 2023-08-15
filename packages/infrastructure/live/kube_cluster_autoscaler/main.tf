@@ -144,7 +144,7 @@ resource "helm_release" "cluster_autoscaler" {
         skip-nodes-with-local-storage = false
         skip-nodes-with-custom-controller-pods = false
         cordon-node-before-terminating = true
-        scale-down-utilization-threshold = 70
+        scale-down-utilization-threshold = "0.6"
         scale-down-delay-after-add = "5m0s"
         scale-down-unneeded-time = "2m0s"
         scale-down-unready-time = "5m0s"

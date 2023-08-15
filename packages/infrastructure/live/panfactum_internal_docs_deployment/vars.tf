@@ -35,6 +35,6 @@ variable "namespace" {
 variable "image_repo" {
   description = "The image to use for the deployment"
   type = string
-  default = "487780594448.dkr.ecr.us-east-2.amazonaws.com/public-site"
+  default = "487780594448.dkr.ecr.us-east-2.amazonaws.com/internal-docs"
 }
 

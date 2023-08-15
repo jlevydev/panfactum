@@ -106,6 +106,17 @@ resource "kubernetes_deployment" "deployment" {
               }
             }
           }
+          pod_anti_affinity {
+            dynamic required_during_scheduling_ignored_during_execution {
+              for_each = var.ha_enabled ? [1] : []
+              content {
+                topology_key = "kubernetes.io/hostname"
+                label_selector {
+                  match_labels = local.match_labels
+                }
+              }
+            }
+          }
         }
 
         security_context {

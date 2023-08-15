@@ -384,10 +384,9 @@ resource "helm_release" "alb_controller" {
         name = kubernetes_service_account.alb_controller.metadata[0].name
       }
 
-      // Does not need to be highly available
-      replicaCount = 1
+      // DOES need to be highly available to avoid ingress disruptions
+      replicaCount = 2
       tolerations = module.constants.spot_node_toleration_helm
-      affinity = module.constants.spot_node_affinity_helm
 
       updateStrategy = {
         type = "RollingUpdate"
@@ -405,7 +404,7 @@ resource "helm_release" "alb_controller" {
       region = data.aws_region.main.name
       vpcId = var.vpc_id
       additionalLabels = merge(local.alb_labels, {
-        customizationHash = md5(join("", [for filename in fileset(path.module, "alb_kustomize/*"): filesha256(filename)]))
+        customizationHash = md5(join("", [for filename in sort(fileset(path.module, "alb_kustomize/*")): filesha256(filename)]))
       })
       deploymentAnnotations = {
         "reloader.stakater.com/auto" = "true"
@@ -569,13 +568,15 @@ resource "helm_release" "nginx_ingress" {
     yamlencode({
       commonLabels = merge(local.nginx_labels,
         {
-          customizationHash = md5(join("", [for filename in fileset(path.module, "nginx_kustomize/*"): filesha256(filename)]))
+          customizationHash = md5(join("", [for filename in sort(fileset(path.module, "nginx_kustomize/*")): filesha256(filename)]))
         }
       )
       controller = {
         image = {
           tag = var.nginx_ingress_version
         }
+
+        replicaCount = var.min_replicas
 
         annotations = {
           // Required b/c the webhook certificate doesn't automatically renew
@@ -703,39 +704,28 @@ resource "helm_release" "nginx_ingress" {
           portName = "metrics"
         }
 
-        // Ensure we have a scalable setup
-        autoscaling = {
-          enabled = var.ha_enabled
-          minReplicas = var.min_replicas
-          maxReplicas = var.max_replicas
-          targetMemoryUtilizationPercentage = 70
-          targetCPUUtilizationPercentage = 70
-        }
         tolerations = module.constants.spot_node_toleration_helm
-        affinity = merge(
-          module.constants.spot_node_affinity_helm,
-          var.ha_enabled ? {
-            podAntiAffinity = {
-              requiredDuringSchedulingIgnoredDuringExecution = [{
-                labelSelector = {
-                  matchExpressions = [
-                    {
-                      key = "app.kubernetes.io/component"
-                      operator = "In"
-                      values = ["controller"]
-                    },
-                    {
-                      key = "app.kubernetes.io/instance"
-                      operator = "In"
-                      values = ["ingress-nginx"]
-                    }
-                  ]
-                }
-                topologyKey = "kubernetes.io/hostname"
-              }]
-            }
-          } : {}
-        )
+        affinity = {
+          podAntiAffinity = {
+            requiredDuringSchedulingIgnoredDuringExecution = [{
+              labelSelector = {
+                matchExpressions = [
+                  {
+                    key = "app.kubernetes.io/component"
+                    operator = "In"
+                    values = ["controller"]
+                  },
+                  {
+                    key = "app.kubernetes.io/instance"
+                    operator = "In"
+                    values = ["ingress-nginx"]
+                  }
+                ]
+              }
+              topologyKey = "kubernetes.io/hostname"
+            }]
+          }
+        }
 
         updateStrategy = {
           type = "RollingUpdate"
@@ -750,7 +740,7 @@ resource "helm_release" "nginx_ingress" {
           {
             maxSkew           = 1
             topologyKey       = "topology.kubernetes.io/zone"
-            whenUnsatisfiable = "ScheduleAnyway"
+            whenUnsatisfiable = "DoNotSchedule"
             labelSelector     = {
               matchLabels = local.nginx_selector
             }
@@ -758,7 +748,7 @@ resource "helm_release" "nginx_ingress" {
           {
             maxSkew           = 1
             topologyKey       = "kubernetes.io/hostname"
-            whenUnsatisfiable = var.ha_enabled ? "DoNotSchedule" : "ScheduleAnyway"
+            whenUnsatisfiable = "DoNotSchedule"
             labelSelector     = {
               matchLabels = local.nginx_selector
             }
@@ -831,15 +821,16 @@ resource "helm_release" "nginx_ingress" {
     })
   ]
 
-  postrender {
-    binary_path = "${path.module}/nginx_kustomize/kustomize.sh"
-    args = [
-      local.namespace,
-      "ingress-nginx-controller",
-      var.min_replicas,
-      var.kube_config_context
-    ]
-  }
+  # TODO: re-enable this patch if we enable horizontal autoscaling in the future
+  #  postrender {
+  #    binary_path = "${path.module}/nginx_kustomize/kustomize.sh"
+  #    args = [
+  #      local.namespace,
+  #      "ingress-nginx-controller",
+  #      var.min_replicas,
+  #      var.kube_config_context
+  #    ]
+  #  }
 
   timeout = 30 * 60
   depends_on = [module.webhook_cert, helm_release.alb_controller]
@@ -949,8 +940,8 @@ module "bastion" {
   service_account = kubernetes_service_account.bastion.metadata[0].name
   kube_labels = local.bastion_labels
 
-  min_replicas = 1
-  max_replicas = 1
+  min_replicas = 2
+  max_replicas = 2
   tolerations = module.constants.spot_node_toleration
   priority_class_name = "system-cluster-critical"
 
@@ -980,8 +971,8 @@ module "bastion" {
         "/usr/sbin/sshd",
         "-D", // run in foreground
         "-e",  // print logs to stderr
-      #  "-o", "LogLevel=INFO",
-      #  "-q", // Don't log connections (we do that at the NLB level and these logs are polluted by healthchecks)
+        "-o", "LogLevel=INFO",
+        "-q", // Don't log connections (we do that at the NLB level and these logs are polluted by healthchecks)
         "-o", "TrustedUserCAKeys=/etc/ssh/vault/trusted-user-ca-keys.pem",
         "-o", "HostKey=/run/sshd/id_rsa",
         "-o", "PORT=${var.bastion_port}"
@@ -1006,7 +997,6 @@ module "bastion" {
     }
   }
 
-  ha_enabled = var.ha_enabled
   vpa_enabled = var.vpa_enabled
 }
 
