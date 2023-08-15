@@ -192,65 +192,65 @@ resource "kubernetes_deployment" "deployment" {
               }
             }
 
-#            startup_probe {
-#              dynamic http_get {
-#                for_each = var.healthcheck_type == "HTTP" ? [1] : []
-#                content {
-#                  path = var.healthcheck_route
-#                  port = var.healthcheck_port
-#                  scheme = "HTTP"
-#                }
-#              }
-#              dynamic tcp_socket {
-#                for_each = var.healthcheck_type == "TCP" ? [1] : []
-#                content {
-#                  port = var.healthcheck_port
-#                }
-#              }
-#              failure_threshold = 120
-#              period_seconds = 1
-#              timeout_seconds = 3
-#            }
-#            liveness_probe {
-#              dynamic http_get {
-#                for_each = var.healthcheck_type == "HTTP" ? [1] : []
-#                content {
-#                  path = var.healthcheck_route
-#                  port = var.healthcheck_port
-#                  scheme = "HTTP"
-#                }
-#              }
-#              dynamic tcp_socket {
-#                for_each = var.healthcheck_type == "TCP" ? [1] : []
-#                content {
-#                  port = var.healthcheck_port
-#                }
-#              }
-#              success_threshold = 1
-#              failure_threshold = 15
-#              period_seconds = 1
-#              timeout_seconds = 3
-#            }
-#            readiness_probe {
-#              dynamic http_get {
-#                for_each = var.healthcheck_type == "HTTP" ? [1] : []
-#                content {
-#                  path = var.healthcheck_route
-#                  port = var.healthcheck_port
-#                  scheme = "HTTP"
-#                }
-#              }
-#              dynamic tcp_socket {
-#                for_each = var.healthcheck_type == "TCP" ? [1] : []
-#                content {
-#                  port = var.healthcheck_port
-#                }
-#              }
-#              success_threshold = 1
-#              failure_threshold = 3
-#              period_seconds = 1
-#              timeout_seconds = 3
-#            }
+            startup_probe {
+              dynamic http_get {
+                for_each = var.healthcheck_type == "HTTP" ? [1] : []
+                content {
+                  path = var.healthcheck_route
+                  port = var.healthcheck_port
+                  scheme = "HTTP"
+                }
+              }
+              dynamic tcp_socket {
+                for_each = var.healthcheck_type == "TCP" ? [1] : []
+                content {
+                  port = var.healthcheck_port
+                }
+              }
+              failure_threshold = 120
+              period_seconds = 1
+              timeout_seconds = 3
+            }
+            liveness_probe {
+              dynamic http_get {
+                for_each = var.healthcheck_type == "HTTP" ? [1] : []
+                content {
+                  path = var.healthcheck_route
+                  port = var.healthcheck_port
+                  scheme = "HTTP"
+                }
+              }
+              dynamic tcp_socket {
+                for_each = var.healthcheck_type == "TCP" ? [1] : []
+                content {
+                  port = var.healthcheck_port
+                }
+              }
+              success_threshold = 1
+              failure_threshold = 15
+              period_seconds = 1
+              timeout_seconds = 3
+            }
+            readiness_probe {
+              dynamic http_get {
+                for_each = var.healthcheck_type == "HTTP" ? [1] : []
+                content {
+                  path = var.healthcheck_route
+                  port = var.healthcheck_port
+                  scheme = "HTTP"
+                }
+              }
+              dynamic tcp_socket {
+                for_each = var.healthcheck_type == "TCP" ? [1] : []
+                content {
+                  port = var.healthcheck_port
+                }
+              }
+              success_threshold = 1
+              failure_threshold = 3
+              period_seconds = 1
+              timeout_seconds = 3
+            }
 
             resources {
               requests = {
