@@ -597,12 +597,13 @@ resource "helm_release" "nginx_ingress" {
           // TODO: These items should be configured per-ingress rather than globally
           // This is possible by using the configuration snippet annotation
           // This MUST be done before we serve HTML sites through the ingress architecture
-          "Content-Security-Policy" = join("; ", concat(
-            [for directive, config in local.csp_config: "${directive} ${join(" ", config)}"],
-            ["upgrade-insecure-requests"]
-          ))
-          "Cross-Origin-Opener-Policy" =  "same-origin-allow-popups"
-          "Cross-Origin-Resource-Policy" = "cross-origin"
+          // It is temporarily disabled as it was blocking development
+#          "Content-Security-Policy" = join("; ", concat(
+#            [for directive, config in local.csp_config: "${directive} ${join(" ", config)}"],
+#            ["upgrade-insecure-requests"]
+#          ))
+#          "Cross-Origin-Opener-Policy" =  "same-origin-allow-popups"
+#          "Cross-Origin-Resource-Policy" = "cross-origin"
         }
 
         extraArgs = {

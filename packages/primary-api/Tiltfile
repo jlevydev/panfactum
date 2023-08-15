@@ -53,5 +53,8 @@ k8s_resource(
   workload='primary-api',
   new_name="primary-api",
   labels=LABELS,
-  links = ["api.{}.dev.panfactum.com".format(NAMESPACE)]
+  links = [
+    "api.{}.dev.panfactum.com".format(NAMESPACE),
+    "api.{}.dev.panfactum.com/docs".format(NAMESPACE)
+  ]
 )

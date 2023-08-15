@@ -1,7 +1,7 @@
 import type { RouteOptions } from 'fastify'
 import { Static, Type } from '@sinclair/typebox'
 import { AUTH_COOKIE_MAX_AGE, AUTH_COOKIE_NAME } from './constants'
-import { db } from '../../db/db'
+import { getDB } from '../../db/db'
 import { createPasswordHash } from '../../util/password'
 import { randomUUID } from 'crypto'
 
@@ -34,6 +34,8 @@ export const AuthLoginRoute: RouteOptions = {
   url: '/auth/login',
   handler: async (req, res): Promise<Static<typeof LoginReturnType> | undefined> => {
     const { email, password: submittedPassword } = req.body as Static<typeof LoginBodyType>
+
+    const db = await getDB()
 
     // Step 1: Get the user salt and stored pw hash from the database
     // based on the input email
@@ -83,7 +85,8 @@ export const AuthLoginRoute: RouteOptions = {
         signed: true,
         secure: true,
         maxAge: AUTH_COOKIE_MAX_AGE,
-        httpOnly: true
+        httpOnly: true,
+        sameSite: "none"
       }
     )
 

@@ -124,19 +124,11 @@ module "deployment" {
     PG_DATABASE = "app"
   }
 
-  dynamic_env_secrets = [{
+  // TODO: Separate init secrets from main container runtime
+  dynamic_secrets = [{
     secret_provider_class = module.db_access_admin.secret_provider_class
-    secret_name = module.db_access_admin.secret_name
-    env = {
-      // TODO: Separate init secrets from main container runtime
-      // for privileged migrations
-      PG_PASSWORD = {
-        secret_key = "password"
-      }
-      PG_USERNAME = {
-        secret_key = "username"
-      }
-    }
+    mount_path = "/secrets/pg_creds"
+    env_var = "PG_CREDS_PATH"
   }]
 
   init_containers = local.is_local ? {

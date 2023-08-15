@@ -33,13 +33,7 @@ locals {
     module.env_vars.env_vars
   )
 
-  dynamic_env_secrets_by_provider = {for config in var.dynamic_env_secrets: config.secret_provider_class => config}
-  dynamic_env_secrets_flat = flatten([for config in var.dynamic_env_secrets: [for env, env_config in config.env: {
-    env = env
-    secret_key = env_config.secret_key
-    secret_name = config.secret_name
-  }]])
-  dynamic_env_secrets = {for config in local.dynamic_env_secrets_flat: config.env => config}
+  dynamic_env_secrets_by_provider = {for config in var.dynamic_secrets: config.secret_provider_class => config}
 }
 
 resource "random_id" "deployment_id" {
@@ -189,18 +183,12 @@ resource "kubernetes_deployment" "deployment" {
               }
             }
 
-            // Dynamic env variables (secret)
+            // Secrets mounts
             dynamic "env" {
-              for_each = local.dynamic_env_secrets
+              for_each = local.dynamic_env_secrets_by_provider
               content {
-                name = env.key
-                value_from {
-                  secret_key_ref {
-                    name = env.value.secret_name
-                    key = env.value.secret_key
-                    optional = false
-                  }
-                }
+                name  = env.value.env_var
+                value = env.value.mount_path
               }
             }
 
@@ -309,7 +297,7 @@ resource "kubernetes_deployment" "deployment" {
               for_each = local.dynamic_env_secrets_by_provider
               content {
                 name = volume_mount.key
-                mount_path = "/mnt/vault/${volume_mount.key}"
+                mount_path = volume_mount.value.mount_path
                 read_only = true
               }
             }
@@ -385,21 +373,14 @@ resource "kubernetes_deployment" "deployment" {
               }
             }
 
-            // Dynamic env variables (secret)
+            // Secrets mounts
             dynamic "env" {
-              for_each = local.dynamic_env_secrets
+              for_each = local.dynamic_env_secrets_by_provider
               content {
-                name = env.key
-                value_from {
-                  secret_key_ref {
-                    name = env.value.secret_name
-                    key = env.value.secret_key
-                    optional = false
-                  }
-                }
+                name  = env.value.env_var
+                value = env.value.mount_path
               }
             }
-
 
             resources {
               requests = {
@@ -446,7 +427,7 @@ resource "kubernetes_deployment" "deployment" {
               for_each = local.dynamic_env_secrets_by_provider
               content {
                 name = volume_mount.key
-                mount_path = "/mnt/vault/${volume_mount.key}"
+                mount_path = volume_mount.value.mount_path
                 read_only = true
               }
             }

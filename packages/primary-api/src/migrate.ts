@@ -4,13 +4,13 @@ import {
   Migrator,
   FileMigrationProvider
 } from 'kysely'
-import { db } from './db/db'
+import { getDB } from './db/db'
 
 const NODE_ENV = process.env['NODE_ENV'] ?? 'development'
 
 export async function migrateToLatest () {
   const migrator = new Migrator({
-    db,
+    db: await getDB(),
     provider: new FileMigrationProvider({
       fs,
       path,
@@ -52,7 +52,7 @@ export async function migrateToLatest () {
 
 export async function seedData () {
   const migrator = new Migrator({
-    db,
+    db: await getDB(),
     migrationTableName: 'kysely_seed',
     migrationLockTableName: 'kysely_seed_lock',
     provider: new FileMigrationProvider({
@@ -104,7 +104,9 @@ export async function run () {
     await migrateToLatest()
   }
 
-  await db.destroy()
+  console.log("Migrations completed successfully")
+  await getDB().then(db => db.destroy())
+  process.exit(0)
 }
 
 void run()

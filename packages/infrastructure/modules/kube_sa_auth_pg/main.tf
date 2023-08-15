@@ -40,7 +40,7 @@ resource "vault_kubernetes_auth_backend_role" "main" {
   bound_service_account_names      = [var.service_account]
   bound_service_account_namespaces = [var.namespace]
   role_name                        = local.role_name
-  token_ttl = 60 * 60 * 4
+  token_ttl = 60 * 60
   token_policies = [vault_policy.main.name]
 }
 
@@ -71,20 +71,6 @@ resource "kubernetes_manifest" "creds" {
           }
         ])
       }
-      secretObjects = [{
-        secretName = local.role_name
-        type = "Opaque"
-        data = [
-          {
-            key = "password"
-            objectName = "password"
-          },
-          {
-            key = "username"
-            objectName = "username"
-          }
-        ]
-      }]
     }
   }
 }

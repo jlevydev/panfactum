@@ -10,7 +10,7 @@ import { AuthLoginRoute, LoginReturnType } from './routes/auth/login'
 import { AUTH_COOKIE_NAME } from './routes/auth/constants'
 import { AuthInfoRoute } from './routes/auth/info'
 import { AuthLogoutRoute } from './routes/auth/logout'
-import { db } from './db/db'
+import { getDB } from './db/db'
 import {HealthzRoute} from "./routes/health/healthz";
 
 const server = Fastify().withTypeProvider<TypeBoxTypeProvider>()
@@ -23,7 +23,7 @@ void server.register(cors, {})
 void server.register(require('@fastify/swagger'), {
   openapi: {
     info: {
-      title: 'Panfori API',
+      title: 'Panfactum API',
       description: 'testing the fastify swagger api',
       version: '0.1.0'
     },
@@ -88,7 +88,8 @@ server.decorateRequest('userId', '')
 server.decorateRequest('loginSessionId', '')
 server.addHook('onRequest', async (req, res) => {
   const rawCookie = req.cookies[AUTH_COOKIE_NAME]
-
+  console.log(req.cookies)
+  console.log(rawCookie)
   // If the cookie isn't present on the request,
   // nothing needed to be done
   if (typeof rawCookie !== 'string') {
@@ -111,7 +112,7 @@ server.addHook('onRequest', async (req, res) => {
       req.userId = userId
       req.loginSessionId = loginSessionId
 
-      void db
+      void (await getDB())
         .updateTable('user_login_session')
         .set({
           last_api_call_at: new Date()

@@ -166,14 +166,12 @@ variable "service_account" {
   type = string
 }
 
-variable "dynamic_env_secrets" {
-  description = "Dynamic environment variable secrets"
+variable "dynamic_secrets" {
+  description = "Dynamic variable secrets"
   type = list(object({ // key is the secret provider class
     secret_provider_class = string // name of the secret provider class
-    secret_name = string // name of the kubernetes secret created by the secret provider class
-    env = map(object({ // key is the ENV variable name
-      secret_key = string // name of the key on the secret that contains the value for the ENV variable
-    }))
+    mount_path = string // absolute path of where to mount the secret
+    env_var = string // name of the env var that will have a path to the secret mount
   }))
   default = []
 }

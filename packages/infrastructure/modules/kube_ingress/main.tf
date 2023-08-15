@@ -46,20 +46,28 @@ locals {
       "sec-ch-ua",
       "sec-ch-ua-mobile",
       "sec-ch-ua-platform",
-      "X-Suggested-File-Name"
+      "X-Suggested-File-Name",
+      "Cookie"
     ])
     "nginx.ingress.kubernetes.io/cors-max-age" = "${60 * 60 * 24}"
-    "nginx.ingress.kubernetes.io/cors-allow-origin" = join(", ", flatten([
+    "nginx.ingress.kubernetes.io/cors-allow-origin" = join(", ", tolist(toset(flatten([
+      [for config in var.ingress_configs: [for domain in config.domains: [
+        "https://${domain}",
+
+        // This allows any sibling domains of the ingress
+        // For example, api.jack.panfactum.com would allow requests from *.jack.panfactum.com
+        "https://*.${join(".", slice(split(".", domain), 1, length(split(".", domain))))}",
+      ]]],
+
       // Main websites
       [for env in local.cors_envs: [
         "https://${env}.panfactum.com",
-        "https://app.${env}.panfactum.com",
-        "https://wwww.${env}.panfactum.com",
+        "https://*.${env}.panfactum.com",
       ]],
-      "https://www.panfactum.com",
-      "https://app.panfactum.com",
+      "https://*.panfactum.com",
+      "https://*.panfactum.com",
       "https://panfactum.com",
-    ]))
+    ]))))
   }
 
   rewrite_configs = flatten([for config in var.ingress_configs: [for rewrite_rule in config.rewrite_rules: merge(config, rewrite_rule)]])
