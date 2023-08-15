@@ -144,7 +144,7 @@ resource "helm_release" "external_dns" {
       }
       domainFilters = each.value.included_domains
       excludeDomains = each.value.excluded_domains
-      policy = "sync"
+      policy = "upsert-only"
       txtOwnerId = random_id.ids[each.key].hex
     })
   ]
