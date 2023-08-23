@@ -1,0 +1,13 @@
+name: Test Runners
+on:
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  apply:
+    runs-on: self-hosted
+    steps:
+      - run: echo 'Hello World!'
