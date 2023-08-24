@@ -1,0 +1,26 @@
+name: Test Runners
+on:
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  apply:
+    runs-on: development-small
+    steps:
+      - name: "Test bash"
+        run: echo 'Hello World!'
+
+      - name: "Test terraform"
+        run: terraform --version
+
+      - name: "Test kubernetes interactions"
+        run: kubectl cluster-info
+
+      - name: "Test AWS interactions"
+        run: aws sts get-caller-identity
+
+      - name: "Test Vault interactions"
+        run: vault write auth/kubernetes/login role=arc-runners jwt=@/var/run/secrets/kubernetes.io/serviceaccount
