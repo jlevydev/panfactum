@@ -7,11 +7,16 @@ defaults:
     shell: bash
 
 jobs:
-  apply:
+  test:
     runs-on: development-small
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: "Test bash"
         run: echo 'Hello World!'
+
+      - name: "Test Github interactions"
+        run: gh issue list -R Panfactum/panfactum
 
       - name: "Test terraform"
         run: terraform --version
@@ -19,8 +24,11 @@ jobs:
       - name: "Test kubernetes interactions"
         run: kubectl cluster-info
 
-      - name: "Test AWS interactions"
+      - name: "Test AWS authentication"
         run: aws sts get-caller-identity
+
+      - name: "Test AWS authorization"
+        run: aws s3 ls
 
       - name: "Test Vault token retrieval"
         run: echo "VAULT_TOKEN=$(vault write --format=json auth/kubernetes/login role=arc-runners jwt=@/var/run/secrets/kubernetes.io/serviceaccount/token | jq -r .auth.client_token)" >> $GITHUB_ENV
