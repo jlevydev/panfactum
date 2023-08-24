@@ -1,4 +1,4 @@
-name: Test Runners
+name: Test Runners (Development)
 on:
   workflow_dispatch:
 
@@ -22,5 +22,8 @@ jobs:
       - name: "Test AWS interactions"
         run: aws sts get-caller-identity
 
-      - name: "Test Vault interactions"
-        run: vault write auth/kubernetes/login role=arc-runners jwt=@/var/run/secrets/kubernetes.io/serviceaccount
+      - name: "Test Vault token retrieval"
+        run: echo "VAULT_TOKEN=$(vault write --format=json auth/kubernetes/login role=arc-runners jwt=@/var/run/secrets/kubernetes.io/serviceaccount/token | jq -r .auth.client_token)" >> $GITHUB_ENV
+
+      - name: "Test Vault token"
+        run: vault token capabilities /
