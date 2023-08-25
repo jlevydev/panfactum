@@ -27,7 +27,7 @@ jobs:
         with:
           sparse-checkout: .
 
-      - uses: ./.github/actions/setup-tf-creds.yaml
+      - uses: ./.github/actions/setup-tf-creds
 
       - name: "Test Vault token"
         run: vault token capabilities /
