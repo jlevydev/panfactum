@@ -5,6 +5,8 @@ runs:
   steps:
     - name: "Login to Vault"
       run: echo "VAULT_TOKEN=$(vault write --format=json auth/kubernetes/login role=arc-runners jwt=@/var/run/secrets/kubernetes.io/serviceaccount/token | jq -r .auth.client_token)" >> $GITHUB_ENV
-
+      shell: bash
+      
     - name: "Login to Azure"
       run: az login --allow-no-subscriptions --federated-token "$(cat /var/run/secrets/azure/tokens/azure-identity-token)" --service-principal -u $AZURE_CLIENT_ID -t $AZURE_TENANT_ID
+      shell: bash
