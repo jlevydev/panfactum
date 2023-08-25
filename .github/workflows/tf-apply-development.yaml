@@ -1,0 +1,29 @@
+name: Terraform Apply (Development)
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - environments/development/**
+      - environments/shared/**
+      - environments/global.yaml
+      - environments/terragrunt.hcl
+      - terraform/**
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+
+concurrency:
+  cancel-in-progress: false
+  group: tf-apply-development
+
+jobs:
+  apply:
+    runs-on: development-small
+    steps:
+      - uses: ./.github/actions/setup-tf-creds.yaml
+
+      - name: "Test Vault token"
+        run: vault token capabilities /

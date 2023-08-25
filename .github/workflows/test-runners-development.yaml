@@ -39,4 +39,7 @@ jobs:
       - name: "Test AAD authentication"
         run: az login --allow-no-subscriptions --federated-token "$(cat /var/run/secrets/azure/tokens/azure-identity-token)" --service-principal -u $AZURE_CLIENT_ID -t $AZURE_TENANT_ID
 
-    
+      - name: "Test AAD authorization"
+        run: az ad app list | jq .[].displayName
+
+
