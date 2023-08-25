@@ -23,6 +23,10 @@ jobs:
   apply:
     runs-on: development-small
     steps:
+      - uses: actions/checkout@v3
+        with:
+          sparse-checkout: .
+          
       - uses: ./.github/actions/setup-tf-creds.yaml
 
       - name: "Test Vault token"
