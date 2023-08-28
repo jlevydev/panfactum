@@ -23,5 +23,5 @@ jobs:
       - uses: ./.github/actions/build-image
         with:
           image-repo: "ci"
-          image-tag: ${{ env.GITHUB_SHA }}
+          image-tag: ${{ github.sha }}
           containerfile-directory: packages/ci
