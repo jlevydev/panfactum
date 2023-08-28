@@ -1,13 +1,6 @@
 name: Build CI Image
 on:
   push:
-    paths:
-      - .podman/**
-      - devenv.nix
-      - devenv.yaml
-      - devenv.lock
-      - packages/nix/**
-      - packages/ci/**
   workflow_dispatch:
 
 defaults:
