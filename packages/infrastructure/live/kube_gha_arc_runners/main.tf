@@ -217,6 +217,10 @@ resource "helm_release" "runner" {
             ]
             env = [
               {
+                name = "CI",
+                value = "true"
+              },
+              {
                 name = "VAULT_ADDR"
                 value = var.vault_internal_address
               },

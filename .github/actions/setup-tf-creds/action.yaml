@@ -11,11 +11,3 @@ runs:
       run: 'az login --allow-no-subscriptions --federated-token "$(cat /var/run/secrets/azure/tokens/azure-identity-token)" --service-principal -u "$AZURE_CLIENT_ID" -t "$AZURE_TENANT_ID"'
       shell: bash
 
-    - name: "Login to AWS"
-      shell: bash
-      run: |
-        CREDS="$(aws sts assume-role-with-web-identity --web-identity-token "$(cat /var/run/secrets/eks.amazonaws.com/serviceaccount/token)" --role-arn "$AWS_ROLE_ARN" --role-session-name terraform-runner)"
-        echo "AWS_ACCESS_KEY_ID=$(echo "$CREDS" | jq -r .Credentials.AccessKeyId)" >> "$GITHUB_ENV"
-        echo "AWS_SECRET_ACCESS_KEY=$(echo "$CREDS" | jq -r .Credentials.SecretAccessKey)" >> "$GITHUB_ENV"
-        echo "AWS_SESSION_TOKEN=$(echo "$CREDS" | jq -r .Credentials.SessionToken)" >> "$GITHUB_ENV"
-
