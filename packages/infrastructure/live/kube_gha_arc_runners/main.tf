@@ -221,6 +221,10 @@ resource "helm_release" "runner" {
                 value = "true"
               },
               {
+                name = "RUNNER_NAME"
+                value = each.key
+              },
+              {
                 name = "VAULT_ADDR"
                 value = var.vault_internal_address
               },

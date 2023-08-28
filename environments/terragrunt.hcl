@@ -103,34 +103,10 @@ generate "aws_provider" {
   contents  = local.enable_aws ? file("${local.shared_folder}/aws.tf") : ""
 }
 
-generate "aws_provider_local" {
-  path      = "aws_provider.tf"
-  if_exists = "overwrite_terragrunt"
-  contents  = local.enable_aws && !local.is_ci ? file("${local.shared_folder}/aws_provider.tf") : ""
-}
-
-generate "aws_provider_ci" {
-  path      = "aws_provider_ci.tf"
-  if_exists = "overwrite_terragrunt"
-  contents  = local.enable_aws && local.is_ci ? file("${local.shared_folder}/aws_provider_ci.tf") : ""
-}
-
 generate "aws_secondary_provider" {
   path      = "aws_secondary.tf"
   if_exists = "overwrite_terragrunt"
   contents  = local.enable_aws_secondary ? file("${local.shared_folder}/aws_secondary.tf") : ""
-}
-
-generate "aws_secondary_provider_local" {
-  path      = "aws_secondary_provider.tf"
-  if_exists = "overwrite_terragrunt"
-  contents  = local.enable_aws && !local.is_ci ? file("${local.shared_folder}/aws_secondary_provider.tf") : ""
-}
-
-generate "aws_secondary_provider_ci" {
-  path      = "aws_secondary_provider_ci.tf"
-  if_exists = "overwrite_terragrunt"
-  contents  = local.enable_aws && local.is_ci ? file("${local.shared_folder}/aws_secondary_provider_ci.tf") : ""
 }
 
 generate "kubernetes_provider" {
@@ -227,12 +203,10 @@ inputs = {
   // aws provider
   aws_region               = local.region_vars.aws_region
   aws_account_id           = local.environment_vars.aws_account_id
-  aws_profile              = local.environment_vars.aws_profile # for running locally
-  aws_role_name            = get_env("AWS_ROLE_ARN", "") # for running in CI environments
+  aws_profile              = local.environment_vars.aws_profile
   aws_secondary_region     = local.region_vars.aws_secondary_region
   aws_secondary_account_id = local.environment_vars.aws_secondary_account_id
-  aws_secondary_profile    = local.environment_vars.aws_secondary_profile # for running locally
-  aws_secondary_role_name  = get_env("AWS_ROLE_ARN", "") # for running in CI environments
+  aws_secondary_profile    = local.environment_vars.aws_secondary_profile
 
   // kubernetes provider
   kube_api_server     = lookup(local.region_vars, "kube_api_server", "")
