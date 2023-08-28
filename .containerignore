@@ -1,19 +1,13 @@
 .devenv
-.kube
-.aws
 .terragrunt-cache
 .tfstate
 docs
 environments
 images
-nix
 terraform
 .devenv.flake.nix
 .editorconfig
 .envrc
-devenv.lock
-devenv.nix
-devenv.yaml
 .git
 .idea
 **/Containerfile
@@ -29,3 +23,5 @@ packages/**/result
 !packages/build
 devenv.local.nix
 .ssh
+.devenv
+out

@@ -68,6 +68,51 @@ resource "aws_iam_policy_attachment" "service_account" {
   roles      = [aws_iam_role.service_account.name]
 }
 
+data "aws_iam_policy_document" "ip_blocks" {
+  statement {
+    effect = "Deny"
+    resources = ["*"]
+    // Since we use vpc endpoints for S3
+    // we need to ignore them for this global deny
+    not_actions = ["s3:*"]
+
+    // Only allow access from inside our cluster
+    condition {
+      test     = "NotIpAddress"
+      values   = concat(["10.0.0.0/16"], var.public_outbound_ips)
+      variable = "aws:SourceIp"
+    }
+  }
+
+  statement {
+    effect = "Deny"
+    actions = ["s3:*"]
+    resources = ["*"]
+
+    // Only allow access from inside our cluster
+    condition {
+      test     = "NotIpAddress"
+      values   = concat(["10.0.0.0/16"], var.public_outbound_ips)
+      variable = "aws:VpcSourceIp"
+    }
+  }
+}
+
+resource "aws_iam_policy" "ip_blocks" {
+  name_prefix = "${var.service_account}-ip-blocks-"
+  description = "Restricts ${var.service_account_namespace}/${var.service_account} in ${var.eks_cluster_name} to cluster IPs."
+  policy      = data.aws_iam_policy_document.ip_blocks.json
+  tags = {
+    description      = "Restricts ${var.service_account_namespace}/${var.service_account} in ${var.eks_cluster_name} to cluster IPs."
+  }
+}
+
+resource "aws_iam_policy_attachment" "ip_blocks" {
+  name       = "${aws_iam_policy.service_account.name}-ip-blocks"
+  policy_arn = aws_iam_policy.ip_blocks.arn
+  roles      = [aws_iam_role.service_account.name]
+}
+
 # ################################################################################
 # Provide the annotation required by IRSA
 # ################################################################################
@@ -80,6 +125,8 @@ resource "kubernetes_annotations" "service_account" {
     name      = var.service_account
     namespace = var.service_account_namespace
   }
+  field_manager = "terraform-aws"
+  force = true
   annotations = {
     "eks.amazonaws.com/role-arn" = aws_iam_role.service_account.arn
   }

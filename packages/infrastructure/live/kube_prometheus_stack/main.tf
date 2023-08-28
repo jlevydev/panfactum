@@ -211,6 +211,7 @@ module "oauth_app" {
   admin_group_object_ids = [for group in var.admin_groups: data.azuread_group.groups[group].object_id]
   editor_group_object_ids = [for group in var.editor_groups: data.azuread_group.groups[group].object_id]
   reader_group_object_ids = [for group in var.reader_groups: data.azuread_group.groups[group].object_id]
+  aad_sp_object_owners = var.aad_sp_object_owners
 }
 
 /***************************************

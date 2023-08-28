@@ -35,4 +35,12 @@ inputs = {
       role_groups = ["engineers", "engineering_admins"]
     }
   }
+
+  ci_group_config = {
+    development = {}
+    production = {}
+    root = {
+      global_admin = true
+    }
+  }
 }

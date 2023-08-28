@@ -6,3 +6,7 @@ output "subnet_info" {
 output "vpc_id" {
   value = aws_vpc.main.id
 }
+
+output "nat_ips" {
+  value = [for eip in aws_eip.nat_ips: eip.public_ip]
+}

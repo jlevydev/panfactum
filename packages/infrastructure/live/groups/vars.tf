@@ -13,3 +13,10 @@ variable "dynamic_group_config" {
     mail_nickname = optional(string)
   }))
 }
+
+variable "ci_group_config" {
+  description = "CI agents are assigned to these groups depending on their environment context"
+  type = map(object({
+    global_admin = optional(bool, false)
+  }))
+}

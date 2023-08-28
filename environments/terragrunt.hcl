@@ -59,8 +59,11 @@ locals {
   is_local            = local.environment_vars.environment == "local"
 
   # get vault_token
-  vault_address = get_env("VAULT_ADDR", local.region_vars.vault_address)
-  vault_token = local.enable_vault ? run_cmd("--terragrunt-quiet", "${get_repo_root()}/scripts/get_vault_token.sh", local.vault_address) : ""
+  vault_address = get_env("VAULT_ADDR", lookup(local.region_vars, "vault_address", ""))
+  vault_token = local.enable_vault ? run_cmd("--terragrunt-quiet", "get-vault-token", local.vault_address) : ""
+
+  # get aad service principle owners
+  aad_sp_object_owners = lookup(local.environment_vars, "aad_sp_object_owners", [])
 }
 
 ################################################################
@@ -192,6 +195,7 @@ inputs = {
 
   // azuread provider
   azuread_tenant_id        = "2a66606b-17a5-47dd-94af-84f5d648ea7b"
+  aad_sp_object_owners     = local.aad_sp_object_owners
 
   // aws provider
   aws_region               = local.region_vars.aws_region

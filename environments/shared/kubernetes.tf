@@ -18,6 +18,7 @@ provider "kubernetes" {
   config_context = var.kube_config_context
   ignore_annotations = [
     "^eks.amazonaws.com\\/.*", // Prevents us from overriding annotations made by EKS (e.g., for IRSA)
-    "^reloader.stakater.com\\/last-reloaded-from\\/.*" // Ignore the reloader annotations
+    "^reloader.stakater.com\\/last-reloaded-from\\/.*", // Ignore the reloader annotations
+    "^azure.workload.identity\\/.*" // Prevents us from overriding annotations needed to AZWI
   ]
 }

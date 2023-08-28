@@ -23,3 +23,8 @@ variable "annotate_service_account" {
   type = bool
   default = true
 }
+variable "public_outbound_ips" {
+  description = "A list of the public ips for outbound cluster traffic"
+  type = list(string)
+}
+

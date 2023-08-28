@@ -1,0 +1,61 @@
+# We use the latest runner as the base for this image so that we can ensure we are using a runner
+# that is compatible with the live version of GHA. They say that we must apply updates within
+# a month, and this is the easiest way to do that
+FROM ghcr.io/actions/actions-runner:latest as production
+
+# Set the right user account
+USER runner
+
+# Copy some standard CI configuration files into the image
+COPY --chown=runner packages/ci/.aws /home/runner/.aws
+COPY --chown=runner packages/ci/.kube /home/runner/.kube
+
+# This installs nix so we can use devenv to install our development environment tools
+# Unfortunately, nix is really only installable via an installation script as it requires
+# reconfiguring the package management system. We pull the install script off of the nix github
+# and update some key variables to the proper versions.
+# This performs a single-user install (for the runner) so that we can omit a lot of the other
+# complex setups steps
+RUN sudo apt-get update -y && \
+  sudo apt-get install -y curl xz-utils && \
+  curl -L https://raw.githubusercontent.com/NixOS/nix/2.17.0/scripts/install.in -o install.sh && \
+  echo "5dc19719a5ce2a6ef69e1fbe16e2a180907875560bce2eb764dc4353b2fb7394 install.sh" | sha256sum -c  && \
+  sed -i 's/@nixVersion@/2.17.0/g' install.sh && \
+  sed -i 's/@tarballHash_x86_64-linux@/1596ed46efae091388ed6db626c31f14fc1b703e5a552b00a9e68419edb8172d/g' install.sh && \
+  sh install.sh --no-daemon && \
+  rm install.sh && \
+  echo "source /home/runner/.nix-profile/etc/profile.d/nix.sh" >> /home/runner/.bashrc && \
+  sudo apt-get remove -y curl xz-utils && \
+  sudo apt-get autoremove -y && \
+  sudo rm -rf /var/lib/apt/lists/*
+
+# This ensures nix is available in subsequent steps
+ENV PATH=/home/runner/.nix-profile/bin:/home/runner/.nix-profile/sbin:/bin:/sbin:/usr/bin:/usr/sbin \
+  NIX_PATH=/nix/var/nix/profiles/per-user/runner/channels
+
+# This command tends to take a while because it isn't using the
+# the binary cache of nixpkgs so will need to recompile everything from source
+# That is also why we do some cleanup steps here so we don't bundle
+# all of the build dependencies in the image
+RUN nix-env -if https://install.devenv.sh/python-rewrite && \
+  nix-collect-garbage --delete-old && \
+  sudo nix-store --optimise && \
+  sudo nix-store --verify --check-contents
+
+# Sandboxing doesn't work when building devenv in a container
+# so we disable it. Oddly, the python version of devenv appears to work
+# just fine, so consider removing this once using devenv 1.0
+RUN mkdir -p /home/runner/.config/nix && echo "sandbox = false" >> /home/runner/.config/nix/nix.conf
+
+# This builds the development environment
+COPY --chown=runner devenv.lock devenv.nix devenv.yaml /home/runner
+COPY --chown=runner packages/ci/devenv.ci.nix /home/runner/devenv.local.nix
+COPY --chown=runner packages/nix /home/runner/packages/nix
+RUN cd /home/runner && \
+ devenv shell && \
+ nix-collect-garbage --delete-old && \
+ sudo nix-store --optimise && \
+ sudo nix-store --verify --check-contents
+
+# This ensures the binaries installed by the development environment are available
+ENV PATH=/home/runner/.devenv/profile/bin:/home/runner/.devenv/profile/sbin:/home/runner/.nix-profile/bin:/home/runner/.nix-profile/sbin:/bin:/sbin:/usr/bin:/usr/sbin

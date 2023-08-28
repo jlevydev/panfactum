@@ -1,0 +1,5 @@
+source: /live/kube_azwi
+providers:
+  kubernetes: true
+  helm: true
+  azuread: true

@@ -13,33 +13,33 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: "Test bash"
-        run: echo 'Hello World!'
+        run: 'echo "Hello World!"'
 
       - name: "Test Github interactions"
-        run: gh issue list -R Panfactum/panfactum
+        run: 'gh issue list -R Panfactum/panfactum'
 
       - name: "Test terraform"
-        run: terraform --version
+        run: 'terraform --version'
 
       - name: "Test kubernetes interactions"
-        run: kubectl cluster-info
+        run: 'kubectl cluster-info'
 
       - name: "Test AWS authentication"
-        run: aws sts get-caller-identity
+        run: 'aws sts get-caller-identity'
 
       - name: "Test AWS authorization"
-        run: aws s3 ls
+        run: 'aws s3 ls'
 
       - name: "Test Vault token retrieval"
-        run: echo "VAULT_TOKEN=$(vault write --format=json auth/kubernetes/login role=arc-runners jwt=@/var/run/secrets/kubernetes.io/serviceaccount/token | jq -r .auth.client_token)" >> $GITHUB_ENV
+        run: 'echo "VAULT_TOKEN=$(vault write --format=json auth/kubernetes/login role=arc-runners jwt=@/var/run/secrets/kubernetes.io/serviceaccount/token | jq -r .auth.client_token)" >> "$GITHUB_ENV"'
 
       - name: "Test Vault token"
-        run: vault token capabilities /
+        run: 'vault token capabilities /'
 
       - name: "Test AAD authentication"
-        run: az login --allow-no-subscriptions --federated-token "$(cat /var/run/secrets/azure/tokens/azure-identity-token)" --service-principal -u $AZURE_CLIENT_ID -t $AZURE_TENANT_ID
+        run: 'az login --allow-no-subscriptions --federated-token "$(cat /var/run/secrets/azure/tokens/azure-identity-token)" --service-principal -u "$AZURE_CLIENT_ID" -t "$AZURE_TENANT_ID"'
 
       - name: "Test AAD authorization"
-        run: az ad app list | jq .[].displayName
+        run: 'az ad app list | jq .[].displayName'
 
 

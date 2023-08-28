@@ -42,6 +42,19 @@ output "spot_node_affinity_helm" {
   }
 }
 
+output "pod_anti_affinity_helm" {
+  value = {
+    podAntiAffinity = {
+      requiredDuringSchedulingIgnoredDuringExecution = [{
+        topologyKey = "kubernetes.io/hostname"
+        labelSelector = {
+          matchLabels = var.matching_labels
+        }
+      }]
+    }
+  }
+}
+
 output "spot_node_preferences" {
   value = {
     "node.kubernetes.io/class" = {

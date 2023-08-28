@@ -45,3 +45,8 @@ variable "reader_role_value" {
   description = "The reader role value to send to the SP for Readers."
   type = string
 }
+
+variable "aad_sp_object_owners" {
+  description = "The object ids for service principals that should own objects created in AAD"
+  type = list(string)
+}

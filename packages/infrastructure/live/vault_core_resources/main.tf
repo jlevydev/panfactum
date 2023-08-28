@@ -69,6 +69,7 @@ module "oidc_app" {
   description = "Used to authenticate users with the vault instance for the ${local.environment} environment in ${local.region}"
   redirect_uris = local.redirect_uris
   group_object_ids = [for group in data.azuread_group.groups: group.object_id]
+  aad_sp_object_owners = var.aad_sp_object_owners
 }
 
 /***************************************

@@ -23,7 +23,7 @@ case "$REGISTRY" in
     REGION=us-east-2
     ;;
   *)
-    >&2 echo "Unknown provided: $REGISTRY"
+    >&2 echo "Unknown registry provided: $REGISTRY"
     exit 1
     ;;
 esac

@@ -7,6 +7,8 @@ listener "tcp" {
   tls_disable = 1
   address = "0.0.0.0:8200"
   cluster_address = "0.0.0.0:8201"
+  x_forwarded_for_authorized_addrs = "10.0.0.0/16"
+  x_forwarded_for_reject_no_present = "false"
   telemetry {
     unauthenticated_metrics_access = "true" # (necessary for Prometheus Operator)
   }

@@ -15,3 +15,5 @@ aws_secondary_region: "us-west-2" # The secondary/backup region to use for the a
 # Kubernetes
 kube_api_server: "" # None in this region
 kube_config_context: "" # None for this region
+
+vault_address: ""

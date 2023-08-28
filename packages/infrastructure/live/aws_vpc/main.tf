@@ -15,11 +15,15 @@ locals {
   public_subnets     = { for name, subnet in var.subnets : name => subnet if subnet.public }
 }
 
+data "aws_region" "region" {}
+
 ##########################################################################
 ## Main VPC
 ##########################################################################
 resource "aws_vpc" "main" {
   cidr_block = var.vpc_cidr
+  enable_dns_hostnames = true
+  enable_dns_support = true
   tags       = merge(var.vpc_extra_tags, { Name = var.vpc_name })
 }
 
@@ -29,12 +33,22 @@ resource "aws_internet_gateway" "main" {
 }
 
 ##########################################################################
+## Resource Endpoints
+##########################################################################
+
+resource "aws_vpc_endpoint" "s3" {
+  vpc_id       = aws_vpc.main.id
+  service_name = "com.amazonaws.${data.aws_region.region.name}.s3"
+  route_table_ids = [for table in aws_route_table.tables: table.id]
+  tags = { Name = "S3-endpoint-${aws_vpc.main.id}}" }
+}
+
+##########################################################################
 ## Subnets
 ##########################################################################
 
 resource "aws_subnet" "subnets" {
   for_each = var.subnets
-
   vpc_id                  = aws_vpc.main.id
   cidr_block              = each.value.cidr_block
   availability_zone       = each.value.az
@@ -57,7 +71,9 @@ data "aws_iam_policy_document" "nat_policy" {
   statement {
     actions = [
       "ec2:AttachNetworkInterface",
-      "ec2:ModifyNetworkInterfaceAttribute"
+      "ec2:ModifyNetworkInterfaceAttribute",
+      "ec2:AssociateAddress",
+      "ec2:DisassociateAddress"
     ]
     effect = "Allow"
     resources = ["*"]
@@ -111,12 +127,6 @@ resource "aws_network_interface" "nats" {
   security_groups = [aws_security_group.nats[each.key].id]
 }
 
-resource "aws_eip_association" "nats" {
-  for_each = local.nat_subnets
-  network_interface_id = aws_network_interface.nats[each.key].id
-  allocation_id = aws_eip.nat_ips[each.key].allocation_id
-}
-
 resource "aws_security_group" "nats" {
   for_each = local.nat_subnets
 
@@ -160,7 +170,16 @@ resource "aws_launch_template" "nats" {
     arn = aws_iam_instance_profile.nat.arn
   }
   vpc_security_group_ids = [aws_security_group.nats[each.key].id]
-  user_data = base64encode(templatefile("nat_user_data.sh", {nat_interface = aws_network_interface.nats[each.key].id}))
+  user_data = base64encode(templatefile("nat_user_data.sh", {
+    ENI_ID = aws_network_interface.nats[each.key].id
+    EIP_ALLOCATION_ID = aws_eip.nat_ips[each.key].allocation_id
+  }))
+  tag_specifications {
+    resource_type = "instance"
+    tags = {
+      Name = "nat-${each.key}"
+    }
+  }
   depends_on = [
     aws_iam_role.nat
   ]
@@ -175,6 +194,12 @@ resource "aws_autoscaling_group" "nats" {
   launch_template {
     name = aws_launch_template.nats[each.key].name
     version = aws_launch_template.nats[each.key].latest_version
+  }
+  instance_refresh {
+    strategy = "Rolling"
+    preferences {
+      min_healthy_percentage = 0
+    }
   }
   vpc_zone_identifier = [aws_subnet.subnets[each.key].id]
 }

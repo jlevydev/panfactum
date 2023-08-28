@@ -10,5 +10,6 @@ ecr_repository_names:
   - primary-api
   - public-app
   - bastion
+  - ci
 
 

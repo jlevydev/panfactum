@@ -192,6 +192,11 @@ resource "helm_release" "vault" {
       }
 
       server = {
+        statefulSet = {
+          annotations = {
+            "reloader.stakater.com/auto" = "true"
+          }
+        }
         serviceAccount = {
           create = false,
           name = kubernetes_service_account.vault.metadata[0].name
