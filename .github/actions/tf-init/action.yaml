@@ -6,10 +6,10 @@ inputs:
     required: true
 runs:
   using: "composite"
-  env:
-    TERRAGRUNT_DOWNLOAD: "/home/runner/_work/.terragrunt-cache"
   steps:
     - name: "Terragrunt init"
       run: terragrunt run-all init --input=false -compact-warnings --terragrunt-non-interactive --terragrunt-include-external-dependencies --terragrunt-parallelism 10
       working-directory: ${{ inputs.tg-directory }}
       shell: bash
+      env:
+        TERRAGRUNT_DOWNLOAD: "/home/runner/_work/.terragrunt-cache"
