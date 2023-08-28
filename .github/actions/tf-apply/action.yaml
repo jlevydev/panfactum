@@ -13,7 +13,7 @@ runs:
     - name: "Terragrunt init"
       uses: ./.github/actions/tf-init
       with:
-        tf-directory: ${{ inputs.tg-directory }}
+        tg-directory: ${{ inputs.tg-directory }}
 
     - name: "Terragrunt apply"
       run: 'terragrunt run-all apply --input=false -compact-warnings --terragrunt-non-interactive --terragrunt-include-external-dependencies --terragrunt-parallelism 10'
