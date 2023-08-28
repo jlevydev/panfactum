@@ -207,6 +207,7 @@ resource "helm_release" "runner" {
         spec = {
           tolerations = module.constants.spot_node_toleration_helm
           serviceAccountName = kubernetes_service_account.runners.metadata[0].name
+          terminationGracePeriodSeconds = 60 * 30
           containers = [{
             name = "runner"
             image = "487780594448.dkr.ecr.us-east-2.amazonaws.com/ci:latest"

@@ -20,8 +20,8 @@ packages/**/result
 .pnp
 **/.docusaurus
 **/build
-!packages/build
 devenv.local.nix
 .ssh
 .devenv
 out
+.podman/.token_seed*

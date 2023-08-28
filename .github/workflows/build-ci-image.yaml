@@ -1,0 +1,27 @@
+name: Build CI Image
+on:
+  push:
+    paths:
+      - .podman/**
+      - devenv.nix
+      - devenv.yaml
+      - devenv.lock
+      - packages/nix/**
+      - packages/ci/**
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  apply:
+    runs-on: development-small
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: ./.github/actions/build-image
+        with:
+          image-repo: "ci"
+          image-tag: ${{ env.GITHUB_SHA }}
+          containerfile-directory: packages/ci

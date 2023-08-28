@@ -10,6 +10,9 @@ let
   # Helper used to get vault tokens during terraform runs
   get-vault-token = import ./packages/nix/get-vault-token { pkgs = pkgs; };
 
+  # Helper used to get the commit sha for a git_ref
+  get-version-tag = import ./packages/nix/get-version-tag { pkgs = pkgs; };
+
   # Used to establish network tunnels to private network resources running in the clusters
   panfactum-tunnel = import ./packages/nix/tunnel {pkgs = pkgs;};
 
@@ -46,6 +49,7 @@ let
     ####################################
     pinned-terraform # declarative iac tool
     terragrunt # terraform-runner
+    get-version-tag # helper for the IaC tagging
 
     ####################################
     # Editors
@@ -171,6 +175,11 @@ in
 {
   enterShell = ''
     source ${(if config.env.CI == "true" then "enter-shell-ci" else "enter-shell-local")}
+
+    # We provide a custom credential helper so we can avoid
+    # the nuisance of the ECR login flow
+    export REGISTRY_AUTH_FILE="$DEVENV_ROOT/.podman/config.json"
+    export DOCKER_CONFIG="$DEVENV_ROOT/.podman" # Needed for buildkit to work
   '';
 
   scripts = {
@@ -191,6 +200,18 @@ in
       description = "Github actions and workflow linting";
       files = "^.github";
       pass_filenames = false;
+    };
+    terragrunt-custom = {
+      enable = true;
+      entry = "terragrunt fmt -check";
+      description = "Terragrunt linting";
+      files = "^environments/(.*).hcl$";
+    };
+    terraform-custom = {
+      enable = true;
+      entry = "terraform fmt -check";
+      description = "Terraform linting";
+      files = "^packages/infrastructure/(.*).hcl$";
     };
   };
 

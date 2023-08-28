@@ -1,0 +1,29 @@
+name: Build image
+description: "Builds an image using moby/buildkit"
+inputs:
+  image-repo:
+    description: 'The repo for the image'
+    required: true
+  image-tag:
+    description: 'The tag for the image'
+    required: true
+  containerfile-directory:
+    description: 'The directory containing the Containerfile to build'
+    required: true
+runs:
+  using: "composite"
+  steps:
+
+    - name: "Build image"
+      shell: bash
+      run: |
+        buildctl \
+          --addr tcp://buildkit.buildkit.svc.cluster.local:1234 \ 
+          build \
+          --frontend=dockerfile.v0 \
+          --output "type=image,name=487780594448.dkr.ecr.us-east-2.amazonaws.com/${{ inputs.image-repo }}:${{ inputs.image-tag }},push=true" \
+          --local context=. \
+          --local dockerfile=${{ inputs.containerfile-directory }} \
+          --opt filename=./Containerfile \
+          --export-cache type=s3,region=us-east-2,bucket=buildkit-cache-41151449fc2ce51f,name=${{ inputs.image-repo }} \
+          --import-cache type=s3,region=us-east-2,bucket=buildkit-cache-41151449fc2ce51f,name=${{ inputs.image-repo }}

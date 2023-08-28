@@ -9,6 +9,7 @@ USER runner
 # Copy some standard CI configuration files into the image
 COPY --chown=runner packages/ci/.aws /home/runner/.aws
 COPY --chown=runner packages/ci/.kube /home/runner/.kube
+COPY --chown=runner .podman /home/runner/.podman
 
 # This installs nix so we can use devenv to install our development environment tools
 # Unfortunately, nix is really only installable via an installation script as it requires

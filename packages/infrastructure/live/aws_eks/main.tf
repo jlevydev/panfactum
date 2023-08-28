@@ -212,7 +212,7 @@ resource "aws_launch_template" "node_group" {
 
     ebs {
       delete_on_termination = "true"
-      volume_size           = 50
+      volume_size           = 200
       volume_type           = "gp3"
     }
   }

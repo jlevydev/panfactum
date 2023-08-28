@@ -28,17 +28,17 @@ inputs = {
     min_replicas = 1
     cpu_millicores = 100
     memory_mb = 1000
-    tmp_space_gb = 5
+    tmp_space_gb = 20
   }
   medium_runner_config = {
     cpu_millicores = 1000
     memory_mb = 8000
-    tmp_space_gb = 5
+    tmp_space_gb = 20
   }
   large_runner_config = {
     cpu_millicores = 2000
     memory_mb = 16000
-    tmp_space_gb = 10
+    tmp_space_gb = 20
   }
   gha_runner_env_prefix = "development"
   gha_runner_max_replicas = 10

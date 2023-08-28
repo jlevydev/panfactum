@@ -31,6 +31,9 @@ locals {
   version_file   = find_in_parent_folders("version.yaml", "")
   version        = lookup(local.module_config, "version", local.version_file == "" ? local.primary_branch : yamldecode(file(local.version_file)).version)
 
+  # The version_tag needs to be a commit sha
+  version_tag = run_cmd("--terragrunt-quiet", "get-version-tag", local.version)
+
   # Defining the module source
   # NOTE: You can only use modules defined inside this repo (to use other repo's modules), define a
   # `module` block in your terraform code
@@ -193,7 +196,7 @@ inputs = {
   app         = local.global_vars.repo_name
   module      = basename(get_original_terragrunt_dir())
   environment = local.environment_vars.environment
-  version_tag = local.version
+  version_tag = local.version_tag
   region      = local.region_vars.region
 
   // azuread provider
@@ -215,7 +218,7 @@ inputs = {
     app         = local.global_vars.repo_name
     module      = basename(get_original_terragrunt_dir())
     environment = local.environment_vars.environment
-    version_tag = local.version
+    version_tag = local.version_tag
     region      = local.region_vars.region
   }
 

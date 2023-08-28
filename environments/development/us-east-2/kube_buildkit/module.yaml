@@ -1,0 +1,4 @@
+source: /live/kube_buildkit
+providers:
+  kubernetes: true
+  aws: true

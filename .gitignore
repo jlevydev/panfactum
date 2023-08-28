@@ -32,3 +32,5 @@ devenv.local.nix
 **/tilt.trigger
 
 .pre-commit-config.yaml
+
+.podman/.token_seed*

@@ -46,6 +46,7 @@ data aws_iam_policy_document "trust_accounts" {
 resource "aws_ecr_repository" "repo" {
   for_each = toset(var.ecr_repository_names)
   name = each.key
+  image_tag_mutability = var.is_immutable ? "IMMUTABLE" : "MUTABLE"
 }
 
 resource "aws_ecr_repository_policy" "delegated_access" {
@@ -57,7 +58,7 @@ resource "aws_ecr_repository_policy" "delegated_access" {
 resource "aws_ecr_lifecycle_policy" "lifecycle" {
   for_each = toset(var.ecr_repository_names)
   policy = jsonencode({
-    rules = [
+    rules = concat([
       {
         action = {
           type = "expire"
@@ -70,7 +71,21 @@ resource "aws_ecr_lifecycle_policy" "lifecycle" {
         description = "Keep last 3 untagged images"
         rulePriority = 1
       }
-    ]
+    ], var.expire_tagged_images ? [
+      {
+        action = {
+          type = "expire"
+        }
+        selection = {
+          tagStatus = "tagged",
+          countType = "sinceImagePushed",
+          countUnit = "days",
+          countNumber = 14
+        },
+        description = "Remove old images"
+        rulePriority = 2
+      }
+    ] : [])
   })
   repository = aws_ecr_repository.repo[each.key].name
 }
