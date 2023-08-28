@@ -25,7 +25,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - uses: ./.github/actions/setup-tf-creds
-
-      - name: "Test Vault token"
-        run: vault token capabilities /
+      - uses: ./.github/actions/tf-apply
+        with:
+          tg-directory: ./environments/development
