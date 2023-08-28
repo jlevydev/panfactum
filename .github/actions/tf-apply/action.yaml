@@ -21,3 +21,4 @@ runs:
       shell: bash
       env:
         TERRAGRUNT_DOWNLOAD: "/home/runner/_work/.terragrunt-cache"
+        CI: "true"
