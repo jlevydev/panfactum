@@ -185,8 +185,12 @@ in
   };
 
   pre-commit.hooks = {
-    actionlint = {
+    actionlint-custom = {
       enable = true;
+      entry = "actionlint";
+      description = "Github actions and workflow linting";
+      files = "^.github";
+      pass_filenames = false;
     };
   };
 
