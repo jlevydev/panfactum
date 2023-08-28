@@ -108,7 +108,7 @@ resource "kubernetes_stateful_set" "buildkit" {
   spec {
     service_name = local.name
     pod_management_policy = "Parallel"
-    replicas = var.replicas
+    replicas = var.min_replicas
     selector {
       match_labels = local.match_labels
     }
@@ -140,6 +140,16 @@ resource "kubernetes_stateful_set" "buildkit" {
             run_as_non_root = true
             run_as_user = 1000
             run_as_group = 1000
+          }
+
+          resources {
+            requests = {
+              cpu = "${var.cpu_millicores}m"
+              memory = "${var.memory_mb}Mi"
+            }
+            limits = {
+              memory ="${var.memory_mb}Mi"
+            }
           }
 
           readiness_probe {
@@ -175,6 +185,9 @@ resource "kubernetes_stateful_set" "buildkit" {
     }
   }
   wait_for_rollout = false
+  lifecycle {
+    ignore_changes = [spec[0].replicas]
+  }
 }
 
 resource "kubernetes_service" "buildkit" {
@@ -192,5 +205,65 @@ resource "kubernetes_service" "buildkit" {
       name = "tcp"
     }
     selector = local.match_labels
+  }
+}
+
+resource "kubernetes_horizontal_pod_autoscaler_v2" "autoscaler" {
+  metadata {
+    name = local.name
+    namespace = local.namespace
+    labels = local.labels
+  }
+  spec {
+    scale_target_ref {
+      api_version = "apps/v1"
+      kind = "StatefulSet"
+      name = kubernetes_stateful_set.buildkit.metadata[0].name
+    }
+    min_replicas = var.min_replicas
+    max_replicas = var.max_replicas
+    metric {
+      type = "Resource"
+      resource {
+        name = "memory"
+        target {
+          type = "Utilization"
+          average_utilization = 70
+        }
+      }
+    }
+    metric {
+      type = "Resource"
+      resource {
+        name = "cpu"
+        target {
+          type = "Utilization"
+          average_utilization = 70
+        }
+      }
+    }
+    behavior {
+      scale_down {
+        select_policy                = "Max"
+        stabilization_window_seconds = 300
+
+        policy {
+          period_seconds = 60
+          type           = "Pods"
+          value          = 1
+        }
+      }
+
+      scale_up {
+        select_policy                = "Max"
+        stabilization_window_seconds = 300
+
+        policy {
+          period_seconds = 15
+          type           = "Pods"
+          value          = 1
+        }
+      }
+    }
   }
 }

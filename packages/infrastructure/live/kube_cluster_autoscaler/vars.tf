@@ -20,3 +20,8 @@ variable "vpa_enabled" {
   type = bool
   default = false
 }
+
+variable "public_outbound_ips" {
+  description = "A list of the public ips for outbound cluster traffic"
+  type = list(string)
+}

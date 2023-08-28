@@ -33,6 +33,7 @@ dependency "vault_core_resources" {
 inputs = {
   eks_cluster_name            = dependency.aws_eks.outputs.cluster_name
   vpc_id                      = dependency.aws_vpc.outputs.vpc_id
+  public_outbound_ips         = dependency.vpc.outputs.nat_ips
   dhparam                     = yamldecode(sops_decrypt_file("${get_terragrunt_dir()}/dhparam.development.yaml")).dhparam
   ingress_domains             = flatten([for domain in keys(dependency.aws_hosted_zones.outputs.zones) : [domain, "*.${domain}"]])
   min_replicas                = 2 // having less than two is disruptive to dns + development workflows when updates occur

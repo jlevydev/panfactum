@@ -1,4 +1,4 @@
-name: Build CI Image
+name: Build Public App Image
 on:
   push:
   workflow_dispatch:
@@ -14,8 +14,8 @@ jobs:
       - uses: actions/checkout@v3
 
       - uses: ./.github/actions/build-image
-        timeout-minutes: 120
+        timeout-minutes: 30
         with:
-          image-repo: "ci"
+          image-repo: public-app
           image-tag: ${{ github.sha }}
-          containerfile-directory: packages/ci
+          containerfile-directory: packages/public-app

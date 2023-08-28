@@ -82,6 +82,7 @@ module "aws_permissions" {
   service_account_namespace = local.namespace
   eks_cluster_name = var.eks_cluster_name
   iam_policy_json = data.aws_iam_policy_document.cilium.json
+  public_outbound_ips = var.public_outbound_ips
 
   // The helm chart creates the service account
   annotate_service_account = false

@@ -23,6 +23,9 @@ locals {
 
 module "constants" {
   source = "../../modules/constants"
+  matching_labels = {
+    app = "workload-identity-webhook"
+  }
 }
 
 /***************************************
@@ -60,7 +63,7 @@ resource "helm_release" "azwi" {
       replicaCount = 2
       tolerations = module.constants.spot_node_toleration_helm
 
-      # TODO: Anti-affinity
+      affinity = module.constants.pod_anti_affinity_helm
     })
   ]
 }
@@ -79,7 +82,7 @@ resource "kubernetes_manifest" "vpa_descheduler" {
       targetRef = {
         apiVersion = "apps/v1"
         kind = "Deployment"
-        name = local.name
+        name = "azure-wi-webhook-controller-manager"
       }
     }
   }

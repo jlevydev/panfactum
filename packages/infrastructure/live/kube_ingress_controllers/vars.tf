@@ -81,3 +81,8 @@ variable "bastion_port" {
   type = number
   default = 45459
 }
+
+variable "public_outbound_ips" {
+  description = "A list of the public ips for outbound cluster traffic"
+  type = list(string)
+}

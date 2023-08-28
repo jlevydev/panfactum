@@ -34,7 +34,7 @@ output "spot_node_affinity_helm" {
           matchExpressions = [{
             key = "node.kubernetes.io/class"
             operator = "In"
-            values = ["spot"]
+            values = ["default-spot", "large-spot"]
           }]
         }
       }]
@@ -60,7 +60,7 @@ output "spot_node_preferences" {
     "node.kubernetes.io/class" = {
       weight = 1
       operator = "In"
-      values = ["spot"]
+      values = ["default-spot", "large-spot"]
     }
   }
 }

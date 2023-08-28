@@ -10,6 +10,10 @@ dependency "linkerd" {
   config_path = "../kube_linkerd"
 }
 
+dependency "vpc" {
+  config_path = "../aws_vpc"
+}
+
 inputs = {
   image_repo = "487780594448.dkr.ecr.us-east-2.amazonaws.com/primary-api"
 
@@ -29,4 +33,5 @@ inputs = {
   ingress_path_prefix = "/api"
 
   eks_cluster_name = dependency.cluster.outputs.cluster_name
+  public_outbound_ips = dependency.vpc.outputs.nat_ips
 }

@@ -142,6 +142,7 @@ module "aws_permissions" {
   service_account_namespace = local.namespace
   eks_cluster_name = var.eks_cluster_name
   iam_policy_json = data.aws_iam_policy_document.sa.json
+  public_outbound_ips = var.public_outbound_ips
 }
 
 /***************************************

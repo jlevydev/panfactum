@@ -79,6 +79,7 @@ module "aws_permissions" {
   service_account_namespace = kubernetes_service_account.ebs_csi.metadata[0].namespace
   eks_cluster_name = var.eks_cluster_name
   iam_policy_json = data.aws_iam_policy_document.extra_permissions.json
+  public_outbound_ips = var.public_outbound_ips
 }
 
 resource "aws_iam_role_policy_attachment" "default_permissions" {

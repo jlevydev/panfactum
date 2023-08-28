@@ -18,6 +18,7 @@ inputs = {
   eks_cluster_name = dependency.cluster.outputs.cluster_name
   public_outbound_ips = dependency.vpc.outputs.nat_ips
   vpa_enabled = true
-  replicas = 1
+  cpu_millicores = 2000
+  memory_mb = 8000
   local_storage_gb = 100
 }

@@ -70,6 +70,7 @@ module "namespace" {
 module "postgres" {
   source = "../../modules/kube_pg_cluster"
   eks_cluster_name = var.eks_cluster_name
+  public_outbound_ips = var.public_outbound_ips
   kube_labels = local.labels
   pg_cluster_name = "${local.service}-pg"
   pg_cluster_namespace = local.namespace

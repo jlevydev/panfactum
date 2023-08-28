@@ -49,6 +49,7 @@ module "aws_permissions" {
   service_account_namespace = var.namespace
   eks_cluster_name = var.eks_cluster_name
   iam_policy_json = data.aws_iam_policy_document.permissions.json
+  public_outbound_ips = var.public_outbound_ips
 }
 
 // the default issuer for PUBLIC tls certs in the default DNS zone for the env

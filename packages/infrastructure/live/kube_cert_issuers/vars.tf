@@ -36,3 +36,8 @@ variable "vault_internal_url" {
   description = "The url to the vault instance for internal cert issuance"
   type = string
 }
+
+variable "public_outbound_ips" {
+  description = "A list of the public ips for outbound cluster traffic"
+  type = list(string)
+}

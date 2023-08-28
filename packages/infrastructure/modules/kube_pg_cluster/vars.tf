@@ -3,6 +3,11 @@ variable "eks_cluster_name" {
   type = string
 }
 
+variable "public_outbound_ips" {
+  description = "A list of the public ips for outbound cluster traffic"
+  type = list(string)
+}
+
 variable "kube_labels" {
   description = "The labels to apply to the kubernetes resources"
   type = map(string)

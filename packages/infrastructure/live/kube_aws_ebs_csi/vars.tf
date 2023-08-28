@@ -10,6 +10,11 @@ variable "eks_cluster_name" {
   type = string
 }
 
+variable "public_outbound_ips" {
+  description = "A list of the public ips for outbound cluster traffic"
+  type = list(string)
+}
+
 variable "vpa_enabled" {
   description = "Whether the VPA resources should be enabled"
   type = bool
