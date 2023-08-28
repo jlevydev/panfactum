@@ -186,10 +186,7 @@ in
 
   pre-commit.hooks = {
     actionlint = {
-      entry = "autolint";
-      description = "Github actions and workflow linting";
-      files = ".github/**";
-      pass_filenames = false;
+      enable = true;
     };
   };
 
