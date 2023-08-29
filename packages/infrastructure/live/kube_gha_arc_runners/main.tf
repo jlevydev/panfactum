@@ -214,7 +214,7 @@ resource "helm_release" "runner" {
             name  = "runner"
             image = var.runner_image
             command = [
-              "/usr/bin/sh",
+              "/usr/bin/bash",
               "-c",
               ". /home/runner/.profile && /home/runner/run.sh"
             ]
@@ -222,7 +222,7 @@ resource "helm_release" "runner" {
               preStop = {
                 exec = {
                   command = [
-                    "/usr/bin/sh",
+                    "/usr/bin/bash",
                     "-c",
                     ". /home/runner/.profile && delete-tf-locks"
                   ]
