@@ -5,19 +5,19 @@ terraform {
       version = "2.22"
     }
     vault = {
-      source = "hashicorp/vault"
+      source  = "hashicorp/vault"
       version = "3.19.0"
     }
     aws = {
-      source                = "hashicorp/aws"
-      version               = "5.10"
+      source  = "hashicorp/aws"
+      version = "5.10"
     }
     azuread = {
-      source = "hashicorp/azuread"
+      source  = "hashicorp/azuread"
       version = "2.41.0"
     }
     time = {
-      source = "hashicorp/time"
+      source  = "hashicorp/time"
       version = "0.9.1"
     }
   }
@@ -48,7 +48,7 @@ data "aws_caller_identity" "id" {}
 
 locals {
   redirect_uris = [
-    "http://localhost:8250/oidc/callback", // CLI
+    "http://localhost:8250/oidc/callback",              // CLI
     "${var.vault_url}/ui/vault/auth/oidc/oidc/callback" // Web
   ]
 }
@@ -58,17 +58,17 @@ locals {
 ***************************************/
 
 data "azuread_group" "groups" {
-  for_each = toset(local.all_groups)
-  display_name = each.key
+  for_each         = toset(local.all_groups)
+  display_name     = each.key
   security_enabled = true
 }
 
 module "oidc_app" {
-  source = "../../modules/aad_oidc_application"
-  display_name = "vault-${local.environment}-${local.region}"
-  description = "Used to authenticate users with the vault instance for the ${local.environment} environment in ${local.region}"
-  redirect_uris = local.redirect_uris
-  group_object_ids = [for group in data.azuread_group.groups: group.object_id]
+  source               = "../../modules/aad_oidc_application"
+  display_name         = "vault-${local.environment}-${local.region}"
+  description          = "Used to authenticate users with the vault instance for the ${local.environment} environment in ${local.region}"
+  redirect_uris        = local.redirect_uris
+  group_object_ids     = [for group in data.azuread_group.groups : group.object_id]
   aad_sp_object_owners = var.aad_sp_object_owners
 }
 
@@ -77,27 +77,27 @@ module "oidc_app" {
 ***************************************/
 
 resource "vault_jwt_auth_backend" "oidc" {
-  description = "Authentication against Azure AD"
-  path = "oidc"
-  oidc_client_id = module.oidc_app.application_id
+  description        = "Authentication against Azure AD"
+  path               = "oidc"
+  oidc_client_id     = module.oidc_app.application_id
   oidc_client_secret = module.oidc_app.client_secret
   oidc_discovery_url = "https://login.microsoftonline.com/${var.azuread_tenant_id}/v2.0"
-  default_role = "default"
+  default_role       = "default"
   tune {
-    max_lease_ttl = "2h"
+    max_lease_ttl     = "2h"
     default_lease_ttl = "2h"
-    token_type = "default-service"
+    token_type        = "default-service"
   }
 }
 
 resource "vault_jwt_auth_backend_role" "default" {
-  backend = vault_jwt_auth_backend.oidc.path
-  role_name  = "default"
-  user_claim = "sub"
-  groups_claim = "groups"
-  allowed_redirect_uris = local.redirect_uris
-  oidc_scopes = ["https://graph.microsoft.com/.default"]
-  max_age = 60 * 60 * 8
+  backend                = vault_jwt_auth_backend.oidc.path
+  role_name              = "default"
+  user_claim             = "sub"
+  groups_claim           = "groups"
+  allowed_redirect_uris  = local.redirect_uris
+  oidc_scopes            = ["https://graph.microsoft.com/.default"]
+  max_age                = 60 * 60 * 8
   token_explicit_max_ttl = 60 * 60 * 2
 }
 
@@ -152,8 +152,8 @@ resource "vault_policy" "admins" {
 
 resource "vault_identity_group" "admins" {
   for_each = toset(var.admin_groups)
-  name = each.key
-  type = "external"
+  name     = each.key
+  type     = "external"
   policies = [vault_policy.admins.name]
 }
 
@@ -204,8 +204,8 @@ resource "vault_policy" "readers" {
 
 resource "vault_identity_group" "readers" {
   for_each = toset(var.reader_groups)
-  name = each.key
-  type = "external"
+  name     = each.key
+  type     = "external"
   policies = [vault_policy.readers.name]
 }
 
@@ -224,7 +224,7 @@ resource "vault_auth_backend" "kubernetes" {
 }
 
 resource "vault_kubernetes_auth_backend_config" "kubernetes" {
-  backend = vault_auth_backend.kubernetes.path
+  backend         = vault_auth_backend.kubernetes.path
   kubernetes_host = var.kubernetes_url
 }
 
@@ -247,17 +247,17 @@ resource "vault_mount" "pki_internal" {
 }
 
 resource "vault_pki_secret_backend_root_cert" "pki_internal" {
-  backend               = vault_mount.pki_internal.path
-  type                  = "internal"
-  common_name           = var.vault_internal_url
-  ttl                   = "${60 * 60 * 24 * 365 * 10}"
-  format                = "pem"
-  private_key_format    = "der"
-  key_type              = "ec"
-  key_bits              = 256
-  exclude_cn_from_sans  = true
-  ou                    = "engineering"
-  organization          = "panfactum"
+  backend              = vault_mount.pki_internal.path
+  type                 = "internal"
+  common_name          = var.vault_internal_url
+  ttl                  = 60 * 60 * 24 * 365 * 10
+  format               = "pem"
+  private_key_format   = "der"
+  key_type             = "ec"
+  key_bits             = 256
+  exclude_cn_from_sans = true
+  ou                   = "engineering"
+  organization         = "panfactum"
 }
 
 resource "vault_pki_secret_backend_config_urls" "pki_internal" {
@@ -304,7 +304,7 @@ resource "vault_mount" "ssh" {
 }
 
 resource "vault_ssh_secret_backend_ca" "ssh" {
-  backend = vault_mount.ssh.path
+  backend              = vault_mount.ssh.path
   generate_signing_key = true
 }
 
@@ -332,10 +332,10 @@ resource "vault_ssh_secret_backend_role" "ssh" {
 
   // Everyone must login with the panfactum user
   allowed_users = "panfactum"
-  default_user = "panfactum"
+  default_user  = "panfactum"
 
   // They are only valid for a single day
-  ttl = 60 * 60 * 24
+  ttl     = 60 * 60 * 24
   max_ttl = 60 * 60 * 24
 }
 

@@ -23,7 +23,7 @@ locals {
 
   is_local = var.is_local
 
-  port = var.is_local ? 443 : 3000
+  port              = var.is_local ? 443 : 3000
   healthcheck_route = var.is_local ? "/" : "/healthz"
 }
 
@@ -36,12 +36,12 @@ module "constants" {
 ***************************************/
 
 module "namespace" {
-  source = "../../modules/kube_namespace"
-  namespace = var.namespace
-  admin_groups = ["system:admins"]
-  reader_groups = ["system:readers"]
+  source            = "../../modules/kube_namespace"
+  namespace         = var.namespace
+  admin_groups      = ["system:admins"]
+  reader_groups     = ["system:readers"]
   bot_reader_groups = ["system:bot-readers"]
-  kube_labels = local.labels
+  kube_labels       = local.labels
 }
 
 /***************************************
@@ -50,24 +50,24 @@ module "namespace" {
 
 resource "kubernetes_service_account" "main" {
   metadata {
-    name = local.service
+    name      = local.service
     namespace = module.namespace.namespace
   }
 }
 
 module "deployment" {
-  source = "../../modules/kube_deployment"
+  source   = "../../modules/kube_deployment"
   is_local = local.is_local
 
-  namespace = local.namespace
-  service_name = local.service
+  namespace       = local.namespace
+  service_name    = local.service
   service_account = kubernetes_service_account.main.metadata[0].name
-  tolerations = module.constants.spot_node_toleration
-  kube_labels = local.labels
+  tolerations     = module.constants.spot_node_toleration
+  kube_labels     = local.labels
   containers = {
     server = {
-      image = var.image_repo
-      version = local.version
+      image   = var.image_repo
+      version = var.image_version
       command = local.is_local ? [
         "node_modules/.bin/docusaurus",
         "start",
@@ -82,36 +82,36 @@ module "deployment" {
   tmp_directories = local.is_local ? [
     "/home/node/.npm",
     "/code/packages/internal-docs/.docusaurus"
-  ]: [
+    ] : [
     "/var/cache/nginx",
     "/var/run"
   ]
-  healthcheck_port = local.port
+  healthcheck_port  = local.port
   healthcheck_route = local.healthcheck_route
 
   ports = {
     http = {
       service_port = local.port
-      pod_port = local.port
+      pod_port     = local.port
     }
   }
 
   min_replicas = var.min_replicas
   max_replicas = var.max_replicas
-  vpa_enabled = var.vpa_enabled
-  ha_enabled = var.ha_enabled
+  vpa_enabled  = var.vpa_enabled
+  ha_enabled   = var.ha_enabled
 }
 
 module "ingress" {
   source = "../../modules/kube_ingress"
 
-  namespace = local.namespace
-  kube_labels = local.labels
+  namespace    = local.namespace
+  kube_labels  = local.labels
   ingress_name = local.service
 
   ingress_configs = [{
-    domains = var.ingress_domains
-    service = module.deployment.service
+    domains      = var.ingress_domains
+    service      = module.deployment.service
     service_port = local.port
   }]
 }

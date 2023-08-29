@@ -17,7 +17,7 @@ terraform {
 
 locals {
 
-  name = "cluster-autoscaler"
+  name      = "cluster-autoscaler"
   namespace = module.namespace.namespace
 
   // Extract values from the enforced kubernetes labels
@@ -37,12 +37,12 @@ module "constants" {
 }
 
 module "namespace" {
-  source = "../../modules/kube_namespace"
-  namespace = local.name
-  admin_groups = ["system:admins"]
-  reader_groups = ["system:readers"]
+  source            = "../../modules/kube_namespace"
+  namespace         = local.name
+  admin_groups      = ["system:admins"]
+  reader_groups     = ["system:readers"]
   bot_reader_groups = ["system:bot-readers"]
-  kube_labels = local.labels
+  kube_labels       = local.labels
 }
 
 data "aws_iam_policy_document" "cluster_autoscaler" {
@@ -67,26 +67,26 @@ data "aws_iam_policy_document" "cluster_autoscaler" {
 
 resource "kubernetes_service_account" "cluster_autoscaler" {
   metadata {
-    name = local.name
+    name      = local.name
     namespace = local.namespace
-    labels = local.labels
+    labels    = local.labels
   }
 }
 
 module "aws_permissions" {
-  source = "../../modules/kube_sa_auth_aws"
-  service_account = kubernetes_service_account.cluster_autoscaler.metadata[0].name
+  source                    = "../../modules/kube_sa_auth_aws"
+  service_account           = kubernetes_service_account.cluster_autoscaler.metadata[0].name
   service_account_namespace = local.namespace
-  eks_cluster_name = var.eks_cluster_name
-  iam_policy_json = data.aws_iam_policy_document.cluster_autoscaler.json
-  public_outbound_ips = var.public_outbound_ips
+  eks_cluster_name          = var.eks_cluster_name
+  iam_policy_json           = data.aws_iam_policy_document.cluster_autoscaler.json
+  public_outbound_ips       = var.public_outbound_ips
 }
 
 // We want to prioritize spot instances over normal instances
 // as they are significantly cheaper
 resource "kubernetes_config_map" "priorities" {
   metadata {
-    name = "cluster-autoscaler-priority-expander"
+    name      = "cluster-autoscaler-priority-expander"
     namespace = local.namespace
   }
   data = {
@@ -117,55 +117,55 @@ resource "helm_release" "cluster_autoscaler" {
       nameOverride = local.name
       image = {
         repository = "registry.k8s.io/autoscaling/cluster-autoscaler"
-        tag = var.cluster_autoscaler_version
+        tag        = var.cluster_autoscaler_version
       }
 
       fullnameOverride = "cluster-autoscaler"
 
       // Does not need to be highly available
       replicaCount = 1
-      tolerations = module.constants.spot_node_toleration_helm
-      affinity = module.constants.spot_node_affinity_helm
+      tolerations  = module.constants.spot_node_toleration_helm
+      affinity     = module.constants.spot_node_affinity_helm
 
       autoDiscovery = {
-        clusterName = var.eks_cluster_name
+        clusterName   = var.eks_cluster_name
         cloudProvider = "aws"
-        tags = ["k8s.io/cluster-autoscaler/enabled","k8s.io/cluster-autoscaler/${var.eks_cluster_name}"]
+        tags          = ["k8s.io/cluster-autoscaler/enabled", "k8s.io/cluster-autoscaler/${var.eks_cluster_name}"]
       }
       rbac = {
         serviceAccount = {
           create = false
-          name = kubernetes_service_account.cluster_autoscaler.metadata[0].name
+          name   = kubernetes_service_account.cluster_autoscaler.metadata[0].name
         }
       }
       additionalLabels = local.labels
-      awsRegion = data.aws_region.main.name
+      awsRegion        = data.aws_region.main.name
       extraArgs = merge({
-        expander = "priority,least-waste"
-        balance-similar-node-groups = true
-        skip-nodes-with-system-pods = false
-        skip-nodes-with-local-storage = false
+        expander                               = "priority,least-waste"
+        balance-similar-node-groups            = true
+        skip-nodes-with-system-pods            = false
+        skip-nodes-with-local-storage          = false
         skip-nodes-with-custom-controller-pods = false
-        cordon-node-before-terminating = true
-        scale-down-utilization-threshold = "0.6"
-        scale-down-delay-after-add = "5m0s"
-        scale-down-unneeded-time = "2m0s"
-        scale-down-unready-time = "5m0s"
-        unremovable-node-recheck-timeout = "2m0s"
-        scale-down-candidates-pool-ratio = "1.0"
-        max-graceful-termination-sec = "120"
-        v = "5"
-      }, {for i, v in [
-        "beta.kubernetes.io/instance-type",
-        "eks.amazonaws.com/nodegroup-image",
-        "eks.amazonaws.com/nodegroup",
-        "eks.amazonaws.com/capacityType",
-        "kubernetes.io/hostname",
-        "node.kubernetes.io/instance-type",
-        "k8s.io/cloud-provider-aws",
-        "eks.amazonaws.com/sourceLaunchTemplateVersion",
-        "eks.amazonaws.com/sourceLaunchTemplateId"
-      ]: "balancing-ignore-label_${i}" => v})
+        cordon-node-before-terminating         = true
+        scale-down-utilization-threshold       = "0.6"
+        scale-down-delay-after-add             = "5m0s"
+        scale-down-unneeded-time               = "2m0s"
+        scale-down-unready-time                = "5m0s"
+        unremovable-node-recheck-timeout       = "2m0s"
+        scale-down-candidates-pool-ratio       = "1.0"
+        max-graceful-termination-sec           = "120"
+        v                                      = "5"
+        }, { for i, v in [
+          "beta.kubernetes.io/instance-type",
+          "eks.amazonaws.com/nodegroup-image",
+          "eks.amazonaws.com/nodegroup",
+          "eks.amazonaws.com/capacityType",
+          "kubernetes.io/hostname",
+          "node.kubernetes.io/instance-type",
+          "k8s.io/cloud-provider-aws",
+          "eks.amazonaws.com/sourceLaunchTemplateVersion",
+          "eks.amazonaws.com/sourceLaunchTemplateId"
+      ] : "balancing-ignore-label_${i}" => v })
     })
   ]
 
@@ -176,17 +176,17 @@ resource "kubernetes_manifest" "vpa" {
   count = var.vpa_enabled ? 1 : 0
   manifest = {
     apiVersion = "autoscaling.k8s.io/v1"
-    kind  = "VerticalPodAutoscaler"
+    kind       = "VerticalPodAutoscaler"
     metadata = {
-      name = local.name
+      name      = local.name
       namespace = local.namespace
-      labels = var.kube_labels
+      labels    = var.kube_labels
     }
     spec = {
       targetRef = {
         apiVersion = "apps/v1"
-        kind = "Deployment"
-        name = local.name
+        kind       = "Deployment"
+        name       = local.name
       }
     }
   }

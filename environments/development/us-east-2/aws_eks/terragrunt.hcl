@@ -61,25 +61,25 @@ inputs = {
   kube_proxy_version = "v1.27.1-eksbuild.1"
   vpc_cni_version    = "v1.13.2-eksbuild.1"
 
-  node_groups       = {
+  node_groups = {
     workers = merge(local.worker_template, {
       kube_version = "1.27"
-      subnets  = ["PRIVATE_AZA"]
+      subnets      = ["PRIVATE_AZA"]
       description  = "Generic worker nodes in availability zone A"
     }),
     large-workers = merge(local.large_worker_template, {
       kube_version = "1.27"
-      subnets  = ["PRIVATE_AZA"]
+      subnets      = ["PRIVATE_AZA"]
       description  = "Large worker nodes in availability zone A"
     })
     spots = merge(local.spot_template, {
       kube_version = "1.27"
-      subnets  = ["PRIVATE_AZA"]
+      subnets      = ["PRIVATE_AZA"]
       description  = "Preemptable nodes in availability zone A"
     })
     large-spots = merge(local.large_spot_template, {
       kube_version = "1.27"
-      subnets  = ["PRIVATE_AZA"]
+      subnets      = ["PRIVATE_AZA"]
       description  = "Large preemptable nodes in availability zone A"
     })
   }

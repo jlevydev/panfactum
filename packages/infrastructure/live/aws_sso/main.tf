@@ -36,7 +36,7 @@ resource "aws_ssoadmin_permission_set" "superuser" {
   description  = "Complete access to the account."
   instance_arn = local.sso_instance_arn
   tags = {
-    description      = "Complete access to the account."
+    description = "Complete access to the account."
   }
 }
 
@@ -53,7 +53,7 @@ resource "aws_ssoadmin_permission_set" "admin" {
   description  = "Read and write access to most resources."
   instance_arn = local.sso_instance_arn
   tags = {
-    description      = "Read and write access to most resources."
+    description = "Read and write access to most resources."
   }
 }
 
@@ -70,7 +70,7 @@ resource "aws_ssoadmin_permission_set" "reader" {
   description  = "Read only access to a select subset of resources."
   instance_arn = local.sso_instance_arn
   tags = {
-    description      = "Read only access to a select subset of resources."
+    description = "Read only access to a select subset of resources."
   }
 }
 
@@ -84,16 +84,16 @@ resource "aws_ssoadmin_permission_set_inline_policy" "reader" {
 ## Permission to Account Bindings
 ###########################################################################
 module "permission_bindings" {
-  for_each = var.environment_access_map
-  source = "../../modules/aws_sso_permission_binding"
-  sso_instance_arn = local.sso_instance_arn
-  identity_store_id = local.identity_store_id
-  environment = each.key
-  aws_account_id = each.value.account_id
-  superuser_groups = each.value.superuser_groups
-  admin_groups = each.value.admin_groups
-  reader_groups = each.value.reader_groups
+  for_each                     = var.environment_access_map
+  source                       = "../../modules/aws_sso_permission_binding"
+  sso_instance_arn             = local.sso_instance_arn
+  identity_store_id            = local.identity_store_id
+  environment                  = each.key
+  aws_account_id               = each.value.account_id
+  superuser_groups             = each.value.superuser_groups
+  admin_groups                 = each.value.admin_groups
+  reader_groups                = each.value.reader_groups
   superuser_permission_set_arn = aws_ssoadmin_permission_set.superuser.arn
-  admin_permission_set_arn = aws_ssoadmin_permission_set.admin.arn
-  reader_permission_set_arn = aws_ssoadmin_permission_set.reader.arn
+  admin_permission_set_arn     = aws_ssoadmin_permission_set.admin.arn
+  reader_permission_set_arn    = aws_ssoadmin_permission_set.reader.arn
 }

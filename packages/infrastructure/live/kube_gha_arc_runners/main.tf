@@ -13,7 +13,7 @@ terraform {
       version = "5.10"
     }
     vault = {
-      source = "hashicorp/vault"
+      source  = "hashicorp/vault"
       version = "3.19.0"
     }
   }
@@ -21,7 +21,7 @@ terraform {
 
 locals {
 
-  name = "arc-runners"
+  name      = "arc-runners"
   namespace = module.namespace.namespace
 
   labels = merge(var.kube_labels, {
@@ -29,9 +29,9 @@ locals {
   })
 
   runners = {
-    "${var.gha_runner_env_prefix}-small" = var.small_runner_config
+    "${var.gha_runner_env_prefix}-small"  = var.small_runner_config
     "${var.gha_runner_env_prefix}-medium" = var.medium_runner_config
-    "${var.gha_runner_env_prefix}-large" = var.large_runner_config
+    "${var.gha_runner_env_prefix}-large"  = var.large_runner_config
   }
 }
 
@@ -44,12 +44,12 @@ module "constants" {
 ***************************************/
 
 module "namespace" {
-  source = "../../modules/kube_namespace"
-  namespace = local.name
-  admin_groups = ["system:admins"]
-  reader_groups = ["system:readers"]
+  source            = "../../modules/kube_namespace"
+  namespace         = local.name
+  admin_groups      = ["system:admins"]
+  reader_groups     = ["system:readers"]
   bot_reader_groups = ["system:bot-readers"]
-  kube_labels = local.labels
+  kube_labels       = local.labels
 }
 
 /***************************************
@@ -58,9 +58,9 @@ module "namespace" {
 
 resource "kubernetes_service_account" "runners" {
   metadata {
-    name = local.name
+    name      = local.name
     namespace = local.namespace
-    labels = local.labels
+    labels    = local.labels
   }
 }
 
@@ -70,16 +70,16 @@ resource "kubernetes_service_account" "runners" {
 resource "kubernetes_cluster_role_binding" "runners" {
   metadata {
     labels = local.labels
-    name = kubernetes_service_account.runners.metadata[0].name
+    name   = kubernetes_service_account.runners.metadata[0].name
   }
   role_ref {
     api_group = "rbac.authorization.k8s.io"
-    kind = "ClusterRole"
-    name = "cluster-admin"
+    kind      = "ClusterRole"
+    name      = "cluster-admin"
   }
   subject {
-    kind = "ServiceAccount"
-    name = kubernetes_service_account.runners.metadata[0].name
+    kind      = "ServiceAccount"
+    name      = kubernetes_service_account.runners.metadata[0].name
     namespace = local.namespace
   }
 }
@@ -92,19 +92,19 @@ resource "kubernetes_cluster_role_binding" "runners" {
 // as they need to be able to deploy IaC
 data "aws_iam_policy_document" "runners" {
   statement {
-    effect = "Allow"
-    actions = ["*"]
+    effect    = "Allow"
+    actions   = ["*"]
     resources = ["*"]
   }
 }
 
 module "aws_permissions" {
-  source = "../../modules/kube_sa_auth_aws"
-  service_account = kubernetes_service_account.runners.metadata[0].name
+  source                    = "../../modules/kube_sa_auth_aws"
+  service_account           = kubernetes_service_account.runners.metadata[0].name
   service_account_namespace = local.namespace
-  eks_cluster_name = var.eks_cluster_name
-  iam_policy_json = data.aws_iam_policy_document.runners.json
-  public_outbound_ips = var.public_outbound_ips
+  eks_cluster_name          = var.eks_cluster_name
+  iam_policy_json           = data.aws_iam_policy_document.runners.json
+  public_outbound_ips       = var.public_outbound_ips
 }
 
 /***************************************
@@ -130,10 +130,10 @@ resource "vault_kubernetes_auth_backend_role" "runners" {
   bound_service_account_names      = [kubernetes_service_account.runners.metadata[0].name]
   bound_service_account_namespaces = [local.namespace]
   role_name                        = local.name
-  token_ttl = 60 * 60
-  token_explicit_max_ttl = 60 * 60 // Force it to expire after 1 hour
-  token_policies = [vault_policy.runners.name]
-  token_bound_cidrs = ["10.0.0.0/16"] // Only allow this token to be used from inside the cluster
+  token_ttl                        = 60 * 60
+  token_explicit_max_ttl           = 60 * 60 // Force it to expire after 1 hour
+  token_policies                   = [vault_policy.runners.name]
+  token_bound_cidrs                = ["10.0.0.0/16"] // Only allow this token to be used from inside the cluster
 }
 
 /***************************************
@@ -141,12 +141,12 @@ resource "vault_kubernetes_auth_backend_role" "runners" {
 ***************************************/
 
 module "aad_permissions" {
-  source = "../../modules/kube_sa_auth_aad"
-  service_account = kubernetes_service_account.runners.metadata[0].name
+  source                    = "../../modules/kube_sa_auth_aad"
+  service_account           = kubernetes_service_account.runners.metadata[0].name
   service_account_namespace = local.namespace
-  eks_cluster_name = var.eks_cluster_name
-  aad_sp_object_owners = var.aad_sp_object_owners
-  public_outbound_ips = var.public_outbound_ips
+  eks_cluster_name          = var.eks_cluster_name
+  aad_sp_object_owners      = var.aad_sp_object_owners
+  public_outbound_ips       = var.public_outbound_ips
 }
 
 /***************************************
@@ -155,14 +155,14 @@ module "aad_permissions" {
 
 resource "kubernetes_secret" "github_app" {
   metadata {
-    name = "github-app"
+    name      = "github-app"
     namespace = local.namespace
-    labels = local.labels
+    labels    = local.labels
   }
   data = {
-    github_app_id = var.github_app_id
+    github_app_id              = var.github_app_id
     github_app_installation_id = var.github_app_installation_id
-    github_app_private_key = var.github_app_private_key
+    github_app_private_key     = var.github_app_private_key
   }
 }
 
@@ -180,15 +180,15 @@ resource "helm_release" "runner" {
 
   values = [
     yamlencode({
-      githubConfigUrl = var.github_config_url
+      githubConfigUrl    = var.github_config_url
       githubConfigSecret = kubernetes_secret.github_app.metadata[0].name
-      minRunners = each.value.min_replicas
-      maxRunners = var.gha_runner_max_replicas
+      minRunners         = each.value.min_replicas
+      maxRunners         = var.gha_runner_max_replicas
 
       containerMode = {
         type = "kubernetes"
         kubernetesModeWorkVolumeClaim = {
-          accessModes = ["ReadWriteOnce"]
+          accessModes      = ["ReadWriteOnce"]
           storageClassName = "ebs-standard" // panfactum custom
           resources = {
             requests = {
@@ -205,12 +205,12 @@ resource "helm_release" "runner" {
           }
         }
         spec = {
-          tolerations = module.constants.spot_node_toleration_helm
-          serviceAccountName = kubernetes_service_account.runners.metadata[0].name
-          terminationGracePeriodSeconds = 60 * 30
+          tolerations                   = module.constants.spot_node_toleration_helm
+          serviceAccountName            = kubernetes_service_account.runners.metadata[0].name
+          terminationGracePeriodSeconds = 60 * 15
           containers = [{
-            name = "runner"
-            image = "487780594448.dkr.ecr.us-east-2.amazonaws.com/ci:test7"
+            name  = "runner"
+            image = var.runner_image
             command = [
               "devenv",
               "shell",
@@ -218,27 +218,27 @@ resource "helm_release" "runner" {
             ]
             env = [
               {
-                name = "CI",
+                name  = "CI",
                 value = "true"
               },
               {
-                name = "DOCKER_CONFIG"
+                name  = "DOCKER_CONFIG"
                 value = "/home/runner/.podman"
               },
               {
-                name = "RUNNER_NAME"
+                name  = "RUNNER_NAME"
                 value = each.key
               },
               {
-                name = "VAULT_ADDR"
+                name  = "VAULT_ADDR"
                 value = var.vault_internal_address
               },
               {
-                name = "AZURE_CLIENT_ID",
+                name  = "AZURE_CLIENT_ID",
                 value = module.aad_permissions.client_id
               },
               {
-                name = "ACTIONS_RUNNER_CONTAINER_HOOKS"
+                name  = "ACTIONS_RUNNER_CONTAINER_HOOKS"
                 value = "/home/runner/k8s/index.js"
               },
               {
@@ -250,28 +250,30 @@ resource "helm_release" "runner" {
                 }
               },
               {
-                name = "ACTIONS_RUNNER_REQUIRE_JOB_CONTAINER"
+                name  = "ACTIONS_RUNNER_REQUIRE_JOB_CONTAINER"
                 value = "false"
               }
             ]
             resources = {
               requests = {
-                cpu = "${each.value.cpu_millicores}m"
+                cpu    = "${each.value.cpu_millicores}m"
                 memory = "${each.value.memory_mb}Mi"
               }
               limits = {
                 memory = "${each.value.memory_mb}Mi"
+                // we do need to limit cpu so as not to disrupt development with bursty workloads
+                cpu = "${each.value.cpu_millicores * 2}m"
               }
             }
             volumeMounts = [{
-              name = "work"
+              name      = "work"
               mountPath = "/home/runner/_work"
             }]
           }]
           volumes = [{
             name = "work"
             emptyDir = {
-              sizeLimit =  "${each.value.tmp_space_gb}Gi"
+              sizeLimit = "${each.value.tmp_space_gb}Gi"
             }
           }]
         }
@@ -279,7 +281,7 @@ resource "helm_release" "runner" {
 
       controllerServiceAccount = {
         namespace = var.arc_controller_service_account_namespace
-        name = var.arc_controller_service_account_name
+        name      = var.arc_controller_service_account_name
       }
     })
 

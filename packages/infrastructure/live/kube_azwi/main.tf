@@ -13,7 +13,7 @@ terraform {
 
 locals {
 
-  name = "azure-workload-identity-system"
+  name      = "azure-workload-identity-system"
   namespace = module.namespace.namespace
 
   labels = merge(var.kube_labels, {
@@ -33,12 +33,12 @@ module "constants" {
 ***************************************/
 
 module "namespace" {
-  source = "../../modules/kube_namespace"
-  namespace = local.name
-  admin_groups = ["system:admins"]
-  reader_groups = ["system:readers"]
+  source            = "../../modules/kube_namespace"
+  namespace         = local.name
+  admin_groups      = ["system:admins"]
+  reader_groups     = ["system:readers"]
   bot_reader_groups = ["system:bot-readers"]
-  kube_labels = local.labels
+  kube_labels       = local.labels
 }
 
 /***************************************
@@ -61,7 +61,7 @@ resource "helm_release" "azwi" {
       azureTenantID = var.azuread_tenant_id
 
       replicaCount = 2
-      tolerations = module.constants.spot_node_toleration_helm
+      tolerations  = module.constants.spot_node_toleration_helm
 
       affinity = module.constants.pod_anti_affinity_helm
     })
@@ -69,20 +69,20 @@ resource "helm_release" "azwi" {
 }
 
 resource "kubernetes_manifest" "vpa_descheduler" {
-  count = var.vpa_enabled ? 1: 0
+  count = var.vpa_enabled ? 1 : 0
   manifest = {
     apiVersion = "autoscaling.k8s.io/v1"
-    kind  = "VerticalPodAutoscaler"
+    kind       = "VerticalPodAutoscaler"
     metadata = {
-      name = local.name
+      name      = local.name
       namespace = local.namespace
-      labels = local.labels
+      labels    = local.labels
     }
     spec = {
       targetRef = {
         apiVersion = "apps/v1"
-        kind = "Deployment"
-        name = "azure-wi-webhook-controller-manager"
+        kind       = "Deployment"
+        name       = "azure-wi-webhook-controller-manager"
       }
     }
   }

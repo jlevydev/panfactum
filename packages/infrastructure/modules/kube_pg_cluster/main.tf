@@ -13,11 +13,11 @@ terraform {
       version = "3.5.1"
     }
     time = {
-      source = "hashicorp/time"
+      source  = "hashicorp/time"
       version = "0.9.1"
     }
     vault = {
-      source = "hashicorp/vault"
+      source  = "hashicorp/vault"
       version = "3.19.0"
     }
   }
@@ -25,7 +25,7 @@ terraform {
 
 locals {
   cluster-label = "${var.pg_cluster_namespace}-${var.pg_cluster_name}"
-  pooler-label = "${local.cluster-label}-pooler-rw"
+  pooler-label  = "${local.cluster-label}-pooler-rw"
 }
 
 module "constants" {
@@ -38,22 +38,22 @@ module "constants" {
 
 resource "random_id" "bucket_name" {
   byte_length = 8
-  prefix = "${var.pg_cluster_name}-backups-"
+  prefix      = "${var.pg_cluster_name}-backups-"
 }
 
 module "s3_bucket" {
-  source = "../aws_s3_private_bucket"
-  bucket_name = random_id.bucket_name.hex
-  description = "Backups for the ${var.pg_cluster_name} cluster."
-  versioning_enabled = false
-  audit_log_enabled = true
+  source                          = "../aws_s3_private_bucket"
+  bucket_name                     = random_id.bucket_name.hex
+  description                     = "Backups for the ${var.pg_cluster_name} cluster."
+  versioning_enabled              = false
+  audit_log_enabled               = true
   intelligent_transitions_enabled = false // db operator takes care of garbage collection
-  force_destroy = !var.ha_enabled
+  force_destroy                   = !var.ha_enabled
 }
 
 data "aws_iam_policy_document" "s3_access" {
   statement {
-    effect = "Allow"
+    effect  = "Allow"
     actions = ["s3:*"]
     resources = [
       module.s3_bucket.bucket_arn,
@@ -63,12 +63,12 @@ data "aws_iam_policy_document" "s3_access" {
 }
 
 module "irsa" {
-  source = "../kube_sa_auth_aws"
-  eks_cluster_name = var.eks_cluster_name
-  service_account = var.pg_cluster_name
+  source                    = "../kube_sa_auth_aws"
+  eks_cluster_name          = var.eks_cluster_name
+  service_account           = var.pg_cluster_name
   service_account_namespace = var.pg_cluster_namespace
-  iam_policy_json = data.aws_iam_policy_document.s3_access.json
-  public_outbound_ips = var.public_outbound_ips
+  iam_policy_json           = data.aws_iam_policy_document.s3_access.json
+  public_outbound_ips       = var.public_outbound_ips
 
   // Due to a limitation in the cluster resource api, the cluster resource is the one that creates
   // the service account for us, so we let it to the annotations
@@ -80,15 +80,15 @@ module "irsa" {
 ***************************************/
 
 resource "random_id" "server_certs_secret" {
-  prefix = "pg-server-certs-"
+  prefix      = "pg-server-certs-"
   byte_length = 8
 }
 
 module "server_certs" {
-  source = "../kube_internal_cert"
+  source      = "../kube_internal_cert"
   secret_name = random_id.server_certs_secret.hex
-  namespace = var.pg_cluster_namespace
-  labels = var.kube_labels
+  namespace   = var.pg_cluster_namespace
+  labels      = var.kube_labels
   service_names = [
     var.pg_cluster_name,
     "${var.pg_cluster_name}-rw",
@@ -101,26 +101,26 @@ resource "kubernetes_labels" "server_certs" {
   api_version = "v1"
   kind        = "Secret"
   metadata {
-    name = random_id.server_certs_secret.hex
+    name      = random_id.server_certs_secret.hex
     namespace = var.pg_cluster_namespace
   }
-  labels      = {
-    "cnpg.io/reload": ""
+  labels = {
+    "cnpg.io/reload" : ""
   }
   depends_on = [module.server_certs]
 }
 
 resource "random_id" "client_certs_secret" {
-  prefix = "pg-client-certs-"
+  prefix      = "pg-client-certs-"
   byte_length = 8
 }
 
 module "client_certs" {
-  source = "../kube_internal_cert"
+  source      = "../kube_internal_cert"
   secret_name = random_id.client_certs_secret.hex
-  namespace = var.pg_cluster_namespace
-  labels = var.kube_labels
-  usages = ["client auth"]
+  namespace   = var.pg_cluster_namespace
+  labels      = var.kube_labels
+  usages      = ["client auth"]
   common_name = "streaming_replica"
 }
 
@@ -128,11 +128,11 @@ resource "kubernetes_labels" "client_certs" {
   api_version = "v1"
   kind        = "Secret"
   metadata {
-    name = random_id.client_certs_secret.hex
+    name      = random_id.client_certs_secret.hex
     namespace = var.pg_cluster_namespace
   }
-  labels      = {
-    "cnpg.io/reload": ""
+  labels = {
+    "cnpg.io/reload" : ""
   }
   depends_on = [module.client_certs]
 }
@@ -147,7 +147,7 @@ resource "time_rotating" "superuser_password_rotation" {
 }
 
 resource "random_password" "superuser_password" {
-  length = 64
+  length  = 64
   special = false
   keepers = {
     rotate = time_rotating.superuser_password_rotation.id
@@ -157,13 +157,13 @@ resource "random_password" "superuser_password" {
 resource "kubernetes_secret" "superuser" {
   type = "kubernetes.io/basic-auth"
   metadata {
-    name = "${var.pg_cluster_name}-superuser"
+    name      = "${var.pg_cluster_name}-superuser"
     namespace = var.pg_cluster_namespace
   }
 
   data = {
     password = random_password.superuser_password.result
-    pgpass = "${var.pg_cluster_name}-rw:5432:*:postgres:${random_password.superuser_password.result}"
+    pgpass   = "${var.pg_cluster_name}-rw:5432:*:postgres:${random_password.superuser_password.result}"
     username = "postgres"
   }
 }
@@ -172,11 +172,11 @@ resource "kubernetes_secret" "superuser" {
 resource "kubernetes_manifest" "postgres_cluster" {
   manifest = {
     apiVersion = "postgresql.cnpg.io/v1"
-    kind = "Cluster"
+    kind       = "Cluster"
     metadata = {
-      name = var.pg_cluster_name
+      name      = var.pg_cluster_name
       namespace = var.pg_cluster_namespace
-      labels = var.kube_labels
+      labels    = var.kube_labels
       annotations = {
         // We cannot disable native postgres encryption in this operator
         // so we will disable our service mesh overlay
@@ -184,8 +184,8 @@ resource "kubernetes_manifest" "postgres_cluster" {
       }
     }
     spec = {
-      imageName = "ghcr.io/cloudnative-pg/postgresql:${var.pg_version}"
-      instances = var.pg_instances
+      imageName             = "ghcr.io/cloudnative-pg/postgresql:${var.pg_version}"
+      instances             = var.pg_instances
       primaryUpdateStrategy = "unsupervised"
 
       superuserSecret = {
@@ -194,9 +194,9 @@ resource "kubernetes_manifest" "postgres_cluster" {
 
       certificates = {
         serverTLSSecret = random_id.server_certs_secret.hex
-        serverCASecret = random_id.server_certs_secret.hex
-#        clientCASecret = random_id.client_certs_secret.hex
-#        replicationTLSSecret = random_id.client_certs_secret.hex
+        serverCASecret  = random_id.server_certs_secret.hex
+        #        clientCASecret = random_id.client_certs_secret.hex
+        #        replicationTLSSecret = random_id.client_certs_secret.hex
       }
 
       inheritedMetadata = {
@@ -262,8 +262,8 @@ resource "kubernetes_manifest" "postgres_cluster" {
 
       // Try to spread the instances evenly across the availability zones
       topologySpreadConstraints = [{
-        maxSkew = 1
-        topologyKey = "topology.kubernetes.io/zone"
+        maxSkew           = 1
+        topologyKey       = "topology.kubernetes.io/zone"
         whenUnsatisfiable = var.ha_enabled ? "DoNotSchedule" : "ScheduleAnyway"
         labelSelector = {
           matchLabels = {
@@ -275,8 +275,8 @@ resource "kubernetes_manifest" "postgres_cluster" {
       affinity = {
         // Ensures that the postgres cluster instances are never scheduled on the same node
         enablePodAntiAffinity = true
-        topologyKey = "kubernetes.io/hostname"
-        podAntiAffinityType = var.ha_enabled ? "required" : "preferred"
+        topologyKey           = "kubernetes.io/hostname"
+        podAntiAffinityType   = var.ha_enabled ? "required" : "preferred"
       }
 
       storage = {
@@ -287,7 +287,7 @@ resource "kubernetes_manifest" "postgres_cluster" {
 
   wait {
     condition {
-      type = "Ready"
+      type   = "Ready"
       status = "True"
     }
   }
@@ -301,13 +301,13 @@ resource "kubernetes_manifest" "postgres_cluster" {
 resource "kubernetes_manifest" "scheduled_backup" {
   manifest = {
     apiVersion = "postgresql.cnpg.io/v1"
-    kind = "ScheduledBackup"
+    kind       = "ScheduledBackup"
     metadata = {
-      name = "${var.pg_cluster_name}-weekly"
+      name      = "${var.pg_cluster_name}-weekly"
       namespace = var.pg_cluster_namespace
     }
     spec = {
-      schedule = "0 3 * * 1" // 3AM on sundays
+      schedule             = "0 3 * * 1" // 3AM on sundays
       backupOwnerReference = "cluster"
       cluster = {
         name = var.pg_cluster_name
@@ -351,9 +351,9 @@ resource "kubernetes_manifest" "scheduled_backup" {
 // See https://stackoverflow.com/questions/57087519/row-is-too-big-maximum-size-8160-when-running-grant-connect-on-database
 
 resource "vault_database_secret_backend_role" "read_only" {
-  backend             = "db"
-  name                = "reader-${var.pg_cluster_namespace}-${var.pg_cluster_name}"
-  db_name             = vault_database_secret_backend_connection.postgres.name
+  backend = "db"
+  name    = "reader-${var.pg_cluster_namespace}-${var.pg_cluster_name}"
+  db_name = vault_database_secret_backend_connection.postgres.name
   creation_statements = [
     // We have to re-run the generic grant commands
     // on every login to make sure we have picked up new objects
@@ -379,13 +379,13 @@ resource "vault_database_secret_backend_role" "read_only" {
     "DROP ROLE IF EXISTS \"{{name}}\""
   ]
   default_ttl = 60 * 60 * 24
-  max_ttl = 60 * 60 * 24
+  max_ttl     = 60 * 60 * 24
 }
 
 resource "vault_database_secret_backend_role" "writer" {
-  backend             = "db"
-  name                = "writer-${var.pg_cluster_namespace}-${var.pg_cluster_name}"
-  db_name             = vault_database_secret_backend_connection.postgres.name
+  backend = "db"
+  name    = "writer-${var.pg_cluster_namespace}-${var.pg_cluster_name}"
+  db_name = vault_database_secret_backend_connection.postgres.name
   creation_statements = [
     // We have to re-run the generic grant commands
     // on every login to make sure we have picked up new objects
@@ -420,13 +420,13 @@ resource "vault_database_secret_backend_role" "writer" {
     "DROP ROLE IF EXISTS \"{{name}}\""
   ]
   default_ttl = 60 * 60 * 24
-  max_ttl = 60 * 60 * 24
+  max_ttl     = 60 * 60 * 24
 }
 
 resource "vault_database_secret_backend_role" "admin" {
-  backend             = "db"
-  name                = "admin-${var.pg_cluster_namespace}-${var.pg_cluster_name}"
-  db_name             = vault_database_secret_backend_connection.postgres.name
+  backend = "db"
+  name    = "admin-${var.pg_cluster_namespace}-${var.pg_cluster_name}"
+  db_name = vault_database_secret_backend_connection.postgres.name
   creation_statements = [
     "CREATE ROLE \"{{name}}\" SUPERUSER LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}';",
 
@@ -454,12 +454,12 @@ resource "vault_database_secret_backend_role" "admin" {
 
   // Limit admin creds to only an hour
   default_ttl = 60 * 60
-  max_ttl = 60 * 60
+  max_ttl     = 60 * 60
 }
 
 resource "vault_database_secret_backend_connection" "postgres" {
-  backend       = "db"
-  name          = "${var.pg_cluster_namespace}-${var.pg_cluster_name}"
+  backend = "db"
+  name    = "${var.pg_cluster_namespace}-${var.pg_cluster_name}"
   allowed_roles = [
     "reader-${var.pg_cluster_namespace}-${var.pg_cluster_name}",
     "writer-${var.pg_cluster_namespace}-${var.pg_cluster_name}",

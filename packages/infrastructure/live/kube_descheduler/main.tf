@@ -13,7 +13,7 @@ terraform {
 
 locals {
 
-  name = "descheduler"
+  name      = "descheduler"
   namespace = module.namespace.namespace
 
   labels = merge(var.kube_labels, {
@@ -30,12 +30,12 @@ module "constants" {
 ***************************************/
 
 module "namespace" {
-  source = "../../modules/kube_namespace"
-  namespace = local.name
-  admin_groups = ["system:admins"]
-  reader_groups = ["system:readers"]
+  source            = "../../modules/kube_namespace"
+  namespace         = local.name
+  admin_groups      = ["system:admins"]
+  reader_groups     = ["system:readers"]
   bot_reader_groups = ["system:bot-readers"]
-  kube_labels = local.labels
+  kube_labels       = local.labels
 }
 
 /***************************************
@@ -62,19 +62,19 @@ resource "helm_release" "descheduler" {
       image = {
         tag = var.descheduler_version
       }
-      commonLabels = local.labels
+      commonLabels         = local.labels
       deschedulingInterval = "30m"
 
       // Does not need to run in high availability mode
-      replicas = 1
+      replicas    = 1
       tolerations = module.constants.spot_node_toleration_helm
-      affinity = module.constants.spot_node_affinity_helm
+      affinity    = module.constants.spot_node_affinity_helm
 
       deschedulerPolicy = {
-        maxNoOfPodsToEvictPerNode = 10
+        maxNoOfPodsToEvictPerNode      = 10
         maxNoOfPodsToEvictPerNamespace = 10
-        ignorePvcPods = true
-        evictLocalStoragePods = true
+        ignorePvcPods                  = true
+        evictLocalStoragePods          = true
         strategies = {
           RemovePodsViolatingInterPodAntiAffinity = {
             enabled = true
@@ -100,7 +100,7 @@ resource "helm_release" "descheduler" {
             enabled = true
             params = {
               podsHavingTooManyRestarts = {
-                podRestartThreshold = 5
+                podRestartThreshold     = 5
                 includingInitContainers = true
               }
             }
@@ -124,28 +124,28 @@ resource "helm_release" "descheduler" {
       }
       livenessProbe = {
         initialDelaySeconds = 20
-        periodSeconds = 10
-        failureThreshold = 3
+        periodSeconds       = 10
+        failureThreshold    = 3
       }
     })
   ]
 }
 
 resource "kubernetes_manifest" "vpa_descheduler" {
-  count = var.vpa_enabled ? 1: 0
+  count = var.vpa_enabled ? 1 : 0
   manifest = {
     apiVersion = "autoscaling.k8s.io/v1"
-    kind  = "VerticalPodAutoscaler"
+    kind       = "VerticalPodAutoscaler"
     metadata = {
-      name = local.name
+      name      = local.name
       namespace = local.namespace
-      labels = var.kube_labels
+      labels    = var.kube_labels
     }
     spec = {
       targetRef = {
         apiVersion = "apps/v1"
-        kind = "Deployment"
-        name = local.name
+        kind       = "Deployment"
+        name       = local.name
       }
     }
   }
@@ -156,10 +156,10 @@ resource "kubernetes_manifest" "vpa_descheduler" {
 ***************************************/
 
 resource "helm_release" "proportional" {
-  namespace       = local.namespace
-  name            = "descheduler-proportional-autoscaler"
-  repository      = "https://kubernetes-sigs.github.io/cluster-proportional-autoscaler/"
-  chart           = "cluster-proportional-autoscaler"
+  namespace  = local.namespace
+  name       = "descheduler-proportional-autoscaler"
+  repository = "https://kubernetes-sigs.github.io/cluster-proportional-autoscaler/"
+  chart      = "cluster-proportional-autoscaler"
   // version = ? no version listed on website
   recreate_pods   = true
   cleanup_on_fail = true
@@ -169,9 +169,9 @@ resource "helm_release" "proportional" {
   values = [
     yamlencode({
       // Does not need to run in high availability mode
-      replicas = 1
+      replicas    = 1
       tolerations = module.constants.spot_node_toleration_helm
-      affinity = module.constants.spot_node_affinity_helm
+      affinity    = module.constants.spot_node_affinity_helm
 
       fullnameOverride = "descheduler-autoscaler"
 
@@ -185,7 +185,7 @@ resource "helm_release" "proportional" {
       }
       options = {
         namespace = local.namespace
-        target = "deployment/descheduler"
+        target    = "deployment/descheduler"
       }
 
       priorityClassName = "system-cluster-critical"
@@ -198,20 +198,20 @@ resource "helm_release" "proportional" {
 }
 
 resource "kubernetes_manifest" "vpa_descheduler_autoscaler" {
-  count = var.vpa_enabled ? 1: 0
+  count = var.vpa_enabled ? 1 : 0
   manifest = {
     apiVersion = "autoscaling.k8s.io/v1"
-    kind  = "VerticalPodAutoscaler"
+    kind       = "VerticalPodAutoscaler"
     metadata = {
-      name = "descheduler-autoscaler"
+      name      = "descheduler-autoscaler"
       namespace = local.namespace
-      labels = var.kube_labels
+      labels    = var.kube_labels
     }
     spec = {
       targetRef = {
         apiVersion = "apps/v1"
-        kind = "Deployment"
-        name = "descheduler-autoscaler"
+        kind       = "Deployment"
+        name       = "descheduler-autoscaler"
       }
     }
   }

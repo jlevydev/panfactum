@@ -12,31 +12,31 @@ terraform {
 ###########################################################################
 
 resource "azuread_group" "role_groups" {
-  for_each = var.role_group_config
-  display_name = "rbac_${each.key}"
-  description = each.value.description
-  security_enabled = true
+  for_each                = var.role_group_config
+  display_name            = "rbac_${each.key}"
+  description             = each.value.description
+  security_enabled        = true
   prevent_duplicate_names = true
-  visibility = "Private"
-  assignable_to_role = true
+  visibility              = "Private"
+  assignable_to_role      = true
   lifecycle {
     ignore_changes = [members]
   }
 }
 
 resource "azuread_group" "dynamic_groups" {
-  for_each = var.dynamic_group_config
-  display_name = each.key
-  description = each.value.description
-  security_enabled = true
-  mail_enabled = each.value.mail_nickname != null
-  mail_nickname = each.value.mail_nickname
+  for_each                = var.dynamic_group_config
+  display_name            = each.key
+  description             = each.value.description
+  security_enabled        = true
+  mail_enabled            = each.value.mail_nickname != null
+  mail_nickname           = each.value.mail_nickname
   prevent_duplicate_names = true
-  types = concat(["DynamicMembership"], each.value.mail_nickname == null ? [] : ["Unified"])
-  visibility = "Private"
+  types                   = concat(["DynamicMembership"], each.value.mail_nickname == null ? [] : ["Unified"])
+  visibility              = "Private"
   dynamic_membership {
     enabled = true
-    rule    = "user.memberof -any (group.objectId -in [${join(", ", [for group in each.value.role_groups: "'${azuread_group.role_groups[group].object_id}'"])}])"
+    rule    = "user.memberof -any (group.objectId -in [${join(", ", [for group in each.value.role_groups : "'${azuread_group.role_groups[group].object_id}'"])}])"
   }
   depends_on = [azuread_group.role_groups]
 }
@@ -71,7 +71,7 @@ resource "azuread_directory_role" "conditional_access_admin" {
 }
 
 resource "azuread_directory_role_assignment" "ci_group_admins" {
-  for_each = {for group, config in var.ci_group_config: group => config if config.global_admin}
+  for_each            = { for group, config in var.ci_group_config : group => config if config.global_admin }
   role_id             = azuread_directory_role.admin.template_id
   principal_object_id = azuread_group.ci_group_config[each.key].object_id
 }

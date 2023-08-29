@@ -8,8 +8,8 @@ variable "role_group_config" {
 variable "dynamic_group_config" {
   description = "Users are assigned to these groups based on their role in the organization."
   type = map(object({
-    description = string
-    role_groups = list(string)
+    description   = string
+    role_groups   = list(string)
     mail_nickname = optional(string)
   }))
 }

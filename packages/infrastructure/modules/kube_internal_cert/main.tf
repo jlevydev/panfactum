@@ -10,15 +10,15 @@ terraform {
 resource "kubernetes_manifest" "webhook_cert" {
   manifest = {
     apiVersion = "cert-manager.io/v1"
-    kind = "Certificate"
+    kind       = "Certificate"
     metadata = {
-      name = var.secret_name
+      name      = var.secret_name
       namespace = var.namespace
     }
     spec = {
       secretName = var.secret_name
       commonName = var.common_name
-      dnsNames = length(var.service_names) == 0 ? ["default"] : flatten([for service in var.service_names: [
+      dnsNames = length(var.service_names) == 0 ? ["default"] : flatten([for service in var.service_names : [
         service,
         "${service}.${var.namespace}",
         "${service}.${var.namespace}.svc",
@@ -35,18 +35,18 @@ resource "kubernetes_manifest" "webhook_cert" {
 
       // rotate every 8 hours with a 16 hour buffer period in case something goes
       // wrong
-      duration = "24h0m0s"
+      duration    = "24h0m0s"
       renewBefore = "16h0m0s"
 
       privateKey = {
-        algorithm = "ECDSA"
-        size = 256
+        algorithm      = "ECDSA"
+        size           = 256
         rotationPolicy = "Always"
       }
 
       issuerRef = {
-        name = "internal"
-        kind = "ClusterIssuer"
+        name  = "internal"
+        kind  = "ClusterIssuer"
         group = "cert-manager.io"
       }
     }
@@ -54,7 +54,7 @@ resource "kubernetes_manifest" "webhook_cert" {
 
   wait {
     condition {
-      type = "Ready"
+      type   = "Ready"
       status = "True"
     }
   }

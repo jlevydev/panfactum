@@ -52,8 +52,8 @@ data "aws_caller_identity" "id" {}
 
 data "aws_iam_policy_document" "state" {
   statement {
-    sid = "EnforcedTLS"
-    effect = "Deny"
+    sid     = "EnforcedTLS"
+    effect  = "Deny"
     actions = ["s3:*"]
     principals {
       identifiers = ["*"]
@@ -70,8 +70,8 @@ data "aws_iam_policy_document" "state" {
     }
   }
   statement {
-    sid = "RootAccess"
-    effect = "Allow"
+    sid     = "RootAccess"
+    effect  = "Allow"
     actions = ["s3:*"]
     principals {
       identifiers = ["arn:aws:iam::${data.aws_caller_identity.id.account_id}:root"]
@@ -143,7 +143,7 @@ resource "aws_dynamodb_table" "lock" {
   replica {
     region_name = var.aws_secondary_region
   }
-  
+
   // Table class immediately drifted on 3/4 tables and would be reapplied every time
   // Ignoring lifecycle changes since we won't be changing table class for these
   lifecycle {

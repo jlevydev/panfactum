@@ -7,6 +7,6 @@ output "application_object_id" {
 }
 
 output "client_secret" {
-  value = azuread_application_password.oidc.value
+  value     = azuread_application_password.oidc.value
   sensitive = true
 }

@@ -13,7 +13,7 @@ terraform {
 
 locals {
 
-  name = "linkerd"
+  name      = "linkerd"
   namespace = module.namespace.namespace
 
   environment = var.environment
@@ -24,14 +24,14 @@ locals {
     service = local.name
   })
 
-  linkerd_vault_issuer = "linkerd-vault-issuer"
-  linkerd_root_ca_secret = "linkerd-identity-trust-roots" # MUST be named this
-  linkerd_root_issuer = "linkerd-root-issuer"
-  linkerd_identity_issuer = "linkerd-identity-issuer"
-  linkerd_identity_ca_secret = "linkerd-identity-issuer"
-  linkerd_policy_validator_webhook_secret = "linkerd-policy-validator-k8s-tls" # MUST be named this
-  linkerd_proxy_injector_webhook_secret = "linkerd-proxy-injector-k8s-tls" # MUST be named this
-  linkerd_profile_validator_webhook_secret = "linkerd-sp-validator-k8s-tls" # MUST be named this
+  linkerd_vault_issuer                     = "linkerd-vault-issuer"
+  linkerd_root_ca_secret                   = "linkerd-identity-trust-roots" # MUST be named this
+  linkerd_root_issuer                      = "linkerd-root-issuer"
+  linkerd_identity_issuer                  = "linkerd-identity-issuer"
+  linkerd_identity_ca_secret               = "linkerd-identity-issuer"
+  linkerd_policy_validator_webhook_secret  = "linkerd-policy-validator-k8s-tls" # MUST be named this
+  linkerd_proxy_injector_webhook_secret    = "linkerd-proxy-injector-k8s-tls"   # MUST be named this
+  linkerd_profile_validator_webhook_secret = "linkerd-sp-validator-k8s-tls"     # MUST be named this
 
   linkerd_submodule = "linkerd"
   linkerd_labels = merge(local.labels, {
@@ -53,12 +53,12 @@ module "constants" {
 ***************************************/
 
 module "namespace" {
-  source = "../../modules/kube_namespace"
-  namespace = local.name
-  admin_groups = ["system:admins"]
-  reader_groups = ["system:readers"]
+  source            = "../../modules/kube_namespace"
+  namespace         = local.name
+  admin_groups      = ["system:admins"]
+  reader_groups     = ["system:readers"]
   bot_reader_groups = ["system:bot-readers"]
-  kube_labels = local.labels
+  kube_labels       = local.labels
 }
 
 /***************************************
@@ -78,32 +78,32 @@ module "namespace" {
 
 resource "kubernetes_service_account" "linkerd_vault_issuer" {
   metadata {
-    name = local.linkerd_vault_issuer
+    name      = local.linkerd_vault_issuer
     namespace = var.cert_manager_namespace
   }
 }
 
 resource "kubernetes_role" "linkerd_vault_issuer" {
   metadata {
-    name = local.linkerd_vault_issuer
+    name      = local.linkerd_vault_issuer
     namespace = var.cert_manager_namespace
   }
   rule {
-    verbs = ["create"]
-    resources = ["serviceaccounts/token"]
+    verbs          = ["create"]
+    resources      = ["serviceaccounts/token"]
     resource_names = [kubernetes_service_account.linkerd_vault_issuer.metadata[0].name]
-    api_groups = [""]
+    api_groups     = [""]
   }
 }
 
 resource "kubernetes_role_binding" "linkerd_vault_issuer" {
   metadata {
-    name = local.linkerd_vault_issuer
+    name      = local.linkerd_vault_issuer
     namespace = var.cert_manager_namespace
   }
   subject {
-    kind = "ServiceAccount"
-    name = "cert-manager"
+    kind      = "ServiceAccount"
+    name      = "cert-manager"
     namespace = var.cert_manager_namespace
   }
   role_ref {
@@ -113,7 +113,7 @@ resource "kubernetes_role_binding" "linkerd_vault_issuer" {
   }
 }
 
-data vault_policy_document "linkerd_vault_issuer" {
+data "vault_policy_document" "linkerd_vault_issuer" {
   rule {
     capabilities = ["create", "read", "update"]
     path         = "${var.vault_internal_pki_path}/root/sign-intermediate"
@@ -128,28 +128,28 @@ resource "vault_policy" "linkerd_vault_issuer" {
 resource "vault_kubernetes_auth_backend_role" "linkerd_vault_issuer" {
   bound_service_account_names      = [kubernetes_service_account.linkerd_vault_issuer.metadata[0].name]
   bound_service_account_namespaces = [kubernetes_service_account.linkerd_vault_issuer.metadata[0].namespace]
-  audience = "vault://${var.cert_manager_namespace}/${local.linkerd_vault_issuer}"
+  audience                         = "vault://${var.cert_manager_namespace}/${local.linkerd_vault_issuer}"
   role_name                        = local.linkerd_vault_issuer
-  token_ttl = 60
-  token_policies = [vault_policy.linkerd_vault_issuer.name]
+  token_ttl                        = 60
+  token_policies                   = [vault_policy.linkerd_vault_issuer.name]
 }
 
 resource "kubernetes_manifest" "linkerd_vault_issuer" {
   manifest = {
     apiVersion = "cert-manager.io/v1"
-    kind = "Issuer"
+    kind       = "Issuer"
     metadata = {
-      name = local.linkerd_vault_issuer
-      labels = local.labels
+      name      = local.linkerd_vault_issuer
+      labels    = local.labels
       namespace = var.cert_manager_namespace
     }
     spec = {
       vault = {
-        path = "${var.vault_internal_pki_path}/root/sign-intermediate"
+        path   = "${var.vault_internal_pki_path}/root/sign-intermediate"
         server = var.vault_internal_url
         auth = {
           kubernetes = {
-            role = vault_kubernetes_auth_backend_role.linkerd_vault_issuer.role_name
+            role      = vault_kubernetes_auth_backend_role.linkerd_vault_issuer.role_name
             mountPath = "/v1/auth/kubernetes"
             serviceAccountRef = {
               name = kubernetes_service_account.linkerd_vault_issuer.metadata[0].name
@@ -164,9 +164,9 @@ resource "kubernetes_manifest" "linkerd_vault_issuer" {
 resource "kubernetes_manifest" "linkerd_root_issuer_cert" {
   manifest = {
     apiVersion = "cert-manager.io/v1"
-    kind = "Certificate"
+    kind       = "Certificate"
     metadata = {
-      name = local.linkerd_root_issuer
+      name      = local.linkerd_root_issuer
       namespace = var.cert_manager_namespace
     }
     spec = {
@@ -176,13 +176,13 @@ resource "kubernetes_manifest" "linkerd_root_issuer_cert" {
         kind = "Issuer"
       }
       commonName = "root.linkerd.cluster.local"
-      isCA = true
+      isCA       = true
 
       // This MUST be configured this way
       // or linkerd will silently error!
       privateKey = {
         algorithm = "ECDSA"
-        size = 256
+        size      = 256
 
         // Don't rotate the private key automatically
         // as this needs to be done manually
@@ -199,7 +199,7 @@ resource "kubernetes_manifest" "linkerd_root_issuer_cert" {
   }
   wait {
     condition {
-      type = "Ready"
+      type   = "Ready"
       status = "True"
     }
   }
@@ -210,7 +210,7 @@ resource "kubernetes_manifest" "linkerd_root_issuer" {
   manifest = {
     apiVersion = "cert-manager.io/v1"
     kind       = "ClusterIssuer"
-    metadata   = {
+    metadata = {
       name   = local.linkerd_root_issuer
       labels = local.labels
     }
@@ -234,9 +234,9 @@ resource "kubernetes_manifest" "linkerd_root_issuer" {
 resource "kubernetes_manifest" "linkerd_identity_issuer" {
   manifest = {
     apiVersion = "cert-manager.io/v1"
-    kind = "Certificate"
+    kind       = "Certificate"
     metadata = {
-      name = local.linkerd_identity_issuer
+      name      = local.linkerd_identity_issuer
       namespace = local.namespace
     }
     spec = {
@@ -246,17 +246,17 @@ resource "kubernetes_manifest" "linkerd_identity_issuer" {
         kind = "ClusterIssuer"
       }
       commonName = "identity.linkerd.cluster.local"
-      isCA = true
+      isCA       = true
 
       // This MUST be configured this way
       // or linkerd will silently error!
       privateKey = {
-        algorithm = "ECDSA"
-        size = 256
+        algorithm      = "ECDSA"
+        size           = 256
         rotationPolicy = "Always"
       }
 
-      duration = "48h0m0s"
+      duration    = "48h0m0s"
       renewBefore = "25h0m0s"
 
       usages = [
@@ -269,7 +269,7 @@ resource "kubernetes_manifest" "linkerd_identity_issuer" {
   }
   wait {
     condition {
-      type = "Ready"
+      type   = "Ready"
       status = "True"
     }
   }
@@ -286,7 +286,7 @@ resource "kubernetes_manifest" "linkerd_identity_issuer" {
 resource "kubernetes_manifest" "linkerd_bundle" {
   manifest = {
     apiVersion = "trust.cert-manager.io/v1alpha1"
-    kind = "Bundle"
+    kind       = "Bundle"
     metadata = {
       name = local.linkerd_root_ca_secret
     }
@@ -294,7 +294,7 @@ resource "kubernetes_manifest" "linkerd_bundle" {
       sources = [{
         secret = {
           name = local.linkerd_root_ca_secret
-          key = "tls.crt"
+          key  = "tls.crt"
         }
       }]
       target = {
@@ -318,9 +318,9 @@ resource "kubernetes_manifest" "linkerd_bundle" {
 resource "kubernetes_manifest" "linkerd_policy_validator" {
   manifest = {
     apiVersion = "cert-manager.io/v1"
-    kind = "Certificate"
+    kind       = "Certificate"
     metadata = {
-      name = local.linkerd_policy_validator_webhook_secret
+      name      = local.linkerd_policy_validator_webhook_secret
       namespace = local.namespace
     }
     spec = {
@@ -330,16 +330,16 @@ resource "kubernetes_manifest" "linkerd_policy_validator" {
         kind = "ClusterIssuer"
       }
       commonName = "linkerd-policy-validator.linkerd.svc"
-      dnsNames = ["linkerd-policy-validator.linkerd.svc"]
+      dnsNames   = ["linkerd-policy-validator.linkerd.svc"]
 
       privateKey = {
-        algorithm = "ECDSA"
-        size = 256
-        encoding = "PKCS8"
+        algorithm      = "ECDSA"
+        size           = 256
+        encoding       = "PKCS8"
         rotationPolicy = "Always"
       }
 
-      duration = "24h0m0s"
+      duration    = "24h0m0s"
       renewBefore = "16h0m0s"
 
       usages = [
@@ -349,7 +349,7 @@ resource "kubernetes_manifest" "linkerd_policy_validator" {
   }
   wait {
     condition {
-      type = "Ready"
+      type   = "Ready"
       status = "True"
     }
   }
@@ -359,9 +359,9 @@ resource "kubernetes_manifest" "linkerd_policy_validator" {
 resource "kubernetes_manifest" "linkerd_proxy_injector" {
   manifest = {
     apiVersion = "cert-manager.io/v1"
-    kind = "Certificate"
+    kind       = "Certificate"
     metadata = {
-      name = local.linkerd_proxy_injector_webhook_secret
+      name      = local.linkerd_proxy_injector_webhook_secret
       namespace = local.namespace
     }
     spec = {
@@ -371,15 +371,15 @@ resource "kubernetes_manifest" "linkerd_proxy_injector" {
         kind = "ClusterIssuer"
       }
       commonName = "linkerd-proxy-injector.linkerd.svc"
-      dnsNames = ["linkerd-proxy-injector.linkerd.svc"]
+      dnsNames   = ["linkerd-proxy-injector.linkerd.svc"]
 
       privateKey = {
-        algorithm = "ECDSA"
-        size = 256
+        algorithm      = "ECDSA"
+        size           = 256
         rotationPolicy = "Always"
       }
 
-      duration = "24h0m0s"
+      duration    = "24h0m0s"
       renewBefore = "16h0m0s"
 
       usages = [
@@ -389,7 +389,7 @@ resource "kubernetes_manifest" "linkerd_proxy_injector" {
   }
   wait {
     condition {
-      type = "Ready"
+      type   = "Ready"
       status = "True"
     }
   }
@@ -400,9 +400,9 @@ resource "kubernetes_manifest" "linkerd_proxy_injector" {
 resource "kubernetes_manifest" "linkerd_profile_validator" {
   manifest = {
     apiVersion = "cert-manager.io/v1"
-    kind = "Certificate"
+    kind       = "Certificate"
     metadata = {
-      name = local.linkerd_profile_validator_webhook_secret
+      name      = local.linkerd_profile_validator_webhook_secret
       namespace = local.namespace
     }
     spec = {
@@ -412,15 +412,15 @@ resource "kubernetes_manifest" "linkerd_profile_validator" {
         kind = "ClusterIssuer"
       }
       commonName = "linkerd-sp-validator.linkerd.svc"
-      dnsNames = ["linkerd-sp-validator.linkerd.svc"]
+      dnsNames   = ["linkerd-sp-validator.linkerd.svc"]
 
       privateKey = {
-        algorithm = "ECDSA"
-        size = 256
+        algorithm      = "ECDSA"
+        size           = 256
         rotationPolicy = "Always"
       }
 
-      duration = "24h0m0s"
+      duration    = "24h0m0s"
       renewBefore = "16h0m0s"
 
       usages = [
@@ -430,7 +430,7 @@ resource "kubernetes_manifest" "linkerd_profile_validator" {
   }
   wait {
     condition {
-      type = "Ready"
+      type   = "Ready"
       status = "True"
     }
   }
@@ -443,7 +443,7 @@ resource "kubernetes_manifest" "linkerd_profile_validator" {
 * Linkerd
 ***************************************/
 
-resource helm_release "linkerd_crds" {
+resource "helm_release" "linkerd_crds" {
   namespace       = local.namespace
   name            = "linkerd-crds"
   repository      = "https://helm.linkerd.io/stable"
@@ -455,7 +455,7 @@ resource helm_release "linkerd_crds" {
   wait_for_jobs   = true
 }
 
-resource helm_release "linkerd" {
+resource "helm_release" "linkerd" {
   namespace       = local.namespace
   name            = "linkerd-control-plane"
   repository      = "https://helm.linkerd.io/stable"
@@ -488,27 +488,27 @@ resource helm_release "linkerd" {
 
       policyValidator = {
         externalSecret = true
-        injectCaFrom = "${local.namespace}/${local.linkerd_policy_validator_webhook_secret}"
+        injectCaFrom   = "${local.namespace}/${local.linkerd_policy_validator_webhook_secret}"
       }
 
       profileValidator = {
         externalSecret = true
-        injectCaFrom = "${local.namespace}/${local.linkerd_profile_validator_webhook_secret}"
+        injectCaFrom   = "${local.namespace}/${local.linkerd_profile_validator_webhook_secret}"
       }
 
       proxyInjector = {
 
         externalSecret = true
-        injectCaFrom = "${local.namespace}/${local.linkerd_proxy_injector_webhook_secret}"
+        injectCaFrom   = "${local.namespace}/${local.linkerd_proxy_injector_webhook_secret}"
 
         // We have to manually put this in here
         // b/c for some reason the default helm chart values disallow the sidecar proxy
         // for cert-manager
         namespaceSelector = {
           matchExpressions = [{
-            key = "config.linkerd.io/admission-webhooks"
+            key      = "config.linkerd.io/admission-webhooks"
             operator = "NotIn"
-            values = ["disabled"]
+            values   = ["disabled"]
           }]
         }
       }
@@ -528,7 +528,7 @@ resource helm_release "linkerd" {
           }
           memory = {
             request = "10Mi"
-            limit = "10Mi"
+            limit   = "10Mi"
           }
         }
       }
@@ -547,60 +547,60 @@ resource helm_release "linkerd" {
 }
 
 resource "kubernetes_manifest" "vpa_identity" {
-  count = var.vpa_enabled ? 1: 0
+  count = var.vpa_enabled ? 1 : 0
   manifest = {
     apiVersion = "autoscaling.k8s.io/v1"
-    kind  = "VerticalPodAutoscaler"
+    kind       = "VerticalPodAutoscaler"
     metadata = {
-      name = "linkerd-identity"
+      name      = "linkerd-identity"
       namespace = local.namespace
-      labels = local.labels
+      labels    = local.labels
     }
     spec = {
       targetRef = {
         apiVersion = "apps/v1"
-        kind = "Deployment"
-        name = "linkerd-identity"
+        kind       = "Deployment"
+        name       = "linkerd-identity"
       }
     }
   }
 }
 
 resource "kubernetes_manifest" "vpa_destination" {
-  count = var.vpa_enabled ? 1: 0
+  count = var.vpa_enabled ? 1 : 0
   manifest = {
     apiVersion = "autoscaling.k8s.io/v1"
-    kind  = "VerticalPodAutoscaler"
+    kind       = "VerticalPodAutoscaler"
     metadata = {
-      name = "linkerd-destination"
+      name      = "linkerd-destination"
       namespace = local.namespace
-      labels = local.labels
+      labels    = local.labels
     }
     spec = {
       targetRef = {
         apiVersion = "apps/v1"
-        kind = "Deployment"
-        name = "linkerd-destination"
+        kind       = "Deployment"
+        name       = "linkerd-destination"
       }
     }
   }
 }
 
 resource "kubernetes_manifest" "vpa_proxy_injectory" {
-  count = var.vpa_enabled ? 1: 0
+  count = var.vpa_enabled ? 1 : 0
   manifest = {
     apiVersion = "autoscaling.k8s.io/v1"
-    kind  = "VerticalPodAutoscaler"
+    kind       = "VerticalPodAutoscaler"
     metadata = {
-      name = "linkerd-proxy-injector"
+      name      = "linkerd-proxy-injector"
       namespace = local.namespace
-      labels = local.labels
+      labels    = local.labels
     }
     spec = {
       targetRef = {
         apiVersion = "apps/v1"
-        kind = "Deployment"
-        name = "linkerd-proxy-injector"
+        kind       = "Deployment"
+        name       = "linkerd-proxy-injector"
       }
     }
   }

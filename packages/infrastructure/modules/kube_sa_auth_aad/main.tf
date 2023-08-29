@@ -5,7 +5,7 @@ terraform {
       version = "5.10"
     }
     azuread = {
-      source = "hashicorp/azuread"
+      source  = "hashicorp/azuread"
       version = "2.41.0"
     }
     kubernetes = {
@@ -16,8 +16,8 @@ terraform {
 }
 
 locals {
-  name = "${var.eks_cluster_name}-${var.service_account_namespace}-${var.service_account}"
-  description = "Permissions for the ${var.service_account} service account in the ${var.service_account_namespace} namespace in the ${var.eks_cluster_name} cluster"
+  name               = "${var.eks_cluster_name}-${var.service_account_namespace}-${var.service_account}"
+  description        = "Permissions for the ${var.service_account} service account in the ${var.service_account_namespace} namespace in the ${var.eks_cluster_name} cluster"
   kube_oidc_provider = data.aws_eks_cluster.cluster.identity[0].oidc[0].issuer
 }
 
@@ -34,8 +34,8 @@ data "aws_eks_cluster" "cluster" {
 
 resource "azuread_application" "main" {
   display_name = "${var.eks_cluster_name}-${var.service_account_namespace}-${var.service_account}"
-  description = local.description
-  owners = var.aad_sp_object_owners
+  description  = local.description
+  owners       = var.aad_sp_object_owners
 }
 
 resource "azuread_application_federated_identity_credential" "main" {
@@ -54,7 +54,7 @@ resource "azuread_application_federated_identity_credential" "main" {
 resource "azuread_service_principal" "main" {
   application_id               = azuread_application.main.application_id
   app_role_assignment_required = false
-  owners = var.aad_sp_object_owners
+  owners                       = var.aad_sp_object_owners
 }
 
 # ################################################################################
@@ -64,7 +64,7 @@ resource "azuread_service_principal" "main" {
 resource "azuread_named_location" "main" {
   display_name = "${var.eks_cluster_name}-${var.service_account_namespace}-${local.name}"
   ip {
-    ip_ranges = [for ip in var.public_outbound_ips: "${ip}/32"]
+    ip_ranges = [for ip in var.public_outbound_ips : "${ip}/32"]
   }
 }
 
@@ -98,7 +98,7 @@ resource "azuread_conditional_access_policy" "main" {
 # ################################################################################
 
 resource "kubernetes_annotations" "service_account" {
-  count = var.annotate_service_account ? 1 : 0
+  count       = var.annotate_service_account ? 1 : 0
   api_version = "v1"
   kind        = "ServiceAccount"
   metadata {
@@ -106,7 +106,7 @@ resource "kubernetes_annotations" "service_account" {
     namespace = var.service_account_namespace
   }
   field_manager = "terraform-aad"
-  force = true
+  force         = true
   annotations = {
     "azure.workload.identity/client-id" = azuread_application.main.application_id
   }

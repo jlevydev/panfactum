@@ -36,13 +36,13 @@ module "constants" {
 ***************************************/
 
 module "namespace" {
-  source = "../../modules/kube_namespace"
-  namespace = local.service
-  admin_groups = ["system:admins"]
-  reader_groups = ["system:readers"]
+  source            = "../../modules/kube_namespace"
+  namespace         = local.service
+  admin_groups      = ["system:admins"]
+  reader_groups     = ["system:readers"]
   bot_reader_groups = ["system:bot-readers"]
-  kube_labels = local.labels
-  linkerd_inject = false
+  kube_labels       = local.labels
+  linkerd_inject    = false
 }
 
 /***************************************
@@ -75,8 +75,8 @@ resource "helm_release" "secrets_csi_driver" {
           "linkerd.io/inject" = "enabled"
         }
       }
-      logVerbosity = 2
-      logFormatJSON = true
+      logVerbosity         = 2
+      logFormatJSON        = true
       enableSecretRotation = true
       syncSecret = {
         enabled = true
@@ -89,17 +89,17 @@ resource "kubernetes_manifest" "vpa" {
   count = var.vpa_enabled ? 1 : 0
   manifest = {
     apiVersion = "autoscaling.k8s.io/v1"
-    kind  = "VerticalPodAutoscaler"
+    kind       = "VerticalPodAutoscaler"
     metadata = {
-      name = "secrets-csi-secrets-store-csi-driver"
+      name      = "secrets-csi-secrets-store-csi-driver"
       namespace = local.namespace
-      labels = var.kube_labels
+      labels    = var.kube_labels
     }
     spec = {
       targetRef = {
         apiVersion = "apps/v1"
-        kind = "DaemonSet"
-        name = "secrets-csi-secrets-store-csi-driver"
+        kind       = "DaemonSet"
+        name       = "secrets-csi-secrets-store-csi-driver"
       }
     }
   }

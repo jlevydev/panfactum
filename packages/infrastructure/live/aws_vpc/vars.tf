@@ -6,7 +6,7 @@ variable "igw_name" {
 variable "nat_associations" {
   description = "A mapping of NATed egress network traffic between subnets. Keys represent the source subnets. Values represent destination subnets that will contain the NAT resources."
   type        = map(string)
-  default = {}
+  default     = {}
 }
 
 variable "subnets" {
@@ -27,7 +27,7 @@ variable "vpc_cidr" {
 variable "vpc_extra_tags" {
   description = "Extra tags to add to the VPC resource."
   type        = map(string)
-  default = {}
+  default     = {}
 }
 
 variable "vpc_name" {

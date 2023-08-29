@@ -130,7 +130,7 @@ data "aws_iam_policy_document" "policy" {
 }
 
 resource "aws_s3_bucket_policy" "bucket" {
-  count = var.access_policy == "" ? 0 : 1
+  count  = var.access_policy == "" ? 0 : 1
   bucket = aws_s3_bucket.bucket.bucket
   policy = data.aws_iam_policy_document.policy.json
 }
@@ -139,17 +139,17 @@ resource "aws_s3_bucket_policy" "bucket" {
 * Bucket Audit Logging
 ***************************************************************/
 resource "aws_s3_bucket" "audit" {
-  count = var.audit_log_enabled ? 1 : 0
+  count               = var.audit_log_enabled ? 1 : 0
   bucket              = "${var.bucket_name}-audit-log"
   object_lock_enabled = true
 
   tags = {
-    description             = "Audit logs for the ${var.bucket_name} bucket"
+    description = "Audit logs for the ${var.bucket_name} bucket"
   }
 }
 
 resource "aws_s3_bucket_server_side_encryption_configuration" "audit" {
-  count = var.audit_log_enabled ? 1 : 0
+  count  = var.audit_log_enabled ? 1 : 0
   bucket = aws_s3_bucket.audit[0].bucket
   rule {
     bucket_key_enabled = true
@@ -160,7 +160,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "audit" {
 }
 
 resource "aws_s3_bucket_public_access_block" "audit" {
-  count = var.audit_log_enabled ? 1 : 0
+  count                   = var.audit_log_enabled ? 1 : 0
   bucket                  = aws_s3_bucket.audit[0].bucket
   block_public_acls       = true
   block_public_policy     = true
@@ -169,18 +169,18 @@ resource "aws_s3_bucket_public_access_block" "audit" {
 }
 
 resource "aws_s3_bucket_object_lock_configuration" "audit" {
-  count = var.audit_log_enabled ? 1 : 0
+  count  = var.audit_log_enabled ? 1 : 0
   bucket = aws_s3_bucket.audit[0].bucket
   rule {
-    default_retention {  
-      mode = "COMPLIANCE"
+    default_retention {
+      mode  = "COMPLIANCE"
       years = 3
     }
   }
 }
 
 resource "aws_s3_bucket_intelligent_tiering_configuration" "audit" {
-  count = var.audit_log_enabled ? 1 : 0
+  count  = var.audit_log_enabled ? 1 : 0
   bucket = aws_s3_bucket.audit[0].bucket
   name   = aws_s3_bucket.audit[0].bucket
   status = "Enabled"
@@ -196,8 +196,8 @@ resource "aws_s3_bucket_intelligent_tiering_configuration" "audit" {
 }
 
 resource "aws_s3_bucket_logging" "audit" {
-  count = var.audit_log_enabled ? 1 : 0
-  bucket = aws_s3_bucket.bucket.bucket
+  count         = var.audit_log_enabled ? 1 : 0
+  bucket        = aws_s3_bucket.bucket.bucket
   target_prefix = ""
   target_bucket = aws_s3_bucket.audit[0].id
 }

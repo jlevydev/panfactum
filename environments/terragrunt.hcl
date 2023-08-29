@@ -32,7 +32,7 @@ locals {
   version        = lookup(local.module_config, "version", local.version_file == "" ? local.primary_branch : yamldecode(file(local.version_file)).version)
 
   # The version_tag needs to be a commit sha
-  version_tag = run_cmd("--terragrunt-quiet", "get-version-tag", local.version)
+  version_hash = run_cmd("--terragrunt-quiet", "get-version-hash", local.version)
 
   # Defining the module source
   # NOTE: You can only use modules defined inside this repo (to use other repo's modules), define a
@@ -63,13 +63,13 @@ locals {
 
   # get vault_token
   vault_address = get_env("VAULT_ADDR", lookup(local.region_vars, "vault_address", ""))
-  vault_token = local.enable_vault ? run_cmd("--terragrunt-quiet", "get-vault-token", local.vault_address) : ""
+  vault_token   = local.enable_vault ? get_env("VAULT_TOKEN", run_cmd("--terragrunt-quiet", "get-vault-token", local.vault_address)) : ""
 
   # get aad service principle owners
   aad_sp_object_owners = lookup(local.environment_vars, "aad_sp_object_owners", [])
 
   # check if in ci system
-  is_ci  = get_env("CI", "false") == "true"
+  is_ci = get_env("CI", "false") == "true"
 }
 
 ################################################################
@@ -191,17 +191,20 @@ inputs = {
   // ensure our ECR repositories are synchronized across accounts
   ecr_repository_names = local.global_vars.ecr_repository_names
 
+  // used for sourcing build artifacts
+  version_hash = local.version_hash
+
   // common vars
   is_local    = local.is_local
   app         = local.global_vars.repo_name
   module      = basename(get_original_terragrunt_dir())
   environment = local.environment_vars.environment
-  version_tag = local.version_tag
+  version_tag = local.version
   region      = local.region_vars.region
 
   // azuread provider
-  azuread_tenant_id        = "2a66606b-17a5-47dd-94af-84f5d648ea7b"
-  aad_sp_object_owners     = local.aad_sp_object_owners
+  azuread_tenant_id    = "2a66606b-17a5-47dd-94af-84f5d648ea7b"
+  aad_sp_object_owners = local.aad_sp_object_owners
 
   // aws provider
   aws_region               = local.region_vars.aws_region
@@ -218,11 +221,11 @@ inputs = {
     app         = local.global_vars.repo_name
     module      = basename(get_original_terragrunt_dir())
     environment = local.environment_vars.environment
-    version_tag = local.version_tag
+    version_tag = local.version
     region      = local.region_vars.region
   }
 
   // vault provider
-  vault_address     = local.vault_address
-  vault_token       = local.vault_token
+  vault_address = local.vault_address
+  vault_token   = local.vault_token
 }

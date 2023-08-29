@@ -8,10 +8,10 @@ terraform {
 }
 
 locals {
-  readers_group = "system:readers"
+  readers_group     = "system:readers"
   bot_readers_group = "system:bot-readers"
-  admins_group = "system:admins"
-  superusers_group = "system:superusers"
+  admins_group      = "system:admins"
+  superusers_group  = "system:superusers"
 }
 
 ////////////////////////////////////////////////////////////
@@ -24,8 +24,8 @@ locals {
 
 resource "kubernetes_cluster_role_binding" "superusers" {
   metadata {
-    name = local.superusers_group
-    labels    = var.kube_labels
+    name   = local.superusers_group
+    labels = var.kube_labels
   }
   role_ref {
     api_group = "rbac.authorization.k8s.io"
@@ -33,8 +33,8 @@ resource "kubernetes_cluster_role_binding" "superusers" {
     name      = "cluster-admin" // built-in role
   }
   subject {
-    kind = "Group"
-    name = local.superusers_group
+    kind      = "Group"
+    name      = local.superusers_group
     api_group = "rbac.authorization.k8s.io"
   }
 }
@@ -45,23 +45,23 @@ resource "kubernetes_cluster_role_binding" "superusers" {
 
 resource "kubernetes_cluster_role" "admins" {
   metadata {
-    name = local.admins_group
-    labels    = var.kube_labels
+    name   = local.admins_group
+    labels = var.kube_labels
   }
   rule {
     api_groups = [""]
-    resources = ["nodes", "namespaces", "pods", "configmaps", "services", "roles", "secrets"]
-    verbs = ["get", "list", "watch"]
+    resources  = ["nodes", "namespaces", "pods", "configmaps", "services", "roles", "secrets"]
+    verbs      = ["get", "list", "watch"]
   }
   rule {
     api_groups = ["apps"]
-    resources  = [
+    resources = [
       "daemonsets",
       "deployments",
       "replicasets",
       "statefulsets",
     ]
-    verbs      = ["get", "list", "watch"]
+    verbs = ["get", "list", "watch"]
   }
   rule {
     api_groups = ["policy"]
@@ -80,16 +80,16 @@ resource "kubernetes_cluster_role" "admins" {
   }
   rule {
     api_groups = ["rbac.authorization.k8s.io"]
-    resources = ["clusterroles", "clusterrolebindings"]
-    verbs = ["get", "list", "watch"]
+    resources  = ["clusterroles", "clusterrolebindings"]
+    verbs      = ["get", "list", "watch"]
   }
 }
 
 
 resource "kubernetes_cluster_role_binding" "admins" {
   metadata {
-    name = local.admins_group
-    labels    = var.kube_labels
+    name   = local.admins_group
+    labels = var.kube_labels
   }
   role_ref {
     api_group = "rbac.authorization.k8s.io"
@@ -109,28 +109,28 @@ resource "kubernetes_cluster_role_binding" "admins" {
 
 resource "kubernetes_cluster_role" "readers" {
   metadata {
-    name = local.readers_group
-    labels    = var.kube_labels
+    name   = local.readers_group
+    labels = var.kube_labels
   }
   rule {
     api_groups = [""]
-    resources = ["nodes", "namespaces", "pods", "configmaps", "services", "roles"]
-    verbs = ["get", "list", "watch"]
+    resources  = ["nodes", "namespaces", "pods", "configmaps", "services", "roles"]
+    verbs      = ["get", "list", "watch"]
   }
   rule {
     api_groups = [""]
-    resources = ["secrets"]
-    verbs = ["list"]
+    resources  = ["secrets"]
+    verbs      = ["list"]
   }
   rule {
     api_groups = ["apps"]
-    resources  = [
+    resources = [
       "daemonsets",
       "deployments",
       "replicasets",
       "statefulsets",
     ]
-    verbs      = ["get", "list", "watch"]
+    verbs = ["get", "list", "watch"]
   }
   rule {
     api_groups = ["policy"]
@@ -149,15 +149,15 @@ resource "kubernetes_cluster_role" "readers" {
   }
   rule {
     api_groups = ["rbac.authorization.k8s.io"]
-    resources = ["clusterroles", "clusterrolebindings"]
-    verbs = ["get", "list", "watch"]
+    resources  = ["clusterroles", "clusterrolebindings"]
+    verbs      = ["get", "list", "watch"]
   }
 }
 
 resource "kubernetes_cluster_role_binding" "readers" {
   metadata {
-    name = local.readers_group
-    labels    = var.kube_labels
+    name   = local.readers_group
+    labels = var.kube_labels
   }
   role_ref {
     api_group = "rbac.authorization.k8s.io"
@@ -177,30 +177,30 @@ resource "kubernetes_cluster_role_binding" "readers" {
 
 resource "kubernetes_cluster_role" "bot_readers" {
   metadata {
-    name = local.bot_readers_group
-    labels    = var.kube_labels
+    name   = local.bot_readers_group
+    labels = var.kube_labels
   }
   rule {
     api_groups = [""]
-    resources = ["nodes", "namespaces"]
-    verbs = ["get", "list", "watch"]
+    resources  = ["nodes", "namespaces"]
+    verbs      = ["get", "list", "watch"]
   }
   rule {
     api_groups = ["rbac.authorization.k8s.io"]
-    resources = ["clusterroles", "clusterrolebindings"]
-    verbs = ["get", "list", "watch"]
+    resources  = ["clusterroles", "clusterrolebindings"]
+    verbs      = ["get", "list", "watch"]
   }
   rule {
-    api_groups = [ "apiextensions.k8s.io" ]
-    resources = [ "customresourcedefinitions" ]
-    verbs = ["get", "list", "watch"]
+    api_groups = ["apiextensions.k8s.io"]
+    resources  = ["customresourcedefinitions"]
+    verbs      = ["get", "list", "watch"]
   }
 }
 
 resource "kubernetes_cluster_role_binding" "bot_readers" {
   metadata {
-    name = local.bot_readers_group
-    labels    = var.kube_labels
+    name   = local.bot_readers_group
+    labels = var.kube_labels
   }
   role_ref {
     api_group = "rbac.authorization.k8s.io"
@@ -208,8 +208,8 @@ resource "kubernetes_cluster_role_binding" "bot_readers" {
     name      = kubernetes_cluster_role.bot_readers.metadata[0].name
   }
   subject {
-    kind = "Group"
-    name = local.bot_readers_group
+    kind      = "Group"
+    name      = local.bot_readers_group
     api_group = "rbac.authorization.k8s.io"
   }
 }
@@ -234,10 +234,10 @@ resource "kubernetes_config_map" "aws_auth" {
       }],
 
       // allows access to superusers
-      [ for arn in var.kube_superuser_role_arns: {
-        rolearn = arn
+      [for arn in var.kube_superuser_role_arns : {
+        rolearn  = arn
         username = "{{SessionName}}"
-        groups = [local.superusers_group]
+        groups   = [local.superusers_group]
       }],
 
       // allows access to admins
@@ -251,14 +251,14 @@ resource "kubernetes_config_map" "aws_auth" {
       [for arn in var.kube_reader_role_arns : {
         rolearn  = arn
         username = "{{SessionName}}"
-        groups = [local.readers_group]
+        groups   = [local.readers_group]
       }],
 
       // allows access to bot read only
-      [ for arn in var.kube_bot_reader_role_arns: {
-        rolearn = arn
+      [for arn in var.kube_bot_reader_role_arns : {
+        rolearn  = arn
         username = "{{SessionName}}"
-        groups = [local.bot_readers_group]
+        groups   = [local.bot_readers_group]
       }]
     ))
   }

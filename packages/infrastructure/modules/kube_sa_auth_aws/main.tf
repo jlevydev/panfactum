@@ -28,7 +28,7 @@ resource "aws_iam_policy" "service_account" {
   description = "Provides IAM permissions for ${var.service_account_namespace}/${var.service_account} in ${var.eks_cluster_name}."
   policy      = var.iam_policy_json
   tags = {
-    description      = "Provides IAM permissions for ${var.service_account_namespace}/${var.service_account} in ${var.eks_cluster_name}."
+    description = "Provides IAM permissions for ${var.service_account_namespace}/${var.service_account} in ${var.eks_cluster_name}."
   }
 }
 
@@ -57,7 +57,7 @@ resource "aws_iam_role" "service_account" {
   description        = "IAM role for ${var.service_account_namespace}/${var.service_account} in ${var.eks_cluster_name}."
   assume_role_policy = data.aws_iam_policy_document.service_account_assume.json
   tags = {
-    description      = "IAM role for ${var.service_account_namespace}/${var.service_account} in ${var.eks_cluster_name}."
+    description = "IAM role for ${var.service_account_namespace}/${var.service_account} in ${var.eks_cluster_name}."
   }
   max_session_duration = 43200
 }
@@ -70,7 +70,7 @@ resource "aws_iam_policy_attachment" "service_account" {
 
 data "aws_iam_policy_document" "ip_blocks" {
   statement {
-    effect = "Deny"
+    effect    = "Deny"
     resources = ["*"]
     // Since we use vpc endpoints for S3
     // we need to ignore them for this global deny
@@ -85,8 +85,8 @@ data "aws_iam_policy_document" "ip_blocks" {
   }
 
   statement {
-    effect = "Deny"
-    actions = ["s3:*"]
+    effect    = "Deny"
+    actions   = ["s3:*"]
     resources = ["*"]
 
     // Only allow access from inside our cluster
@@ -103,7 +103,7 @@ resource "aws_iam_policy" "ip_blocks" {
   description = "Restricts ${var.service_account_namespace}/${var.service_account} in ${var.eks_cluster_name} to cluster IPs."
   policy      = data.aws_iam_policy_document.ip_blocks.json
   tags = {
-    description      = "Restricts ${var.service_account_namespace}/${var.service_account} in ${var.eks_cluster_name} to cluster IPs."
+    description = "Restricts ${var.service_account_namespace}/${var.service_account} in ${var.eks_cluster_name} to cluster IPs."
   }
 }
 
@@ -118,7 +118,7 @@ resource "aws_iam_policy_attachment" "ip_blocks" {
 # ################################################################################
 
 resource "kubernetes_annotations" "service_account" {
-  count = var.annotate_service_account ? 1 : 0
+  count       = var.annotate_service_account ? 1 : 0
   api_version = "v1"
   kind        = "ServiceAccount"
   metadata {
@@ -126,7 +126,7 @@ resource "kubernetes_annotations" "service_account" {
     namespace = var.service_account_namespace
   }
   field_manager = "terraform-aws"
-  force = true
+  force         = true
   annotations = {
     "eks.amazonaws.com/role-arn" = aws_iam_role.service_account.arn
   }

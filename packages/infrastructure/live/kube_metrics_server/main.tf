@@ -13,7 +13,7 @@ terraform {
 
 locals {
 
-  name = "metrics-server"
+  name      = "metrics-server"
   namespace = module.namespace.namespace
 
   // Extract values from the enforced kubernetes labels
@@ -35,12 +35,12 @@ module "constants" {
 ***************************************/
 
 module "namespace" {
-  source = "../../modules/kube_namespace"
-  namespace = local.name
-  admin_groups = ["system:admins"]
-  reader_groups = ["system:readers"]
+  source            = "../../modules/kube_namespace"
+  namespace         = local.name
+  admin_groups      = ["system:admins"]
+  reader_groups     = ["system:readers"]
   bot_reader_groups = ["system:bot-readers"]
-  kube_labels = local.labels
+  kube_labels       = local.labels
 }
 
 resource "helm_release" "metrics_server" {
@@ -58,7 +58,7 @@ resource "helm_release" "metrics_server" {
     yamlencode({
       image = {
         repository = "registry.k8s.io/metrics-server/metrics-server"
-        tag = var.metrics_server_version
+        tag        = var.metrics_server_version
       }
       commonLabels = local.labels
       deploymentAnnotations = {
@@ -68,39 +68,39 @@ resource "helm_release" "metrics_server" {
 
       // Does not need to be highly available
       replicaCount = 1
-      tolerations = module.constants.spot_node_toleration_helm
-      affinity = module.constants.spot_node_affinity_helm
+      tolerations  = module.constants.spot_node_toleration_helm
+      affinity     = module.constants.spot_node_affinity_helm
 
       args = ["--v=0"]
       livenessProbe = {
         initialDelaySeconds = 20
-        periodSeconds = 10
-        failureThreshold = 3
+        periodSeconds       = 10
+        failureThreshold    = 3
       }
       readinessProbe = {
         initialDelaySeconds = 20
-        periodSeconds = 10
-        failureThreshold = 1
+        periodSeconds       = 10
+        failureThreshold    = 1
       }
     })
   ]
 }
 
 resource "kubernetes_manifest" "vpa" {
-  count = var.vpa_enabled ? 1: 0
+  count = var.vpa_enabled ? 1 : 0
   manifest = {
     apiVersion = "autoscaling.k8s.io/v1"
-    kind  = "VerticalPodAutoscaler"
+    kind       = "VerticalPodAutoscaler"
     metadata = {
-      name = local.name
+      name      = local.name
       namespace = local.namespace
-      labels = var.kube_labels
+      labels    = var.kube_labels
     }
     spec = {
       targetRef = {
         apiVersion = "apps/v1"
-        kind = "Deployment"
-        name = local.name
+        kind       = "Deployment"
+        name       = local.name
       }
     }
   }

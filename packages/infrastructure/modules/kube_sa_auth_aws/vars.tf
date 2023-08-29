@@ -20,11 +20,11 @@ variable "iam_policy_json" {
 
 variable "annotate_service_account" {
   description = "Whether or not to annotate the service account"
-  type = bool
-  default = true
+  type        = bool
+  default     = true
 }
 variable "public_outbound_ips" {
   description = "A list of the public ips for outbound cluster traffic"
-  type = list(string)
+  type        = list(string)
 }
 

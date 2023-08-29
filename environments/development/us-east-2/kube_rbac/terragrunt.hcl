@@ -17,5 +17,5 @@ inputs = {
     "arn:aws:iam::938942960544:role/AWSReservedSSO_Reader_81318b8bffc5950a"
   ]
   kube_bot_reader_role_arns = []
-  aws_node_role_arn = dependency.cluster.outputs.node_role_arn
+  aws_node_role_arn         = dependency.cluster.outputs.node_role_arn
 }

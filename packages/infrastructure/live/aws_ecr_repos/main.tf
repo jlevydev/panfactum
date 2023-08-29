@@ -11,12 +11,12 @@ terraform {
 ## Repo setup
 ##########################################################################
 
-data aws_iam_policy_document "trust_accounts" {
+data "aws_iam_policy_document" "trust_accounts" {
   statement {
     effect = "Allow"
     principals {
-      identifiers = [for id in var.trusted_account_ids: "arn:aws:iam::${id}:root"]
-      type = "AWS"
+      identifiers = [for id in var.trusted_account_ids : "arn:aws:iam::${id}:root"]
+      type        = "AWS"
     }
     actions = [
       "ecr:BatchCheckLayerAvailability",
@@ -44,14 +44,14 @@ data aws_iam_policy_document "trust_accounts" {
 }
 
 resource "aws_ecr_repository" "repo" {
-  for_each = toset(var.ecr_repository_names)
-  name = each.key
+  for_each             = toset(var.ecr_repository_names)
+  name                 = each.key
   image_tag_mutability = var.is_immutable ? "IMMUTABLE" : "MUTABLE"
 }
 
 resource "aws_ecr_repository_policy" "delegated_access" {
-  for_each = toset(var.ecr_repository_names)
-  policy = data.aws_iam_policy_document.trust_accounts.json
+  for_each   = toset(var.ecr_repository_names)
+  policy     = data.aws_iam_policy_document.trust_accounts.json
   repository = aws_ecr_repository.repo[each.key].name
 }
 
@@ -64,25 +64,25 @@ resource "aws_ecr_lifecycle_policy" "lifecycle" {
           type = "expire"
         }
         selection = {
-          countType = "imageCountMoreThan"
+          countType   = "imageCountMoreThan"
           countNumber = 3
-          tagStatus = "untagged"
+          tagStatus   = "untagged"
         }
-        description = "Keep last 3 untagged images"
+        description  = "Keep last 3 untagged images"
         rulePriority = 1
       }
-    ], var.expire_tagged_images ? [
+      ], var.expire_tagged_images ? [
       {
         action = {
           type = "expire"
         }
         selection = {
-          tagStatus = "tagged",
-          countType = "sinceImagePushed",
-          countUnit = "days",
+          tagStatus   = "any",
+          countType   = "sinceImagePushed",
+          countUnit   = "days",
           countNumber = 14
         },
-        description = "Remove old images"
+        description  = "Remove old images"
         rulePriority = 2
       }
     ] : [])

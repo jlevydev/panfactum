@@ -8,5 +8,5 @@ output "vpc_id" {
 }
 
 output "nat_ips" {
-  value = [for eip in aws_eip.nat_ips: eip.public_ip]
+  value = [for eip in aws_eip.nat_ips : eip.public_ip]
 }

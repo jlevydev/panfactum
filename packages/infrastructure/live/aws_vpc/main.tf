@@ -21,10 +21,10 @@ data "aws_region" "region" {}
 ## Main VPC
 ##########################################################################
 resource "aws_vpc" "main" {
-  cidr_block = var.vpc_cidr
+  cidr_block           = var.vpc_cidr
   enable_dns_hostnames = true
-  enable_dns_support = true
-  tags       = merge(var.vpc_extra_tags, { Name = var.vpc_name })
+  enable_dns_support   = true
+  tags                 = merge(var.vpc_extra_tags, { Name = var.vpc_name })
 }
 
 resource "aws_internet_gateway" "main" {
@@ -37,10 +37,10 @@ resource "aws_internet_gateway" "main" {
 ##########################################################################
 
 resource "aws_vpc_endpoint" "s3" {
-  vpc_id       = aws_vpc.main.id
-  service_name = "com.amazonaws.${data.aws_region.region.name}.s3"
-  route_table_ids = [for table in aws_route_table.tables: table.id]
-  tags = { Name = "S3-endpoint-${aws_vpc.main.id}}" }
+  vpc_id          = aws_vpc.main.id
+  service_name    = "com.amazonaws.${data.aws_region.region.name}.s3"
+  route_table_ids = [for table in aws_route_table.tables : table.id]
+  tags            = { Name = "S3-endpoint-${aws_vpc.main.id}}" }
 }
 
 ##########################################################################
@@ -48,7 +48,7 @@ resource "aws_vpc_endpoint" "s3" {
 ##########################################################################
 
 resource "aws_subnet" "subnets" {
-  for_each = var.subnets
+  for_each                = var.subnets
   vpc_id                  = aws_vpc.main.id
   cidr_block              = each.value.cidr_block
   availability_zone       = each.value.az
@@ -75,7 +75,7 @@ data "aws_iam_policy_document" "nat_policy" {
       "ec2:AssociateAddress",
       "ec2:DisassociateAddress"
     ]
-    effect = "Allow"
+    effect    = "Allow"
     resources = ["*"]
   }
 }
@@ -83,7 +83,7 @@ data "aws_iam_policy_document" "nat_policy" {
 data "aws_iam_policy_document" "nat_assume_role_policy" {
   statement {
     actions = ["sts:AssumeRole"]
-    effect = "Allow"
+    effect  = "Allow"
     principals {
       identifiers = ["ec2.amazonaws.com"]
       type        = "Service"
@@ -92,14 +92,14 @@ data "aws_iam_policy_document" "nat_assume_role_policy" {
 }
 
 resource "aws_iam_role" "nat" {
-  name_prefix = "fck-nat-"
+  name_prefix        = "fck-nat-"
   assume_role_policy = data.aws_iam_policy_document.nat_assume_role_policy.json
-  description = "Role for fck-nat (self-hosted NAT) instances"
+  description        = "Role for fck-nat (self-hosted NAT) instances"
 }
 
 resource "aws_iam_policy" "nat" {
   name_prefix = "fck-nat-"
-  policy = data.aws_iam_policy_document.nat_policy.json
+  policy      = data.aws_iam_policy_document.nat_policy.json
   description = "Policy for fck-nat (self-hosted NAT) instances"
 }
 
@@ -122,29 +122,29 @@ resource "aws_eip" "nat_ips" {
 resource "aws_network_interface" "nats" {
   for_each = local.nat_subnets
 
-  subnet_id = aws_subnet.subnets[each.key].id
+  subnet_id         = aws_subnet.subnets[each.key].id
   source_dest_check = false
-  security_groups = [aws_security_group.nats[each.key].id]
+  security_groups   = [aws_security_group.nats[each.key].id]
 }
 
 resource "aws_security_group" "nats" {
   for_each = local.nat_subnets
 
   name_prefix = "nat-"
-  vpc_id = aws_vpc.main.id
+  vpc_id      = aws_vpc.main.id
   ingress {
     description = "Only allow inbound traffic from inside the VPC"
     cidr_blocks = [var.vpc_cidr]
-    from_port = 0
-    to_port = 0
-    protocol = "-1"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
   }
   egress {
     description = "Allow outbound traffic"
     cidr_blocks = ["0.0.0.0/0"]
-    from_port = 0
-    to_port = 0
-    protocol = "-1"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
   }
 }
 
@@ -162,8 +162,8 @@ data "aws_ami" "fck_nat" {
 }
 
 resource "aws_launch_template" "nats" {
-  for_each = local.nat_subnets
-  name_prefix = "nat-"
+  for_each      = local.nat_subnets
+  name_prefix   = "nat-"
   image_id      = data.aws_ami.fck_nat.id
   instance_type = "t4g.nano"
   iam_instance_profile {
@@ -171,7 +171,7 @@ resource "aws_launch_template" "nats" {
   }
   vpc_security_group_ids = [aws_security_group.nats[each.key].id]
   user_data = base64encode(templatefile("nat_user_data.sh", {
-    ENI_ID = aws_network_interface.nats[each.key].id
+    ENI_ID            = aws_network_interface.nats[each.key].id
     EIP_ALLOCATION_ID = aws_eip.nat_ips[each.key].allocation_id
   }))
   tag_specifications {
@@ -186,13 +186,13 @@ resource "aws_launch_template" "nats" {
 }
 
 resource "aws_autoscaling_group" "nats" {
-  for_each = local.nat_subnets
-  name_prefix = "nat-"
-  max_size = 1
-  min_size = 1
+  for_each         = local.nat_subnets
+  name_prefix      = "nat-"
+  max_size         = 1
+  min_size         = 1
   desired_capacity = 1
   launch_template {
-    name = aws_launch_template.nats[each.key].name
+    name    = aws_launch_template.nats[each.key].name
     version = aws_launch_template.nats[each.key].latest_version
   }
   instance_refresh {

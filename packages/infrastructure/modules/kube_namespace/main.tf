@@ -22,7 +22,7 @@ locals {
 
 resource "kubernetes_namespace" "main" {
   metadata {
-    name = var.namespace
+    name   = var.namespace
     labels = local.namespace_labels
     annotations = merge({},
       var.linkerd_inject ? { "linkerd.io/inject" = "enabled" } : {}
@@ -39,14 +39,14 @@ resource "kubernetes_namespace" "main" {
 
 resource "kubernetes_role" "admins" {
   metadata {
-    name = "namespace:admin"
+    name      = "namespace:admin"
     namespace = local.namespace
-    labels = var.kube_labels
+    labels    = var.kube_labels
   }
   rule {
     api_groups = ["", "*"]
-    resources = ["*"]
-    verbs = ["*"]
+    resources  = ["*"]
+    verbs      = ["*"]
   }
 }
 
@@ -54,9 +54,9 @@ resource "kubernetes_role" "admins" {
 resource "kubernetes_role_binding" "admins" {
   count = min(length(var.admin_groups), 1)
   metadata {
-    name = "namespace:admins"
+    name      = "namespace:admins"
     namespace = local.namespace
-    labels = var.kube_labels
+    labels    = var.kube_labels
   }
   role_ref {
     api_group = "rbac.authorization.k8s.io"
@@ -66,8 +66,8 @@ resource "kubernetes_role_binding" "admins" {
   dynamic "subject" {
     for_each = toset(var.admin_groups)
     content {
-      kind = "Group"
-      name = subject.key
+      kind      = "Group"
+      name      = subject.key
       api_group = "rbac.authorization.k8s.io"
     }
   }
@@ -77,9 +77,9 @@ resource "kubernetes_role_binding" "admins" {
 
 resource "kubernetes_role" "readers" {
   metadata {
-    name = "namespace:reader"
+    name      = "namespace:reader"
     namespace = local.namespace
-    labels = var.kube_labels
+    labels    = var.kube_labels
   }
 
   rule {
@@ -94,7 +94,7 @@ resource "kubernetes_role" "readers" {
   }
   rule {
     api_groups = [""]
-    resources  = [
+    resources = [
       "pods",
       "pods/logs",
       "pods/status",
@@ -115,11 +115,11 @@ resource "kubernetes_role" "readers" {
       "services",
       "services/status"
     ]
-    verbs      = ["get", "list", "watch"]
+    verbs = ["get", "list", "watch"]
   }
   rule {
     api_groups = ["apps"]
-    resources  = [
+    resources = [
       "controllerversions",
       "daemonsets",
       "daemonsets/status",
@@ -130,7 +130,7 @@ resource "kubernetes_role" "readers" {
       "statefulsets",
       "statefulsets/status"
     ]
-    verbs      = ["get", "list", "watch"]
+    verbs = ["get", "list", "watch"]
   }
   rule {
     api_groups = ["autoscaling"]
@@ -144,7 +144,7 @@ resource "kubernetes_role" "readers" {
   }
   rule {
     api_groups = ["extensions"]
-    resources  = [
+    resources = [
       "daemonsets",
       "daemonsets/status",
       "deployments",
@@ -155,7 +155,7 @@ resource "kubernetes_role" "readers" {
       "replicasets",
       "replicasets/status"
     ]
-    verbs      = ["get", "list", "watch"]
+    verbs = ["get", "list", "watch"]
   }
   rule {
     api_groups = ["policy"]
@@ -184,9 +184,9 @@ resource "kubernetes_role" "readers" {
 resource "kubernetes_role_binding" "readers" {
   count = min(length(var.reader_groups), 1)
   metadata {
-    name = "namespace:readers"
+    name      = "namespace:readers"
     namespace = local.namespace
-    labels = var.kube_labels
+    labels    = var.kube_labels
   }
   role_ref {
     api_group = "rbac.authorization.k8s.io"
@@ -196,8 +196,8 @@ resource "kubernetes_role_binding" "readers" {
   dynamic "subject" {
     for_each = toset(var.reader_groups)
     content {
-      kind = "Group"
-      name = subject.key
+      kind      = "Group"
+      name      = subject.key
       api_group = "rbac.authorization.k8s.io"
     }
   }
@@ -207,9 +207,9 @@ resource "kubernetes_role_binding" "readers" {
 
 resource "kubernetes_role" "bot_readers" {
   metadata {
-    name = "namespace:bot-reader"
+    name      = "namespace:bot-reader"
     namespace = local.namespace
-    labels = var.kube_labels
+    labels    = var.kube_labels
   }
   rule {
     api_groups = [""]
@@ -222,9 +222,9 @@ resource "kubernetes_role" "bot_readers" {
 resource "kubernetes_role_binding" "bot_readers" {
   count = min(length(var.bot_reader_groups), 1)
   metadata {
-    name = "namespace:bot-readers"
+    name      = "namespace:bot-readers"
     namespace = local.namespace
-    labels = var.kube_labels
+    labels    = var.kube_labels
   }
   role_ref {
     api_group = "rbac.authorization.k8s.io"
@@ -234,8 +234,8 @@ resource "kubernetes_role_binding" "bot_readers" {
   dynamic "subject" {
     for_each = toset(var.bot_reader_groups)
     content {
-      kind = "Group"
-      name = subject.key
+      kind      = "Group"
+      name      = subject.key
       api_group = "rbac.authorization.k8s.io"
     }
   }
@@ -244,9 +244,9 @@ resource "kubernetes_role_binding" "bot_readers" {
 resource "kubernetes_role_binding" "bot_readers_extra" {
   count = min(length(var.bot_reader_groups), 1)
   metadata {
-    name = "namespace:bot-readers-extra"
+    name      = "namespace:bot-readers-extra"
     namespace = local.namespace
-    labels = var.kube_labels
+    labels    = var.kube_labels
   }
   role_ref {
     api_group = "rbac.authorization.k8s.io"
@@ -256,8 +256,8 @@ resource "kubernetes_role_binding" "bot_readers_extra" {
   dynamic "subject" {
     for_each = toset(var.bot_reader_groups)
     content {
-      kind = "Group"
-      name = subject.key
+      kind      = "Group"
+      name      = subject.key
       api_group = "rbac.authorization.k8s.io"
     }
   }

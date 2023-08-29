@@ -5,12 +5,12 @@ variable "namespace" {
 
 variable "kube_labels" {
   description = "Labels to apply to the certificate"
-  type = map(string)
+  type        = map(string)
 }
 
 variable "ingress_name" {
   description = "The name prefix of the ingresses that will get created"
-  type = string
+  type        = string
 }
 
 variable "ingress_configs" {
@@ -18,18 +18,18 @@ variable "ingress_configs" {
   type = list(object({
 
     # THis ingress matches all incoming requests on the indicated domains that have the indicated path prefixes
-    domains = list(string)
-    path_prefix = optional(string, "/")
+    domains       = list(string)
+    path_prefix   = optional(string, "/")
     remove_prefix = optional(bool, false) # True iff the the path_prefix should be stripped before forwarding on to upstream service
 
     # The backing Kubernetes service
-    service = string
+    service      = string
     service_port = number
 
     # Allows redirecting a subset of traffic to a different service;
     # For use in migrating functionality between services
     rewrite_rules = optional(list(object({
-      path_regex = string # A regex to match against incoming paths
+      path_regex   = string # A regex to match against incoming paths
       path_rewrite = string # The new path to use
     })), [])
   }))

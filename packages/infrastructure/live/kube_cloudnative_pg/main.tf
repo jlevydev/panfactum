@@ -13,7 +13,7 @@ terraform {
 
 locals {
 
-  name = "cloudnative-pg"
+  name      = "cloudnative-pg"
   namespace = module.namespace.namespace
 
   // Extract values from the enforced kubernetes labels
@@ -23,7 +23,7 @@ locals {
 
   labels = merge(var.kube_labels, {
     service = local.name,
-    test = "t"
+    test    = "t"
   })
 }
 
@@ -36,12 +36,12 @@ module "constants" {
 ***************************************/
 
 module "namespace" {
-  source = "../../modules/kube_namespace"
-  namespace = local.name
-  admin_groups = ["system:admins"]
-  reader_groups = ["system:readers"]
+  source            = "../../modules/kube_namespace"
+  namespace         = local.name
+  admin_groups      = ["system:admins"]
+  reader_groups     = ["system:readers"]
   bot_reader_groups = ["system:bot-readers"]
-  kube_labels = local.labels
+  kube_labels       = local.labels
 }
 
 resource "helm_release" "cnpg" {
@@ -67,8 +67,8 @@ resource "helm_release" "cnpg" {
 
       // Does not need to be highly available
       replicaCount = 1
-      tolerations = module.constants.spot_node_toleration_helm
-      affinity = module.constants.spot_node_affinity_helm
+      tolerations  = module.constants.spot_node_toleration_helm
+      affinity     = module.constants.spot_node_affinity_helm
 
       podAnnotations = {
         "reloader.stakater.com/auto" = "true"
@@ -77,7 +77,7 @@ resource "helm_release" "cnpg" {
       config = {
         data = {
           INHERITED_ANNOTATIONS = "linkerd.io/*"
-          INHERITED_LABELS = "region, service, version_tag, module, app"
+          INHERITED_LABELS      = "region, service, version_tag, module, app"
         }
       }
       podLabels = local.labels
@@ -89,17 +89,17 @@ resource "kubernetes_manifest" "vpa" {
   count = var.vpa_enabled ? 1 : 0
   manifest = {
     apiVersion = "autoscaling.k8s.io/v1"
-    kind  = "VerticalPodAutoscaler"
+    kind       = "VerticalPodAutoscaler"
     metadata = {
-      name = local.name
+      name      = local.name
       namespace = local.namespace
-      labels = var.kube_labels
+      labels    = var.kube_labels
     }
     spec = {
       targetRef = {
         apiVersion = "apps/v1"
-        kind = "Deployment"
-        name = local.name
+        kind       = "Deployment"
+        name       = local.name
       }
     }
   }

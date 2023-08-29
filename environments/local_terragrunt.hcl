@@ -11,6 +11,6 @@ remote_state {
   }
 
   config = {
-    path  = "${get_repo_root()}/.tfstate/${path_relative_to_include()}/terraform.tfstate"
+    path = "${get_repo_root()}/.tfstate/${path_relative_to_include()}/terraform.tfstate"
   }
 }

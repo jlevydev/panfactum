@@ -9,6 +9,6 @@ locals {
 
     // Set some Node.js runtime options
     AWS_NODEJS_CONNECTION_REUSE_ENABLED = "1"
-    NODE_OPTIONS=join(" ", local.node_options)
+    NODE_OPTIONS                        = join(" ", local.node_options)
   }
 }

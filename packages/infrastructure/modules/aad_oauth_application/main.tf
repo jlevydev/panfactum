@@ -1,15 +1,15 @@
 terraform {
   required_providers {
     azuread = {
-      source = "hashicorp/azuread"
+      source  = "hashicorp/azuread"
       version = "2.41.0"
     }
     time = {
-      source = "hashicorp/time"
+      source  = "hashicorp/time"
       version = "0.9.1"
     }
     random = {
-      source = "hashicorp/random"
+      source  = "hashicorp/random"
       version = "3.5.1"
     }
   }
@@ -25,7 +25,7 @@ resource "random_uuid" "reader" {}
 
 resource "azuread_application" "oauth" {
   display_name = var.display_name
-  description = var.description
+  description  = var.description
   web {
     redirect_uris = var.redirect_uris
     implicit_grant {
@@ -66,19 +66,19 @@ resource "azuread_application" "oauth" {
 
     // email address access
     resource_access {
-      id = "64a6cdd6-aab1-4aaf-94b8-3cc8405e90d0"
+      id   = "64a6cdd6-aab1-4aaf-94b8-3cc8405e90d0"
       type = "Scope"
     }
 
     // basic profile access
     resource_access {
-      id = "14dad69e-099b-42c9-810b-d002981feec1"
+      id   = "14dad69e-099b-42c9-810b-d002981feec1"
       type = "Scope"
     }
 
     // Allows you to sign in
     resource_access {
-      id = "e1fe6dd8-ba31-4d61-89e7-88639da4683d"
+      id   = "e1fe6dd8-ba31-4d61-89e7-88639da4683d"
       type = "Scope"
     }
   }
@@ -91,7 +91,7 @@ resource "time_rotating" "client_secret" {
 }
 
 resource "azuread_application_password" "oauth" {
-  display_name = "main"
+  display_name          = "main"
   application_object_id = azuread_application.oauth.object_id
   rotate_when_changed = {
     time = time_rotating.client_secret.id
@@ -103,21 +103,21 @@ resource "azuread_service_principal" "oauth" {
 }
 
 resource "azuread_app_role_assignment" "admins" {
-  for_each = toset(var.admin_group_object_ids)
+  for_each            = toset(var.admin_group_object_ids)
   app_role_id         = azuread_service_principal.oauth.app_role_ids[var.admin_role_value]
   principal_object_id = each.key
   resource_object_id  = azuread_service_principal.oauth.object_id
 }
 
 resource "azuread_app_role_assignment" "editors" {
-  for_each = toset(var.editor_group_object_ids)
+  for_each            = toset(var.editor_group_object_ids)
   app_role_id         = azuread_service_principal.oauth.app_role_ids[var.editor_role_value]
   principal_object_id = each.key
   resource_object_id  = azuread_service_principal.oauth.object_id
 }
 
 resource "azuread_app_role_assignment" "readers" {
-  for_each = toset(var.reader_group_object_ids)
+  for_each            = toset(var.reader_group_object_ids)
   app_role_id         = azuread_service_principal.oauth.app_role_ids[var.reader_role_value]
   principal_object_id = each.key
   resource_object_id  = azuread_service_principal.oauth.object_id

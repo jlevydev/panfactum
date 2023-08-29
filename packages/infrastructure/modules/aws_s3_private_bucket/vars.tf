@@ -47,11 +47,11 @@ variable "access_policy" {
 
 variable "description" {
   description = "A statement of purpose for the S3 bucket."
-  type = string
+  type        = string
 }
 
 variable "force_destroy" {
   description = "Whether the bucket can be deleted if objects still exist in it."
-  type = bool
-  default = false
+  type        = bool
+  default     = false
 }

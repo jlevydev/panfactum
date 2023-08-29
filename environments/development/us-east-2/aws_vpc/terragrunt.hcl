@@ -3,15 +3,15 @@ include "shared" {
 }
 
 inputs = {
-  vpc_name = "PANFACTUM_DEVELOPMENT_PRIMARY"
-  vpc_cidr = "10.0.0.0/16"
-  vpc_extra_tags = {}
+  vpc_name        = "PANFACTUM_DEVELOPMENT_PRIMARY"
+  vpc_cidr        = "10.0.0.0/16"
+  vpc_extra_tags  = {}
   vpc_description = "VPC for the primary development environment."
-  igw_name       = "PANFACTUM_DEVELOPMENT_PRIMARY"
+  igw_name        = "PANFACTUM_DEVELOPMENT_PRIMARY"
 
   nat_associations = {
-    "PRIVATE_AZA"   = "PUBLIC_AZA"
-    "DB_AZA" = "PUBLIC_AZA"
+    "PRIVATE_AZA" = "PUBLIC_AZA"
+    "DB_AZA"      = "PUBLIC_AZA"
   }
 
   subnets = {
@@ -20,9 +20,9 @@ inputs = {
       cidr_block  = "10.0.0.0/20"
       public      = true
       description = "Subnet for incoming public traffic to availability zone A"
-      extra_tags  = {
-        "kubernetes.io/cluster/development-primary"        = "shared"
-        "kubernetes.io/role/elb"                           = "1"
+      extra_tags = {
+        "kubernetes.io/cluster/development-primary" = "shared"
+        "kubernetes.io/role/elb"                    = "1"
       }
     },
     "PUBLIC_AZB" = {
@@ -30,9 +30,9 @@ inputs = {
       cidr_block  = "10.0.16.0/20"
       public      = true
       description = "Subnet for incoming public traffic to availability zone B"
-      extra_tags  = {
-        "kubernetes.io/cluster/development-primary"        = "shared"
-        "kubernetes.io/role/elb"                           = "1"
+      extra_tags = {
+        "kubernetes.io/cluster/development-primary" = "shared"
+        "kubernetes.io/role/elb"                    = "1"
       }
     },
     "PUBLIC_AZC" = {
@@ -40,7 +40,7 @@ inputs = {
       cidr_block  = "10.0.32.0/20"
       public      = true
       description = "Subnet for incoming public traffic to availability zone C"
-      extra_tags  = {
+      extra_tags = {
         "kubernetes.io/cluster/development-primary" = "shared"
       }
     },
@@ -49,9 +49,9 @@ inputs = {
       cidr_block  = "10.0.48.0/20"
       public      = false
       description = "Subnet for private nodes in availability zone A"
-      extra_tags  = {
+      extra_tags = {
         "kubernetes.io/cluster/development-primary" = "shared"
-        "kubernetes.io/role/internal-elb"                  = "1"
+        "kubernetes.io/role/internal-elb"           = "1"
       }
     },
     "DB_AZA" = {

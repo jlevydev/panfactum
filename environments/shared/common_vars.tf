@@ -38,6 +38,11 @@ variable "version_tag" {
   type        = string
 }
 
+variable "version_hash" {
+  description = "The commit hash for the version. Used to reference build artifacts."
+  type        = string
+}
+
 variable "is_local" {
   description = "Whether this module is a part of a local development deployment"
   type        = bool

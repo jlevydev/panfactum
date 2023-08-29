@@ -12,5 +12,5 @@ dependency "linkerd" {
 
 inputs = {
   eks_cluster_name = dependency.cluster.outputs.cluster_name
-  vpa_enabled = true
+  vpa_enabled      = true
 }

@@ -13,7 +13,7 @@ terraform {
 
 locals {
 
-  name = "cert-manager"
+  name      = "cert-manager"
   namespace = module.namespace.namespace
 
   // Extract values from the enforced kubernetes labels
@@ -35,12 +35,12 @@ module "constants" {
 ***************************************/
 
 module "namespace" {
-  source = "../../modules/kube_namespace"
-  namespace = local.name
-  admin_groups = ["system:admins"]
-  reader_groups = ["system:readers"]
+  source            = "../../modules/kube_namespace"
+  namespace         = local.name
+  admin_groups      = ["system:admins"]
+  reader_groups     = ["system:readers"]
   bot_reader_groups = ["system:bot-readers"]
-  kube_labels = local.labels
+  kube_labels       = local.labels
 }
 
 /***************************************
@@ -49,9 +49,9 @@ module "namespace" {
 
 resource "kubernetes_service_account" "cert_manager" {
   metadata {
-    name = local.name
+    name      = local.name
     namespace = local.namespace
-    labels = local.labels
+    labels    = local.labels
   }
 }
 
@@ -70,13 +70,13 @@ resource "helm_release" "cert_manager" {
     yamlencode({
       installCRDs = true
       global = {
-        commonLabels = local.labels
+        commonLabels      = local.labels
         priorityClassName = "system-cluster-critical"
       }
       // Does not need to be highly available
       replicaCount = 1
-      tolerations = module.constants.spot_node_toleration_helm
-      affinity = module.constants.spot_node_affinity_helm
+      tolerations  = module.constants.spot_node_toleration_helm
+      affinity     = module.constants.spot_node_affinity_helm
 
       livenessProbe = {
         enabled = true
@@ -84,23 +84,23 @@ resource "helm_release" "cert_manager" {
       extraArgs = ["--v=0"]
       serviceAccount = {
         create = false
-        name = kubernetes_service_account.cert_manager.metadata[0].name
+        name   = kubernetes_service_account.cert_manager.metadata[0].name
       }
       securityContext = {
         fsGroup = 1001
       }
       webhook = {
         replicaCount = 1
-        extraArgs = ["--v=0"]
-        tolerations = module.constants.spot_node_toleration_helm
-        affinity = module.constants.spot_node_affinity_helm
+        extraArgs    = ["--v=0"]
+        tolerations  = module.constants.spot_node_toleration_helm
+        affinity     = module.constants.spot_node_affinity_helm
       }
       cainjector = {
-        enabled = true
+        enabled      = true
         replicaCount = 1
-        extraArgs = ["--v=0"]
-        tolerations = module.constants.spot_node_toleration_helm
-        affinity = module.constants.spot_node_affinity_helm
+        extraArgs    = ["--v=0"]
+        tolerations  = module.constants.spot_node_toleration_helm
+        affinity     = module.constants.spot_node_affinity_helm
       }
     })
   ]
@@ -110,17 +110,17 @@ resource "kubernetes_manifest" "vpa_controller" {
   count = var.vpa_enabled ? 1 : 0
   manifest = {
     apiVersion = "autoscaling.k8s.io/v1"
-    kind  = "VerticalPodAutoscaler"
+    kind       = "VerticalPodAutoscaler"
     metadata = {
-      name = "jetstack-cert-manager"
+      name      = "jetstack-cert-manager"
       namespace = local.namespace
-      labels = var.kube_labels
+      labels    = var.kube_labels
     }
     spec = {
       targetRef = {
         apiVersion = "apps/v1"
-        kind = "Deployment"
-        name = "jetstack-cert-manager"
+        kind       = "Deployment"
+        name       = "jetstack-cert-manager"
       }
     }
   }
@@ -130,17 +130,17 @@ resource "kubernetes_manifest" "vpa_cainjector" {
   count = var.vpa_enabled ? 1 : 0
   manifest = {
     apiVersion = "autoscaling.k8s.io/v1"
-    kind  = "VerticalPodAutoscaler"
+    kind       = "VerticalPodAutoscaler"
     metadata = {
-      name = "jetstack-cert-manager-cainjector"
+      name      = "jetstack-cert-manager-cainjector"
       namespace = local.namespace
-      labels = var.kube_labels
+      labels    = var.kube_labels
     }
     spec = {
       targetRef = {
         apiVersion = "apps/v1"
-        kind = "Deployment"
-        name = "jetstack-cert-manager-cainjector"
+        kind       = "Deployment"
+        name       = "jetstack-cert-manager-cainjector"
       }
     }
   }
@@ -150,17 +150,17 @@ resource "kubernetes_manifest" "vpa_webhook" {
   count = var.vpa_enabled ? 1 : 0
   manifest = {
     apiVersion = "autoscaling.k8s.io/v1"
-    kind  = "VerticalPodAutoscaler"
+    kind       = "VerticalPodAutoscaler"
     metadata = {
-      name = "jetstack-cert-manager-webhook"
+      name      = "jetstack-cert-manager-webhook"
       namespace = local.namespace
-      labels = var.kube_labels
+      labels    = var.kube_labels
     }
     spec = {
       targetRef = {
         apiVersion = "apps/v1"
-        kind = "Deployment"
-        name = "jetstack-cert-manager-webhook"
+        kind       = "Deployment"
+        name       = "jetstack-cert-manager-webhook"
       }
     }
   }
@@ -194,8 +194,8 @@ resource "helm_release" "trust_manager" {
 
       // Does not need to be highly available
       replicaCount = 1
-      tolerations = module.constants.spot_node_toleration_helm
-      affinity = module.constants.spot_node_affinity_helm
+      tolerations  = module.constants.spot_node_toleration_helm
+      affinity     = module.constants.spot_node_affinity_helm
 
     })
   ]

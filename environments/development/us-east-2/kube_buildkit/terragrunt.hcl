@@ -15,10 +15,10 @@ dependency "vpc" {
 }
 
 inputs = {
-  eks_cluster_name = dependency.cluster.outputs.cluster_name
+  eks_cluster_name    = dependency.cluster.outputs.cluster_name
   public_outbound_ips = dependency.vpc.outputs.nat_ips
-  vpa_enabled = true
-  cpu_millicores = 2000
-  memory_mb = 8000
-  local_storage_gb = 100
+  vpa_enabled         = true
+  cpu_millicores      = 2000
+  memory_mb           = 8000
+  local_storage_gb    = 100
 }

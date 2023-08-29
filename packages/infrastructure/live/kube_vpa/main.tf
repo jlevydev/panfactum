@@ -13,7 +13,7 @@ terraform {
 
 locals {
 
-  name = "vertical-pod-autoscaler"
+  name      = "vertical-pod-autoscaler"
   namespace = module.namespace.namespace
 
   environment = var.environment
@@ -36,12 +36,12 @@ module "constants" {
 # ################################################################################
 
 module "namespace" {
-  source = "../../modules/kube_namespace"
-  namespace = local.name
-  admin_groups = ["system:admins"]
-  reader_groups = ["system:readers"]
+  source            = "../../modules/kube_namespace"
+  namespace         = local.name
+  admin_groups      = ["system:admins"]
+  reader_groups     = ["system:readers"]
   bot_reader_groups = ["system:bot-readers"]
-  kube_labels = local.labels
+  kube_labels       = local.labels
 }
 
 # ################################################################################
@@ -49,11 +49,11 @@ module "namespace" {
 # ################################################################################
 
 module "webhook_cert" {
-  source = "../../modules/kube_internal_cert"
+  source        = "../../modules/kube_internal_cert"
   service_names = ["vertical-pod-autoscaler-vpa-webhook"]
-  secret_name = local.webhook_secret
-  namespace = local.namespace
-  labels = local.labels
+  secret_name   = local.webhook_secret
+  namespace     = local.namespace
+  labels        = local.labels
 }
 
 resource "helm_release" "vpa" {
@@ -71,26 +71,26 @@ resource "helm_release" "vpa" {
     yamlencode({
 
       podLabels = merge(local.labels, {
-        customizationHash = md5(join("", [for filename in fileset(path.module, "vpa_kustomize/*"): filesha256(filename)]))
+        customizationHash = md5(join("", [for filename in fileset(path.module, "vpa_kustomize/*") : filesha256(filename)]))
       })
 
       priorityClassName = "system-cluster-critical"
 
       recommender = {
         replicaCount = 1
-        tolerations = module.constants.spot_node_toleration_helm
-        affinity = module.constants.spot_node_affinity_helm
+        tolerations  = module.constants.spot_node_toleration_helm
+        affinity     = module.constants.spot_node_affinity_helm
 
         extraArgs = {
           // Better packing
           "pod-recommendation-min-cpu-millicores" = 2
-          "pod-recommendation-min-memory-mb" = 10
+          "pod-recommendation-min-memory-mb"      = 10
 
           // Make very responsive if OOM occurs
           "oom-bump-up-ratio" = "2.0"
 
           // Lower half-life so we have better intra-day scaling
-          "cpu-histogram-decay-half-life" = "2h0m0s"
+          "cpu-histogram-decay-half-life"    = "2h0m0s"
           "memory-histogram-decay-half-life" = "2h0m0s"
 
           v = 2
@@ -100,12 +100,12 @@ resource "helm_release" "vpa" {
       updater = {
         // Does not need to be highly available
         replicaCount = 1
-        tolerations = module.constants.spot_node_toleration_helm
-        affinity = module.constants.spot_node_affinity_helm
+        tolerations  = module.constants.spot_node_toleration_helm
+        affinity     = module.constants.spot_node_affinity_helm
 
         extraArgs = {
           "min-replicas" = 0 // We don't care b/c we use pdbs
-          v = 2
+          v              = 2
         }
       }
 
@@ -116,7 +116,7 @@ resource "helm_release" "vpa" {
         // resource requirements when it comes back up and then the
         // updater will take it down again
         replicaCount = 2
-        tolerations = module.constants.spot_node_toleration_helm
+        tolerations  = module.constants.spot_node_toleration_helm
         affinity = merge(
           module.constants.spot_node_affinity_helm,
           {
@@ -125,16 +125,16 @@ resource "helm_release" "vpa" {
                 weight = 100
                 podAffinityTerm = {
                   labelSelector = {
-                    matchExpressions =[
+                    matchExpressions = [
                       {
-                        key = "app.kubernetes.io/component"
+                        key      = "app.kubernetes.io/component"
                         operator = "In"
-                        values = ["admission-controller"]
+                        values   = ["admission-controller"]
                       },
                       {
-                        key = "app.kubernetes.io/instance"
+                        key      = "app.kubernetes.io/instance"
                         operator = "In"
-                        values = ["vertical-pod-autoscaler"]
+                        values   = ["vertical-pod-autoscaler"]
                       }
                     ]
                   }
@@ -151,12 +151,12 @@ resource "helm_release" "vpa" {
 
         // We will use our own secret
         generateCertificate = false
-        secretName = local.webhook_secret
+        secretName          = local.webhook_secret
         extraArgs = {
-          client-ca-file = "/etc/tls-certs/ca.crt"
-          tls-cert-file  = "/etc/tls-certs/tls.crt"
+          client-ca-file  = "/etc/tls-certs/ca.crt"
+          tls-cert-file   = "/etc/tls-certs/tls.crt"
           tls-private-key = "/etc/tls-certs/tls.key"
-          v = "2"
+          v               = "2"
         }
         mutatingWebhookConfiguration = {
           annotations = {
@@ -184,17 +184,17 @@ resource "kubernetes_manifest" "vpa_controller" {
   count = var.vpa_enabled ? 1 : 0
   manifest = {
     apiVersion = "autoscaling.k8s.io/v1"
-    kind  = "VerticalPodAutoscaler"
+    kind       = "VerticalPodAutoscaler"
     metadata = {
-      name = "vertical-pod-autoscaler-vpa-admission-controller"
+      name      = "vertical-pod-autoscaler-vpa-admission-controller"
       namespace = local.namespace
-      labels = local.labels
+      labels    = local.labels
     }
     spec = {
       targetRef = {
         apiVersion = "apps/v1"
-        kind = "Deployment"
-        name = "vertical-pod-autoscaler-vpa-admission-controller"
+        kind       = "Deployment"
+        name       = "vertical-pod-autoscaler-vpa-admission-controller"
       }
     }
   }
@@ -204,17 +204,17 @@ resource "kubernetes_manifest" "vpa_recommender" {
   count = var.vpa_enabled ? 1 : 0
   manifest = {
     apiVersion = "autoscaling.k8s.io/v1"
-    kind  = "VerticalPodAutoscaler"
+    kind       = "VerticalPodAutoscaler"
     metadata = {
-      name = "vertical-pod-autoscaler-vpa-recommender"
+      name      = "vertical-pod-autoscaler-vpa-recommender"
       namespace = local.namespace
-      labels = local.labels
+      labels    = local.labels
     }
     spec = {
       targetRef = {
         apiVersion = "apps/v1"
-        kind = "Deployment"
-        name = "vertical-pod-autoscaler-vpa-recommender"
+        kind       = "Deployment"
+        name       = "vertical-pod-autoscaler-vpa-recommender"
       }
     }
   }
@@ -224,17 +224,17 @@ resource "kubernetes_manifest" "vpa_updater" {
   count = var.vpa_enabled ? 1 : 0
   manifest = {
     apiVersion = "autoscaling.k8s.io/v1"
-    kind  = "VerticalPodAutoscaler"
+    kind       = "VerticalPodAutoscaler"
     metadata = {
-      name = "vertical-pod-autoscaler-vpa-updater"
+      name      = "vertical-pod-autoscaler-vpa-updater"
       namespace = local.namespace
-      labels = local.labels
+      labels    = local.labels
     }
     spec = {
       targetRef = {
         apiVersion = "apps/v1"
-        kind = "Deployment"
-        name = "vertical-pod-autoscaler-vpa-updater"
+        kind       = "Deployment"
+        name       = "vertical-pod-autoscaler-vpa-updater"
       }
     }
   }

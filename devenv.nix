@@ -1,32 +1,7 @@
 { pkgs, config, ... }:
 let
 
-  # Pinning terraform so we have consistent statefiles
-  pinned-terraform = import ./packages/nix/terraform.nix { pkgs = pkgs; };
-
-  # Used to allow easier ECR login
-  docker-credential-aws = import ./packages/nix/docker-credential-aws { pkgs = pkgs; };
-
-  # Helper used to get vault tokens during terraform runs
-  get-vault-token = import ./packages/nix/get-vault-token { pkgs = pkgs; };
-
-  # Helper used to get the buildkit address to use for building images
-  get-buildkit-address = import ./packages/nix/get-buildkit-address { pkgs = pkgs; };
-
-  # Helper used to get the commit sha for a git_ref
-  get-version-tag = import ./packages/nix/get-version-tag { pkgs = pkgs; };
-
-  # Used to establish network tunnels to private network resources running in the clusters
-  panfactum-tunnel = import ./packages/nix/tunnel {pkgs = pkgs;};
-
-  # Used to ensure we always use the right namespace when using cilium
-  panfactum-cilium = import ./packages/nix/cilium.nix {pkgs = pkgs;};
-
-  # Used to intialize the shell in local development environments
-  enter-shell-local = import ./packages/nix/enter-shell-local {pkgs = pkgs;};
-
-  # Used to intialize the shell in ci environments
-  enter-shell-ci = import ./packages/nix/enter-shell-ci {pkgs = pkgs;};
+  customModule = module: import ./packages/nix/${module} { pkgs = pkgs; };
 
   # For most packages, you can find more info about their build
   # configurations and homepages/projects from
@@ -45,14 +20,17 @@ let
     # Hashicorp Vault
     ####################################
     vault # provides the vault cli for interacting with vault
-    get-vault-token # our helper tool for getting vault tokens during tf runs
+    (customModule "get-vault-token") # our helper tool for getting vault tokens during tf runs
 
     ####################################
     # Infrastructure-as-Code
     ####################################
-    pinned-terraform # declarative iac tool
+    (customModule "terraform") # declarative iac tool
     terragrunt # terraform-runner
-    get-version-tag # helper for the IaC tagging
+    (customModule "get-version-hash") # helper for the IaC tagging
+    (customModule "wait-on-image") # helper for waiting on image availability
+    (customModule "precommit-terragrunt-fmt") # pre-commit hook for terragrunt
+    (customModule "precommit-terraform-fmt") # pre-commit hook for terragrunt
 
     ####################################
     # Editors
@@ -111,13 +89,14 @@ let
     ####################################
     gh # github cli
     actionlint # gha linter
-    get-buildkit-address
+    (customModule "get-buildkit-address") # Helper used to get the buildkit address to use for building images
 
     ####################################
     # Container Utilities
     ####################################
-    docker-credential-aws # our package for ecr authentication
+    (customModule "docker-credential-aws")  # our package for ecr authentication
     buildkit # used for building containers using moby/buildkit
+    skopeo # used for moving images around
 
     ####################################
     # Network Utilities
@@ -131,7 +110,12 @@ let
     ####################################
     # Devenv Setup
     ####################################
-    enter-shell-local
+    (customModule "enter-shell-local")
+
+    ####################################
+    # Linting
+    ####################################
+    (customModule "lint") # lints everything!
 
     ####################################
     # Postgres Management
@@ -158,7 +142,7 @@ let
     ####################################
     # Kubernetes
     ####################################
-    panfactum-cilium # for managing the cilium CNI
+    (customModule "cilium")  # for managing the cilium CNI
     hubble # for network observability
     cmctl # for working with cert-manager
     linkerd # for working with the service mesh
@@ -170,14 +154,14 @@ let
     openssh # ssh client and server
     autossh # automatically restart tunnels
     step-cli # working with certificates
-    panfactum-tunnel # for connecting to private network resources through ssh bastion
+    (customModule "tunnel")  # for connecting to private network resources through ssh bastion
   ];
 
   ci_packages = with pkgs; [
     ####################################
     # Devenv Setup
     ####################################
-    enter-shell-ci
+    (customModule "enter-shell-ci")
   ];
 
 in
@@ -212,15 +196,15 @@ in
     };
     terragrunt-custom = {
       enable = true;
-      entry = "terragrunt fmt -check";
+      entry = "precommit-terragrunt-fmt";
       description = "Terragrunt linting";
       files = "^environments/(.*).hcl$";
     };
     terraform-custom = {
       enable = true;
-      entry = "terraform fmt -check";
+      entry = "precommit-terraform-fmt";
       description = "Terraform linting";
-      files = "^packages/infrastructure/(.*).hcl$";
+      files = "^packages/infrastructure/(.*).tf$";
     };
   };
 

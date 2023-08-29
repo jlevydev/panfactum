@@ -13,7 +13,7 @@ terraform {
 
 locals {
 
-  name = "arc-systems"
+  name      = "arc-systems"
   namespace = module.namespace.namespace
 
   labels = merge(var.kube_labels, {
@@ -30,12 +30,12 @@ module "constants" {
 ***************************************/
 
 module "namespace" {
-  source = "../../modules/kube_namespace"
-  namespace = local.name
-  admin_groups = ["system:admins"]
-  reader_groups = ["system:readers"]
+  source            = "../../modules/kube_namespace"
+  namespace         = local.name
+  admin_groups      = ["system:admins"]
+  reader_groups     = ["system:readers"]
   bot_reader_groups = ["system:bot-readers"]
-  kube_labels = local.labels
+  kube_labels       = local.labels
 }
 
 /***************************************
@@ -44,9 +44,9 @@ module "namespace" {
 
 resource "kubernetes_service_account" "arc" {
   metadata {
-    name = "gha-runner-scale-set-controller"
+    name      = "gha-runner-scale-set-controller"
     namespace = local.namespace
-    labels = local.labels
+    labels    = local.labels
   }
 }
 
@@ -67,14 +67,14 @@ resource "helm_release" "arc" {
 
       serviceAccount = {
         create = false
-        name = kubernetes_service_account.arc.metadata[0].name
+        name   = kubernetes_service_account.arc.metadata[0].name
       }
 
       securityContext = {
-        capabilities = {drop = ["ALL"]}
-        readOnlyRootFilesystem = true
-        runAsNonRoot = true
-        runAsUser = 1000
+        capabilities             = { drop = ["ALL"] }
+        readOnlyRootFilesystem   = true
+        runAsNonRoot             = true
+        runAsUser                = 1000
         allowPrivilegeEscalation = false
       }
 
@@ -84,11 +84,11 @@ resource "helm_release" "arc" {
       affinity = {
         podAntiAffinity = {
           requiredDuringSchedulingIgnoredDuringExecution = [{
-          topologyKey = "kubernetes.io/hostname"
+            topologyKey = "kubernetes.io/hostname"
             labelSelector = {
               matchLabels = {
                 "app.kubernetes.io/component" = "controller-manager"
-                "app.kubernetes.io/instance" = "gha-runner-scale-set-controller"
+                "app.kubernetes.io/instance"  = "gha-runner-scale-set-controller"
               }
             }
           }]
@@ -96,34 +96,34 @@ resource "helm_release" "arc" {
       }
 
       flags = {
-        logLevel = "info"
+        logLevel  = "info"
         logFormat = "json"
       }
 
       metrics = {
-       controllerManagerAddr = ":8080"
-       listenerAddr = ":8080"
-       listenerEndpoint = "/metrics"
+        controllerManagerAddr = ":8080"
+        listenerAddr          = ":8080"
+        listenerEndpoint      = "/metrics"
       }
     })
   ]
 }
 
 resource "kubernetes_manifest" "vpa" {
-  count = var.vpa_enabled ? 1: 0
+  count = var.vpa_enabled ? 1 : 0
   manifest = {
     apiVersion = "autoscaling.k8s.io/v1"
-    kind  = "VerticalPodAutoscaler"
+    kind       = "VerticalPodAutoscaler"
     metadata = {
-      name = "arc-controller"
+      name      = "arc-controller"
       namespace = local.namespace
-      labels = var.kube_labels
+      labels    = var.kube_labels
     }
     spec = {
       targetRef = {
         apiVersion = "apps/v1"
-        kind = "Deployment"
-        name = "gha-runner-scale-set-controller-gha-rs-controller"
+        kind       = "Deployment"
+        name       = "gha-runner-scale-set-controller-gha-rs-controller"
       }
     }
   }

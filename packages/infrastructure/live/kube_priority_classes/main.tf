@@ -13,7 +13,7 @@ module "constants" {
 
 resource "kubernetes_priority_class" "database" {
   metadata {
-    name = module.constants.database_priority_class_name
+    name   = module.constants.database_priority_class_name
     labels = var.kube_labels
   }
   value = 10000000

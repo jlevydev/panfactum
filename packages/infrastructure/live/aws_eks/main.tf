@@ -19,24 +19,24 @@ locals {
     "k8s.io/cluster-autoscaler/enabled"             = "true"
     "kubernetes.io/cluster/${var.cluster_name}"     = "owned"
   })
-  asg_tags  = flatten([for group, config in var.node_groups: [
+  asg_tags = flatten([for group, config in var.node_groups : [
     for tag in concat(
       [
-        {key = "k8s.io/cluster-autoscaler/node-template/label/node.kubernetes.io/class", value = config.class},
-        {key = "k8s.io/cluster-autoscaler/node-template/label/class", value = config.class},
-        {key = "k8s.io/cluster-autoscaler/node-template/label/kubernetes.io/os", value = "linux"},
-        {key = "k8s.io/cluster-autoscaler/node-template/label/kubernetes.io/arch", value = "amd64"},
-        {key = "k8s.io/cluster-autoscaler/node-template/label/kubernetes.io/hostname", value = group},
-        {key = "k8s.io/cluster-autoscaler/node-template/label/topology.kubernetes.io/region", value = data.aws_region.region.name},
-        {key = "k8s.io/cluster-autoscaler/node-template/label/topology.kubernetes.io/zone", value = data.aws_subnet.node_groups[config.subnets[0]].availability_zone}
+        { key = "k8s.io/cluster-autoscaler/node-template/label/node.kubernetes.io/class", value = config.class },
+        { key = "k8s.io/cluster-autoscaler/node-template/label/class", value = config.class },
+        { key = "k8s.io/cluster-autoscaler/node-template/label/kubernetes.io/os", value = "linux" },
+        { key = "k8s.io/cluster-autoscaler/node-template/label/kubernetes.io/arch", value = "amd64" },
+        { key = "k8s.io/cluster-autoscaler/node-template/label/kubernetes.io/hostname", value = group },
+        { key = "k8s.io/cluster-autoscaler/node-template/label/topology.kubernetes.io/region", value = data.aws_region.region.name },
+        { key = "k8s.io/cluster-autoscaler/node-template/label/topology.kubernetes.io/zone", value = data.aws_subnet.node_groups[config.subnets[0]].availability_zone }
       ],
       config.spot ? [
-        {key = "k8s.io/cluster-autoscaler/node-template/label/eks.amazonaws.com/capacityType", value = "SPOT" },
-        {key = "k8s.io/cluster-autoscaler/node-template/taint/spot", value = "true:NoSchedule"}
-      ] : [
-        {key = "k8s.io/cluster-autoscaler/node-template/label/eks.amazonaws.com/capacityType", value = "ON_DEMAND" }
+        { key = "k8s.io/cluster-autoscaler/node-template/label/eks.amazonaws.com/capacityType", value = "SPOT" },
+        { key = "k8s.io/cluster-autoscaler/node-template/taint/spot", value = "true:NoSchedule" }
+        ] : [
+        { key = "k8s.io/cluster-autoscaler/node-template/label/eks.amazonaws.com/capacityType", value = "ON_DEMAND" }
       ]
-    ): {group = group, key = tag.key, value = tag.value}
+    ) : { group = group, key = tag.key, value = tag.value }
   ]])
 
   blacklisted_ami_ids = []
@@ -63,11 +63,11 @@ resource "aws_eks_cluster" "cluster" {
     endpoint_private_access = true
     endpoint_public_access  = true
     public_access_cidrs     = ["0.0.0.0/0"]
-    security_group_ids = [aws_security_group.control_plane.id]
+    security_group_ids      = [aws_security_group.control_plane.id]
   }
 
   tags = {
-    description             = var.cluster_description
+    description = var.cluster_description
   }
 
   lifecycle {
@@ -87,7 +87,7 @@ resource "aws_security_group" "control_plane" {
   description = "Security group for the ${var.cluster_name} EKS control plane."
   vpc_id      = local.vpc_id
   tags = {
-    Name                                      = var.cluster_name
+    Name                                        = var.cluster_name
     "kubernetes.io/cluster/${var.cluster_name}" = "owned"
     description                                 = "Security group for the ${var.cluster_name} EKS control plane."
   }
@@ -124,8 +124,8 @@ resource "aws_iam_role" "eks_cluster_role" {
     "arn:aws:iam::aws:policy/AmazonEKSServicePolicy"
   ]
   tags = {
-    Name              = var.cluster_name
-    description       = "IAM role for the ${var.cluster_name} EKS control plane."
+    Name        = var.cluster_name
+    description = "IAM role for the ${var.cluster_name} EKS control plane."
   }
   lifecycle {
     prevent_destroy = true
@@ -144,9 +144,9 @@ data "aws_iam_policy_document" "eks_assume_role" {
 }
 
 resource "aws_eks_addon" "coredns" {
-  cluster_name      = aws_eks_cluster.cluster.name
-  addon_name        = "coredns"
-  addon_version     = var.coredns_version
+  cluster_name                = aws_eks_cluster.cluster.name
+  addon_name                  = "coredns"
+  addon_version               = var.coredns_version
   resolve_conflicts_on_update = "OVERWRITE"
   resolve_conflicts_on_create = "OVERWRITE"
 }
@@ -157,8 +157,8 @@ resource "aws_eks_addon" "coredns" {
 // TODO: https://github.com/aws/containers-roadmap/issues/1141
 ////////////////////////////////////////////////////////////
 module "aws_cloudwatch_log_group" {
-  source = "../../modules/aws_cloudwatch_log_group"
-  name = "/aws/eks/${var.cluster_name}/cluster"
+  source      = "../../modules/aws_cloudwatch_log_group"
+  name        = "/aws/eks/${var.cluster_name}/cluster"
   description = "Collects logs for our AWS EKS Cluster"
 }
 
@@ -195,7 +195,7 @@ resource "aws_launch_template" "node_group" {
   for_each    = var.node_groups
   name_prefix = "${each.key}-"
 
-  image_id      = [for id in data.aws_ami_ids.launch_template_ami[each.key].ids: id if !contains(local.blacklisted_ami_ids, id)][0]
+  image_id = [for id in data.aws_ami_ids.launch_template_ami[each.key].ids : id if !contains(local.blacklisted_ami_ids, id)][0]
 
   default_version         = 1
   disable_api_termination = false
@@ -226,15 +226,15 @@ resource "aws_launch_template" "node_group" {
   tag_specifications {
     resource_type = "instance"
     tags = merge(local.common_tags, {
-      Name                                            = "${var.cluster_name}-${each.key}"
-      description                                     = each.value.description
-      eks-managed                                     = "true"
-      "aws-node-termination-handler/managed"          = "true"
+      Name                                   = "${var.cluster_name}-${each.key}"
+      description                            = each.value.description
+      eks-managed                            = "true"
+      "aws-node-termination-handler/managed" = "true"
     })
   }
 
   tags = merge(local.common_tags, {
-    description       = each.value.description
+    description = each.value.description
   })
 
   lifecycle {
@@ -246,9 +246,9 @@ resource "aws_eks_node_group" "node_groups" {
   for_each = var.node_groups
 
   node_group_name_prefix = "${each.key}-"
-  cluster_name    = var.cluster_name
-  node_role_arn   = aws_iam_role.node_group.arn
-  subnet_ids      = [for subnet in each.value.subnets : data.aws_subnet.node_groups[subnet].id]
+  cluster_name           = var.cluster_name
+  node_role_arn          = aws_iam_role.node_group.arn
+  subnet_ids             = [for subnet in each.value.subnets : data.aws_subnet.node_groups[subnet].id]
 
   instance_types = each.value.instance_types
 
@@ -268,19 +268,19 @@ resource "aws_eks_node_group" "node_groups" {
   capacity_type = each.value.spot ? "SPOT" : "ON_DEMAND"
 
   tags = merge(local.common_tags, {
-    description      = each.value.description
+    description = each.value.description
   })
   labels = {
-    class            = each.value.class
+    class = each.value.class
   }
   dynamic "taint" {
     for_each = merge(
       each.value.taints,
-      each.value.spot ? {spot = "true"} : {}
+      each.value.spot ? { spot = "true" } : {}
     )
     content {
-      key = taint.key
-      value = taint.value
+      key    = taint.key
+      value  = taint.value
       effect = "NO_SCHEDULE"
     }
   }
@@ -294,7 +294,7 @@ resource "aws_eks_node_group" "node_groups" {
   force_update_version = true
 
   lifecycle {
-    ignore_changes = [scaling_config[0].desired_size]
+    ignore_changes        = [scaling_config[0].desired_size]
     create_before_destroy = true
   }
 }
@@ -338,33 +338,33 @@ resource "aws_security_group_rule" "ingress_self" {
 }
 
 resource "aws_security_group_rule" "ingress_api_server" {
-  security_group_id = aws_security_group.all_nodes.id
-  type                      = "ingress"
-  description               = "Allow communication to the kubelet from the API server."
-  protocol                  = "tcp"
-  from_port                 = 1025
-  to_port                   = 65535
-  source_security_group_id  = aws_security_group.control_plane.id
+  security_group_id        = aws_security_group.all_nodes.id
+  type                     = "ingress"
+  description              = "Allow communication to the kubelet from the API server."
+  protocol                 = "tcp"
+  from_port                = 1025
+  to_port                  = 65535
+  source_security_group_id = aws_security_group.control_plane.id
 }
 
 resource "aws_security_group_rule" "ingress_api_extensions" {
-  security_group_id = aws_security_group.all_nodes.id
-  type                      = "ingress"
-  description               = "Allow communication to API server extensions."
-  protocol                  = "tcp"
-  from_port                 = 443
-  to_port                   = 443
-  source_security_group_id  = aws_security_group.control_plane.id
+  security_group_id        = aws_security_group.all_nodes.id
+  type                     = "ingress"
+  description              = "Allow communication to API server extensions."
+  protocol                 = "tcp"
+  from_port                = 443
+  to_port                  = 443
+  source_security_group_id = aws_security_group.control_plane.id
 }
 
 resource "aws_security_group_rule" "ingress_dynamic" {
-  for_each                  = var.all_nodes_allowed_security_groups
-  security_group_id         = aws_security_group.all_nodes.id
-  type                      = "ingress"
-  protocol                  = "-1"
-  from_port                 = 0
-  to_port                   = 0
-  source_security_group_id  = data.aws_security_group.all_nodes_source[each.key].id
+  for_each                 = var.all_nodes_allowed_security_groups
+  security_group_id        = aws_security_group.all_nodes.id
+  type                     = "ingress"
+  protocol                 = "-1"
+  from_port                = 0
+  to_port                  = 0
+  source_security_group_id = data.aws_security_group.all_nodes_source[each.key].id
 }
 
 resource "aws_security_group_rule" "egress_all" {
@@ -385,7 +385,7 @@ resource "aws_iam_instance_profile" "node_group" {
   name_prefix = "${var.cluster_name}-node-"
   role        = aws_iam_role.node_group.name
   tags = {
-    description       = "Instance profile for all nodes in the ${var.cluster_name} EKS cluster"
+    description = "Instance profile for all nodes in the ${var.cluster_name} EKS cluster"
   }
   lifecycle {
     create_before_destroy = true
@@ -427,7 +427,7 @@ resource "aws_iam_role" "node_group" {
   ]
 
   tags = {
-    description       = "IAM role for all nodes in the ${var.cluster_name} EKS cluster"
+    description = "IAM role for all nodes in the ${var.cluster_name} EKS cluster"
   }
 
   lifecycle {
@@ -449,7 +449,7 @@ resource "aws_iam_openid_connect_provider" "provider" {
   url             = aws_eks_cluster.cluster.identity[0].oidc[0].issuer
 
   tags = {
-    description      = "Gives the ${var.cluster_name} EKS cluster access to AWS roles via IRSA"
+    description = "Gives the ${var.cluster_name} EKS cluster access to AWS roles via IRSA"
   }
 }
 
@@ -464,7 +464,7 @@ data "aws_iam_policy_document" "queue_policy" {
       identifiers = ["events.amazonaws.com", "sqs.amazonaws.com"]
       type        = "Service"
     }
-    actions = ["sqs:SendMessage"]
+    actions   = ["sqs:SendMessage"]
     resources = [aws_sqs_queue.termination_messages.arn]
   }
 }
@@ -475,14 +475,14 @@ resource "aws_sqs_queue_policy" "termination_messages" {
 }
 
 resource "aws_sqs_queue" "termination_messages" {
-  name_prefix = "eks-node-termination-events-"
+  name_prefix               = "eks-node-termination-events-"
   message_retention_seconds = 300
-  sqs_managed_sse_enabled = true
+  sqs_managed_sse_enabled   = true
 }
 
 data "aws_iam_policy_document" "termination_messages_assume_role" {
   statement {
-    effect = "Allow"
+    effect  = "Allow"
     actions = ["sts:AssumeRole"]
     principals {
       identifiers = ["autoscaling.amazonaws.com"]
@@ -492,7 +492,7 @@ data "aws_iam_policy_document" "termination_messages_assume_role" {
 }
 
 resource "aws_iam_role" "termination_messages" {
-  name_prefix = "eks-node-termination-events-"
+  name_prefix        = "eks-node-termination-events-"
   assume_role_policy = data.aws_iam_policy_document.termination_messages_assume_role.json
 }
 
@@ -502,14 +502,14 @@ resource "aws_iam_role_policy_attachment" "termination_messages" {
 }
 
 resource "aws_autoscaling_lifecycle_hook" "hooks" {
-  for_each = aws_eks_node_group.node_groups
-  name                   = "eks-node-termination-events"
-  autoscaling_group_name = each.value.resources[0].autoscaling_groups[0].name
-  lifecycle_transition   = "autoscaling:EC2_INSTANCE_TERMINATING"
-  default_result         = "CONTINUE"
-  heartbeat_timeout      = 300
+  for_each                = aws_eks_node_group.node_groups
+  name                    = "eks-node-termination-events"
+  autoscaling_group_name  = each.value.resources[0].autoscaling_groups[0].name
+  lifecycle_transition    = "autoscaling:EC2_INSTANCE_TERMINATING"
+  default_result          = "CONTINUE"
+  heartbeat_timeout       = 300
   notification_target_arn = aws_sqs_queue.termination_messages.arn
-  role_arn = aws_iam_role.termination_messages.arn
+  role_arn                = aws_iam_role.termination_messages.arn
 }
 
 ##########################################################################
@@ -517,7 +517,7 @@ resource "aws_autoscaling_lifecycle_hook" "hooks" {
 ##########################################################################
 
 resource "aws_autoscaling_group_tag" "tags" {
-  count = length(local.asg_tags)
+  count                  = length(local.asg_tags)
   autoscaling_group_name = aws_eks_node_group.node_groups[local.asg_tags[count.index].group].resources[0].autoscaling_groups[0].name
   tag {
     key                 = local.asg_tags[count.index].key

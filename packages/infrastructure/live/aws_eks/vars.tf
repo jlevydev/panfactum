@@ -29,8 +29,8 @@ variable "kube_control_plane_legacy_role_name" {
 
 variable "kube_control_plane_logging" {
   description = "Which log streams to turn on for the control plane (will be sent to Cloudwatch and forwarded to DataDog)"
-  type = set(string)
-  default = []
+  type        = set(string)
+  default     = []
   validation {
     condition = length(setsubtract(var.kube_control_plane_logging, [
       "api",
@@ -59,19 +59,19 @@ variable "coredns_version" {
 variable "node_groups" {
   description = "Map of node group names to configurations"
   type = map(object({
-    kube_version                      = string       // the version of kubernetes to use on the node
-    instance_types                    = list(string) // the instance size codes
-    class                             = string       // a "class" for the nodes in the node group (used for node selectors)
-    min_nodes                         = number       // minimum number of nodes in the group
-    max_nodes                         = number       // maximum number of nodes in the group
-    init_nodes                        = number       // the number of nodes in the group on first launch (ignored after launch)
-    subnets                           = list(string) // list of names for subnets that nodes should be deployed to
-    scaling_cooldown_seconds          = number       // number of seconds to wait between scaling events
-    health_check_grace_period_seconds = number       // number of seconds to wait before healthchecks start failing
-    max_instance_lifetime_seconds     = number       // maximum number of seconds that an instance is allowed to exist
-    description                       = string       // description of the purpose of the node group
-    spot                              = optional(bool, false)       // whether the instances in this node group should be spot instances
-    taints                            = optional(map(string), {})   // A map of taint key-values for NO_SCHEDULE settings
+    kube_version                      = string                    // the version of kubernetes to use on the node
+    instance_types                    = list(string)              // the instance size codes
+    class                             = string                    // a "class" for the nodes in the node group (used for node selectors)
+    min_nodes                         = number                    // minimum number of nodes in the group
+    max_nodes                         = number                    // maximum number of nodes in the group
+    init_nodes                        = number                    // the number of nodes in the group on first launch (ignored after launch)
+    subnets                           = list(string)              // list of names for subnets that nodes should be deployed to
+    scaling_cooldown_seconds          = number                    // number of seconds to wait between scaling events
+    health_check_grace_period_seconds = number                    // number of seconds to wait before healthchecks start failing
+    max_instance_lifetime_seconds     = number                    // maximum number of seconds that an instance is allowed to exist
+    description                       = string                    // description of the purpose of the node group
+    spot                              = optional(bool, false)     // whether the instances in this node group should be spot instances
+    taints                            = optional(map(string), {}) // A map of taint key-values for NO_SCHEDULE settings
   }))
 }
 

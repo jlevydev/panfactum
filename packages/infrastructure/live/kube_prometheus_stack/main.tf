@@ -9,15 +9,15 @@ terraform {
       version = "2.10.1"
     }
     time = {
-      source = "hashicorp/time"
+      source  = "hashicorp/time"
       version = "0.9.1"
     }
     random = {
-      source = "hashicorp/random"
+      source  = "hashicorp/random"
       version = "3.5.1"
     }
     azuread = {
-      source = "hashicorp/azuread"
+      source  = "hashicorp/azuread"
       version = "2.41.0"
     }
   }
@@ -25,7 +25,7 @@ terraform {
 
 locals {
 
-  name = "prometheus"
+  name      = "prometheus"
   namespace = module.namespace.namespace
 
   // Extract values from the enforced kubernetes labels
@@ -56,12 +56,12 @@ module "constants" {
 ***************************************/
 
 module "namespace" {
-  source = "../../modules/kube_namespace"
-  namespace = local.name
-  admin_groups = ["system:admins"]
-  reader_groups = ["system:readers"]
+  source            = "../../modules/kube_namespace"
+  namespace         = local.name
+  admin_groups      = ["system:admins"]
+  reader_groups     = ["system:readers"]
   bot_reader_groups = ["system:bot-readers"]
-  kube_labels = local.labels
+  kube_labels       = local.labels
 }
 
 /***************************************
@@ -72,7 +72,7 @@ resource "time_rotating" "grafana_admin_pw" {
 }
 
 resource "random_password" "grafana_admin_pw" {
-  length = 32
+  length  = 32
   special = false
   keepers = {
     time = time_rotating.grafana_admin_pw.id
@@ -81,11 +81,11 @@ resource "random_password" "grafana_admin_pw" {
 
 resource "kubernetes_secret" "grafana_creds" {
   metadata {
-    name = "grafana-creds"
+    name      = "grafana-creds"
     namespace = local.namespace
   }
   data = {
-    admin-user = "admin"
+    admin-user     = "admin"
     admin-password = random_password.grafana_admin_pw.result
   }
 }
@@ -105,7 +105,7 @@ resource "helm_release" "prometheus_stack" {
     yamlencode({
 
       commonLabels = {
-        customizationHash = md5(join("", [for filename in fileset(path.module, "prometheus_kustomize/*"): filesha256(filename)]))
+        customizationHash = md5(join("", [for filename in fileset(path.module, "prometheus_kustomize/*") : filesha256(filename)]))
       }
 
       crds = {
@@ -151,30 +151,30 @@ resource "helm_release" "prometheus_stack" {
         enabled = true
         admin = {
           existingSecret = kubernetes_secret.grafana_creds.metadata[0].name
-          userKey = "admin-user"
-          passwordKey = "admin-password"
+          userKey        = "admin-user"
+          passwordKey    = "admin-password"
         }
         "grafana.ini" = {
           server = {
-            domain = local.grafana_domain
+            domain   = local.grafana_domain
             root_url = "https://${local.grafana_domain}/"
           }
           "auth.azuread" = {
-            name = "Azure AD"
-            enabled = true
-            allow_sign_up = true
-            auto_login = true
-            client_id = module.oauth_app.application_id
-            client_secret  = module.oauth_app.client_secret
-            scopes = "openid profile email"
-            auth_url = "https://login.microsoftonline.com/${var.azuread_tenant_id}/oauth2/v2.0/authorize"
-            token_url = "https://login.microsoftonline.com/${var.azuread_tenant_id}/oauth2/v2.0/token"
-            allowed_grousp = join(" ", [for group in data.azuread_group.groups: group.object_id])
-            allowed_organizations = var.azuread_tenant_id
-            role_attribute_strict = false
+            name                       = "Azure AD"
+            enabled                    = true
+            allow_sign_up              = true
+            auto_login                 = true
+            client_id                  = module.oauth_app.application_id
+            client_secret              = module.oauth_app.client_secret
+            scopes                     = "openid profile email"
+            auth_url                   = "https://login.microsoftonline.com/${var.azuread_tenant_id}/oauth2/v2.0/authorize"
+            token_url                  = "https://login.microsoftonline.com/${var.azuread_tenant_id}/oauth2/v2.0/token"
+            allowed_grousp             = join(" ", [for group in data.azuread_group.groups : group.object_id])
+            allowed_organizations      = var.azuread_tenant_id
+            role_attribute_strict      = false
             allow_assign_grafana_admin = true
-            skip_org_role_sync = false
-            use_pkce = true
+            skip_org_role_sync         = false
+            use_pkce                   = true
           }
         }
         ingress = {
@@ -195,23 +195,23 @@ resource "helm_release" "prometheus_stack" {
 ***************************************/
 
 data "azuread_group" "groups" {
-  for_each = toset(local.all_groups)
-  display_name = each.key
+  for_each         = toset(local.all_groups)
+  display_name     = each.key
   security_enabled = true
 }
 
 module "oauth_app" {
-  source = "../../modules/aad_oauth_application"
-  display_name = "grafana-${local.environment}-${local.region}"
-  description = "Used to authenticate users to grafana in the ${local.environment} environment in ${local.region}"
-  redirect_uris = local.oauth_redirect_uris
-  admin_role_value = "GrafanaAdmin"
-  editor_role_value = "Editor"
-  reader_role_value = "Viewer"
-  admin_group_object_ids = [for group in var.admin_groups: data.azuread_group.groups[group].object_id]
-  editor_group_object_ids = [for group in var.editor_groups: data.azuread_group.groups[group].object_id]
-  reader_group_object_ids = [for group in var.reader_groups: data.azuread_group.groups[group].object_id]
-  aad_sp_object_owners = var.aad_sp_object_owners
+  source                  = "../../modules/aad_oauth_application"
+  display_name            = "grafana-${local.environment}-${local.region}"
+  description             = "Used to authenticate users to grafana in the ${local.environment} environment in ${local.region}"
+  redirect_uris           = local.oauth_redirect_uris
+  admin_role_value        = "GrafanaAdmin"
+  editor_role_value       = "Editor"
+  reader_role_value       = "Viewer"
+  admin_group_object_ids  = [for group in var.admin_groups : data.azuread_group.groups[group].object_id]
+  editor_group_object_ids = [for group in var.editor_groups : data.azuread_group.groups[group].object_id]
+  reader_group_object_ids = [for group in var.reader_groups : data.azuread_group.groups[group].object_id]
+  aad_sp_object_owners    = var.aad_sp_object_owners
 }
 
 /***************************************
@@ -219,13 +219,13 @@ module "oauth_app" {
 ***************************************/
 
 module "ingress" {
-  source = "../../modules/kube_ingress"
-  namespace = local.namespace
-  kube_labels = local.labels
+  source       = "../../modules/kube_ingress"
+  namespace    = local.namespace
+  kube_labels  = local.labels
   ingress_name = "grafana"
   ingress_configs = [{
-    domains = [local.grafana_domain]
-    service = "prometheus-grafana"
+    domains      = [local.grafana_domain]
+    service      = "prometheus-grafana"
     service_port = 80
   }]
   depends_on = [helm_release.prometheus_stack]

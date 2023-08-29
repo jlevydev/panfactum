@@ -18,7 +18,7 @@ terraform {
 
 locals {
 
-  name = "vault"
+  name      = "vault"
   namespace = module.namespace.namespace
 
   environment = var.environment
@@ -38,7 +38,7 @@ locals {
     submodule = local.server_submodule
   })
   server_match = {
-    module = local.module
+    module    = local.module
     submodule = local.server_submodule
   }
 
@@ -57,12 +57,12 @@ data "aws_caller_identity" "id" {}
 ***************************************/
 
 module "namespace" {
-  source = "../../modules/kube_namespace"
-  namespace = local.name
-  admin_groups = ["system:admins"]
-  reader_groups = ["system:readers"]
+  source            = "../../modules/kube_namespace"
+  namespace         = local.name
+  admin_groups      = ["system:admins"]
+  reader_groups     = ["system:readers"]
   bot_reader_groups = ["system:bot-readers"]
-  kube_labels = local.labels
+  kube_labels       = local.labels
 }
 
 /***************************************
@@ -70,8 +70,8 @@ module "namespace" {
 ***************************************/
 data "aws_iam_policy_document" "kms" {
   statement {
-    sid       = "VaultKMSUnseal"
-    effect    = "Allow"
+    sid    = "VaultKMSUnseal"
+    effect = "Allow"
     actions = [
       "kms:*"
     ]
@@ -80,7 +80,7 @@ data "aws_iam_policy_document" "kms" {
         "arn:aws:iam::${data.aws_caller_identity.id.account_id}:root",
         module.aws_permissions.role_arn
       ]
-      type        = "AWS"
+      type = "AWS"
     }
     resources = ["*"]
   }
@@ -92,7 +92,7 @@ resource "aws_kms_key" "vault" {
   deletion_window_in_days  = 30
   is_enabled               = true
   multi_region             = true
-  policy = data.aws_iam_policy_document.kms.json
+  policy                   = data.aws_iam_policy_document.kms.json
 }
 
 resource "aws_kms_alias" "alias" {
@@ -106,7 +106,7 @@ resource "aws_kms_replica_key" "replica" {
   description             = "vault unseal key for ${var.eks_cluster_name}"
   deletion_window_in_days = 30
   enabled                 = true
-  policy = data.aws_iam_policy_document.kms.json
+  policy                  = data.aws_iam_policy_document.kms.json
 }
 
 resource "aws_kms_alias" "replica_alias" {
@@ -117,8 +117,8 @@ resource "aws_kms_alias" "replica_alias" {
 
 data "aws_iam_policy_document" "sa" {
   statement {
-    sid       = "VaultKMSUnseal"
-    effect    = "Allow"
+    sid    = "VaultKMSUnseal"
+    effect = "Allow"
     actions = [
       "kms:Encrypt",
       "kms:Decrypt",
@@ -130,19 +130,19 @@ data "aws_iam_policy_document" "sa" {
 
 resource "kubernetes_service_account" "vault" {
   metadata {
-    name = local.name
+    name      = local.name
     namespace = local.namespace
-    labels = local.labels
+    labels    = local.labels
   }
 }
 
 module "aws_permissions" {
-  source = "../../modules/kube_sa_auth_aws"
-  service_account = kubernetes_service_account.vault.metadata[0].name
+  source                    = "../../modules/kube_sa_auth_aws"
+  service_account           = kubernetes_service_account.vault.metadata[0].name
   service_account_namespace = local.namespace
-  eks_cluster_name = var.eks_cluster_name
-  iam_policy_json = data.aws_iam_policy_document.sa.json
-  public_outbound_ips = var.public_outbound_ips
+  eks_cluster_name          = var.eks_cluster_name
+  iam_policy_json           = data.aws_iam_policy_document.sa.json
+  public_outbound_ips       = var.public_outbound_ips
 }
 
 /***************************************
@@ -184,7 +184,7 @@ resource "helm_release" "vault" {
         }
         pod = {
           priorityClassName = "system-cluster-critical"
-          tolerations = module.constants.spot_node_toleration_helm
+          tolerations       = module.constants.spot_node_toleration_helm
         }
       }
 
@@ -200,12 +200,12 @@ resource "helm_release" "vault" {
         }
         serviceAccount = {
           create = false,
-          name = kubernetes_service_account.vault.metadata[0].name
+          name   = kubernetes_service_account.vault.metadata[0].name
         }
         dataStorage = {
-          enabled = true
-          size = "${var.vault_storage_size_gb}Gi"
-          mountPath = "/vault/data"
+          enabled      = true
+          size         = "${var.vault_storage_size_gb}Gi"
+          mountPath    = "/vault/data"
           storageClass = "ebs-standard"
         }
         affinity = {
@@ -214,13 +214,13 @@ resource "helm_release" "vault" {
               labelSelector = {
                 matchLabels = local.server_match
               }
-              topologyKey: "kubernetes.io/hostname"
+              topologyKey : "kubernetes.io/hostname"
             }]
           }
         }
         topologySpreadConstraints = [{
-          maxSkew = 1
-          topologyKey = "topology.kubernetes.io/zone"
+          maxSkew           = 1
+          topologyKey       = "topology.kubernetes.io/zone"
           whenUnsatisfiable = "DoNotSchedule"
           labelSelector = {
             matchLabels = local.server_match
@@ -229,27 +229,27 @@ resource "helm_release" "vault" {
         priorityClassName = "system-cluster-critical"
 
         extraEnvironmentVars = {
-          AWS_REGION = data.aws_region.region.name
+          AWS_REGION   = data.aws_region.region.name
           AWS_ROLE_ARN = module.aws_permissions.role_arn
         }
 
         standalone = {
           enabled = !var.ha_enabled
           config = templatefile("./standalone.hcl", {
-            aws_region = data.aws_region.region.name
-            kms_key_id = aws_kms_key.vault.id
+            aws_region   = data.aws_region.region.name
+            kms_key_id   = aws_kms_key.vault.id
             aws_role_arn = module.aws_permissions.role_arn
           })
         }
         ha = {
-          enabled = var.ha_enabled
+          enabled  = var.ha_enabled
           replicas = 3
           raft = {
-            enabled = true
+            enabled   = true
             setNodeId = true
             config = templatefile("./ha.hcl", {
-              aws_region = data.aws_region.region.name
-              kms_key_id = aws_kms_key.vault.id
+              aws_region   = data.aws_region.region.name
+              kms_key_id   = aws_kms_key.vault.id
               aws_role_arn = module.aws_permissions.role_arn
             })
           }
@@ -265,20 +265,20 @@ resource "helm_release" "vault" {
 ***************************************/
 
 resource "kubernetes_manifest" "vpa_csi" {
-  count = var.vpa_enabled ? 1: 0
+  count = var.vpa_enabled ? 1 : 0
   manifest = {
     apiVersion = "autoscaling.k8s.io/v1"
-    kind  = "VerticalPodAutoscaler"
+    kind       = "VerticalPodAutoscaler"
     metadata = {
-      name = "vault-csi-provider"
+      name      = "vault-csi-provider"
       namespace = local.namespace
-      labels = local.injector_labels
+      labels    = local.injector_labels
     }
     spec = {
       targetRef = {
         apiVersion = "apps/v1"
-        kind = "DaemonSet"
-        name = "vault-csi-provider"
+        kind       = "DaemonSet"
+        name       = "vault-csi-provider"
       }
     }
   }
@@ -286,20 +286,20 @@ resource "kubernetes_manifest" "vpa_csi" {
 }
 
 resource "kubernetes_manifest" "vpa_server" {
-  count = var.vpa_enabled ? 1: 0
+  count = var.vpa_enabled ? 1 : 0
   manifest = {
     apiVersion = "autoscaling.k8s.io/v1"
-    kind  = "VerticalPodAutoscaler"
+    kind       = "VerticalPodAutoscaler"
     metadata = {
-      name = "vault"
+      name      = "vault"
       namespace = local.namespace
-      labels = local.server_labels
+      labels    = local.server_labels
     }
     spec = {
       targetRef = {
         apiVersion = "apps/v1"
-        kind = "StatefulSet"
-        name = "vault"
+        kind       = "StatefulSet"
+        name       = "vault"
       }
     }
   }
@@ -311,13 +311,13 @@ resource "kubernetes_manifest" "vpa_server" {
 ***************************************/
 
 module "ingress" {
-  source = "../../modules/kube_ingress"
-  namespace = local.namespace
-  kube_labels = local.server_labels
+  source       = "../../modules/kube_ingress"
+  namespace    = local.namespace
+  kube_labels  = local.server_labels
   ingress_name = local.server_submodule
   ingress_configs = [{
-    domains = [local.vault_domain]
-    service = "vault"
+    domains      = [local.vault_domain]
+    service      = "vault"
     service_port = 8200
   }]
   depends_on = [helm_release.vault]

@@ -11,7 +11,7 @@ dependency "vault" {
 }
 
 inputs = {
-  vault_url = dependency.vault.outputs.vault_url
+  vault_url          = dependency.vault.outputs.vault_url
   vault_internal_url = dependency.vault.outputs.vault_internal_url
   admin_groups = [
     "rbac_engineering_admins",

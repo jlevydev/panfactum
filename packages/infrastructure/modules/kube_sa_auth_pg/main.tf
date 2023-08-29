@@ -5,7 +5,7 @@ terraform {
       version = "2.22"
     }
     vault = {
-      source = "hashicorp/vault"
+      source  = "hashicorp/vault"
       version = "3.19.0"
     }
   }
@@ -23,7 +23,7 @@ module "constants" {
 * Main
 ***************************************/
 
-data vault_policy_document "main" {
+data "vault_policy_document" "main" {
   rule {
     capabilities = ["read"]
     path         = "db/creds/${var.database_role}"
@@ -40,34 +40,34 @@ resource "vault_kubernetes_auth_backend_role" "main" {
   bound_service_account_names      = [var.service_account]
   bound_service_account_namespaces = [var.namespace]
   role_name                        = local.role_name
-  token_ttl = 60 * 60
-  token_policies = [vault_policy.main.name]
+  token_ttl                        = 60 * 60
+  token_policies                   = [vault_policy.main.name]
 }
 
 resource "kubernetes_manifest" "creds" {
   manifest = {
     apiVersion = "secrets-store.csi.x-k8s.io/v1alpha1"
-    kind = "SecretProviderClass"
+    kind       = "SecretProviderClass"
     metadata = {
-      name = local.role_name
+      name      = local.role_name
       namespace = var.namespace
-      labels = var.kube_labels
+      labels    = var.kube_labels
     }
     spec = {
       provider = "vault"
       parameters = {
         vaultAddress = "http://vault.vault.svc.cluster.local:8200"
-        roleName = vault_kubernetes_auth_backend_role.main.role_name
+        roleName     = vault_kubernetes_auth_backend_role.main.role_name
         objects = yamlencode([
           {
             objectName = "password"
             secretPath = "db/creds/${var.database_role}"
-            secretKey = "password"
+            secretKey  = "password"
           },
           {
             objectName = "username"
             secretPath = "db/creds/${var.database_role}"
-            secretKey = "username"
+            secretKey  = "username"
           }
         ])
       }

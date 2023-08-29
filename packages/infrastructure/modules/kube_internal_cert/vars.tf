@@ -6,7 +6,7 @@ variable "namespace" {
 variable "service_names" {
   description = "The names of the kubernetes service(s) to use for the domain names"
   type        = list(string)
-  default = []
+  default     = []
 }
 
 variable "secret_name" {
@@ -16,17 +16,17 @@ variable "secret_name" {
 
 variable "labels" {
   description = "Labels to apply to the certificate"
-  type = map(string)
+  type        = map(string)
 }
 
 variable "usages" {
   description = "Usages to add to the certificate"
-  type = list(string)
-  default = []
+  type        = list(string)
+  default     = []
 }
 
 variable "common_name" {
   description = "Common name to add to add to the cert"
-  type = string
-  default = "default"
+  type        = string
+  default     = "default"
 }

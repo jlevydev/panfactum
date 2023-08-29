@@ -17,7 +17,7 @@ terraform {
 
 locals {
 
-  name = "cilium"
+  name      = "cilium"
   namespace = module.namespace.namespace
 
   // Extract values from the enforced kubernetes labels
@@ -41,12 +41,12 @@ module "constants" {
 ***************************************/
 
 module "namespace" {
-  source = "../../modules/kube_namespace"
-  namespace = local.name
-  admin_groups = ["system:admins"]
-  reader_groups = ["system:readers"]
+  source            = "../../modules/kube_namespace"
+  namespace         = local.name
+  admin_groups      = ["system:admins"]
+  reader_groups     = ["system:readers"]
   bot_reader_groups = ["system:bot-readers"]
-  kube_labels = local.labels
+  kube_labels       = local.labels
 }
 
 /***************************************
@@ -77,12 +77,12 @@ data "aws_iam_policy_document" "cilium" {
 }
 
 module "aws_permissions" {
-  source = "../../modules/kube_sa_auth_aws"
-  service_account = "cilium-operator"
+  source                    = "../../modules/kube_sa_auth_aws"
+  service_account           = "cilium-operator"
   service_account_namespace = local.namespace
-  eks_cluster_name = var.eks_cluster_name
-  iam_policy_json = data.aws_iam_policy_document.cilium.json
-  public_outbound_ips = var.public_outbound_ips
+  eks_cluster_name          = var.eks_cluster_name
+  iam_policy_json           = data.aws_iam_policy_document.cilium.json
+  public_outbound_ips       = var.public_outbound_ips
 
   // The helm chart creates the service account
   annotate_service_account = false
@@ -106,7 +106,7 @@ resource "kubernetes_annotations" "service_account" {
 * Cilium
 ***************************************/
 
-resource helm_release "cilium" {
+resource "helm_release" "cilium" {
   namespace       = local.namespace
   name            = "cilium"
   repository      = "https://helm.cilium.io/"
@@ -126,17 +126,17 @@ resource helm_release "cilium" {
         // ENI; otherwise, traffic will get dropped
         // https://github.com/cilium/cilium/issues/19250
         awsEnablePrefixDelegation = true
-        awsReleaseExcessIPs = true
+        awsReleaseExcessIPs       = true
       }
       ipam = {
-        mode = "eni"
+        mode    = "eni"
         iamRole = module.aws_permissions.role_arn
       }
       egressMasqueradeInterfaces = "eth0"
-      routingMode = "native"
+      routingMode                = "native"
 
       podLabels = merge(local.labels, {
-        customizationHash = md5(join("", [for filename in fileset(path.module, "cilium_kustomize/*"): filesha256(filename)]))
+        customizationHash = md5(join("", [for filename in fileset(path.module, "cilium_kustomize/*") : filesha256(filename)]))
       })
 
       policyEnforcementMode = "default"
@@ -145,13 +145,13 @@ resource helm_release "cilium" {
       // shifts so you MUST use the internal EKS API DNS name
       // in order for this to continue to work
       kubeProxyReplacement = true
-      k8sServiceHost = trimprefix(var.eks_cluster_url, "https://")
-      k8sServicePort = 443
+      k8sServiceHost       = trimprefix(var.eks_cluster_url, "https://")
+      k8sServicePort       = 443
 
       // Enhanced load balancing capabilities
       loadBalancer = {
         serviceTopology = true
-        algorithm = "maglev"
+        algorithm       = "maglev"
       }
 
       // Used to facilitate the proper scaling in the cluster autoscaler
@@ -171,10 +171,10 @@ resource helm_release "cilium" {
           // This is needed b/c the cilium agents on each node need the operator
           // to be running in order for them to remove this taint
           {
-            key = module.constants.cilium_taint.key
+            key      = module.constants.cilium_taint.key
             operator = "Equal"
-            value = module.constants.cilium_taint.value
-            effect = module.constants.cilium_taint.effect
+            value    = module.constants.cilium_taint.value
+            effect   = module.constants.cilium_taint.effect
           }
         ])
 
@@ -185,8 +185,8 @@ resource helm_release "cilium" {
           "--cluster-name=${var.eks_cluster_name}"
         ]
         extraEnv = [
-          { name: "AWS_ROLE_ARN", value = module.aws_permissions.role_arn },
-          { name: "AWS_REGION", value = data.aws_region.region.name }
+          { name : "AWS_ROLE_ARN", value = module.aws_permissions.role_arn },
+          { name : "AWS_REGION", value = data.aws_region.region.name }
         ]
       }
     })
@@ -204,40 +204,40 @@ resource helm_release "cilium" {
 }
 
 resource "kubernetes_manifest" "vpa_operator" {
-  count = var.vpa_enabled ? 1: 0
+  count = var.vpa_enabled ? 1 : 0
   manifest = {
     apiVersion = "autoscaling.k8s.io/v1"
-    kind  = "VerticalPodAutoscaler"
+    kind       = "VerticalPodAutoscaler"
     metadata = {
-      name = "cilium-operator"
+      name      = "cilium-operator"
       namespace = local.namespace
-      labels = local.labels
+      labels    = local.labels
     }
     spec = {
       targetRef = {
         apiVersion = "apps/v1"
-        kind = "Deployment"
-        name = "cilium-operator"
+        kind       = "Deployment"
+        name       = "cilium-operator"
       }
     }
   }
 }
 
 resource "kubernetes_manifest" "vpa_node" {
-  count = var.vpa_enabled ? 1: 0
+  count = var.vpa_enabled ? 1 : 0
   manifest = {
     apiVersion = "autoscaling.k8s.io/v1"
-    kind  = "VerticalPodAutoscaler"
+    kind       = "VerticalPodAutoscaler"
     metadata = {
-      name = "cilium-nodes"
+      name      = "cilium-nodes"
       namespace = local.namespace
-      labels = local.labels
+      labels    = local.labels
     }
     spec = {
       targetRef = {
         apiVersion = "apps/v1"
-        kind = "DaemonSet"
-        name = "cilium"
+        kind       = "DaemonSet"
+        name       = "cilium"
       }
     }
   }

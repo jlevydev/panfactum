@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: ./.github/actions/build-image
-        timeout-minutes: 120
+        timeout-minutes: 30
         with:
           image-repo: "ci"
           image-tag: ${{ github.sha }}

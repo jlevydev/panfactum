@@ -3,6 +3,6 @@ output "namespace" {
 }
 
 output "grafana_admin_password" {
-  value = random_password.grafana_admin_pw.result
+  value     = random_password.grafana_admin_pw.result
   sensitive = true
 }

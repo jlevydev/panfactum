@@ -19,3 +19,13 @@ jobs:
           image-repo: primary-api
           image-tag: ${{ github.sha }}
           containerfile-directory: packages/primary-api
+
+  deploy-dev:
+    if: ${{ github.ref }} == 'refs/heads/main'
+    needs: build
+    runs-on: development-small
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/tf-apply
+        with:
+          tg-directory: ./environments/development/us-east-2/panfactum_primary_api_deployment

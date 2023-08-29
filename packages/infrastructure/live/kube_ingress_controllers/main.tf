@@ -13,7 +13,7 @@ terraform {
       version = "5.10"
     }
     tls = {
-      source = "hashicorp/tls"
+      source  = "hashicorp/tls"
       version = "4.0.4"
     }
   }
@@ -21,11 +21,11 @@ terraform {
 
 locals {
 
-  name = "ingress"
-  nginx_name = "ingress-nginx"
-  alb_name = "alb-controller"
+  name         = "ingress"
+  nginx_name   = "ingress-nginx"
+  alb_name     = "alb-controller"
   bastion_name = "bastion"
-  namespace = module.namespace.namespace
+  namespace    = module.namespace.namespace
 
   environment = var.environment
   module      = var.module
@@ -43,14 +43,14 @@ locals {
 
   nginx_selector = {
     "app.kubernetes.io/component" = "controller"
-    "app.kubernetes.io/instance" = "ingress-nginx"
-    "app.kubernetes.io/name" = "ingress-nginx"
+    "app.kubernetes.io/instance"  = "ingress-nginx"
+    "app.kubernetes.io/name"      = "ingress-nginx"
   }
   alb_selector = {
     "app.kubernetes.io/name" = "aws-load-balancer-controller"
   }
   bastion_selector = {
-    module = local.module
+    module    = local.module
     submodule = local.bastion_name
   }
 
@@ -73,10 +73,10 @@ locals {
     default-src = [
       "'self'"
     ]
-    connect-src = ["'self'", "ws:"]
-    base-uri = ["'self'"]
-    font-src = ["'self'", "https:", "data:"]
-    form-action = ["'self'"]
+    connect-src     = ["'self'", "ws:"]
+    base-uri        = ["'self'"]
+    font-src        = ["'self'", "https:", "data:"]
+    form-action     = ["'self'"]
     frame-ancestors = ["'self'"]
     img-src = [
       "'self'",
@@ -86,20 +86,20 @@ locals {
     script-src = [
       "'self'",
       "'unsafe-inline'", # Added for grafana
-      "'unsafe-eval'"  # Added for grafana
+      "'unsafe-eval'"    # Added for grafana
     ]
     style-src = ["'self'", "https:", "'unsafe-inline'"]
   }
 
   nlb_common_annotations = {
-    "service.beta.kubernetes.io/aws-load-balancer-type" = "external"
-    "service.beta.kubernetes.io/aws-load-balancer-backend-protocol" = "tcp"
-    "service.beta.kubernetes.io/aws-load-balancer-scheme" = "internet-facing"
-    "service.beta.kubernetes.io/aws-load-balancer-nlb-target-type" = "ip"
+    "service.beta.kubernetes.io/aws-load-balancer-type"                            = "external"
+    "service.beta.kubernetes.io/aws-load-balancer-backend-protocol"                = "tcp"
+    "service.beta.kubernetes.io/aws-load-balancer-scheme"                          = "internet-facing"
+    "service.beta.kubernetes.io/aws-load-balancer-nlb-target-type"                 = "ip"
     "service.beta.kubernetes.io/aws-load-balancer-healthcheck-unhealthy-threshold" = "2"
-    "service.beta.kubernetes.io/aws-load-balancer-healthcheck-healthy-threshold" = "2"
-    "service.beta.kubernetes.io/aws-load-balancer-healthcheck-timeout" = "2"
-    "service.beta.kubernetes.io/aws-load-balancer-healthcheck-interval" = "5"
+    "service.beta.kubernetes.io/aws-load-balancer-healthcheck-healthy-threshold"   = "2"
+    "service.beta.kubernetes.io/aws-load-balancer-healthcheck-timeout"             = "2"
+    "service.beta.kubernetes.io/aws-load-balancer-healthcheck-interval"            = "5"
     "service.beta.kubernetes.io/aws-load-balancer-target-group-attributes" = join(",", [
 
       // Ensures a client always connects to the same backing server; important
@@ -124,13 +124,13 @@ module "constants" {
 }
 
 module "namespace" {
-  source = "../../modules/kube_namespace"
-  namespace = local.name
-  admin_groups = ["system:admins"]
-  reader_groups = ["system:readers"]
+  source            = "../../modules/kube_namespace"
+  namespace         = local.name
+  admin_groups      = ["system:admins"]
+  reader_groups     = ["system:readers"]
   bot_reader_groups = ["system:bot-readers"]
-  kube_labels = var.kube_labels
-  linkerd_inject = false
+  kube_labels       = var.kube_labels
+  linkerd_inject    = false
 }
 
 /********************************************************************************************************************
@@ -145,7 +145,7 @@ data "aws_vpc" "vpc" {
 
 data "aws_iam_policy_document" "alb" {
   statement {
-    effect  = "Allow"
+    effect = "Allow"
     actions = [
       "iam:CreateServiceLinkedRole"
     ]
@@ -158,7 +158,7 @@ data "aws_iam_policy_document" "alb" {
   }
 
   statement {
-    effect  = "Allow"
+    effect = "Allow"
     actions = [
       "ec2:DescribeAccountAttributes",
       "ec2:DescribeAddresses",
@@ -187,7 +187,7 @@ data "aws_iam_policy_document" "alb" {
     resources = ["*"]
   }
   statement {
-    effect  = "Allow"
+    effect = "Allow"
     actions = [
       "cognito-idp:DescribeUserPoolClient",
       "acm:ListCertificates",
@@ -211,7 +211,7 @@ data "aws_iam_policy_document" "alb" {
   }
 
   statement {
-    effect  = "Allow"
+    effect = "Allow"
     actions = [
       "ec2:AuthorizeSecurityGroupIngress",
       "ec2:RevokeSecurityGroupIngress"
@@ -220,7 +220,7 @@ data "aws_iam_policy_document" "alb" {
   }
 
   statement {
-    effect  = "Allow"
+    effect = "Allow"
     actions = [
       "ec2:CreateSecurityGroup",
     ]
@@ -228,7 +228,7 @@ data "aws_iam_policy_document" "alb" {
   }
 
   statement {
-    effect  = "Allow"
+    effect = "Allow"
     actions = [
       "ec2:CreateTags"
     ]
@@ -236,7 +236,7 @@ data "aws_iam_policy_document" "alb" {
   }
 
   statement {
-    effect  = "Allow"
+    effect = "Allow"
     actions = [
       "ec2:CreateTags",
       "ec2:DeleteTags"
@@ -245,7 +245,7 @@ data "aws_iam_policy_document" "alb" {
   }
 
   statement {
-    effect  = "Allow"
+    effect = "Allow"
     actions = [
       "ec2:AuthorizeSecurityGroupIngress",
       "ec2:RevokeSecurityGroupIngress",
@@ -255,7 +255,7 @@ data "aws_iam_policy_document" "alb" {
   }
 
   statement {
-    effect  = "Allow"
+    effect = "Allow"
     actions = [
       "elasticloadbalancing:CreateLoadBalancer",
       "elasticloadbalancing:CreateTargetGroup"
@@ -269,7 +269,7 @@ data "aws_iam_policy_document" "alb" {
   }
 
   statement {
-    effect  = "Allow"
+    effect = "Allow"
     actions = [
       "elasticloadbalancing:CreateListener",
       "elasticloadbalancing:DeleteListener",
@@ -280,7 +280,7 @@ data "aws_iam_policy_document" "alb" {
   }
 
   statement {
-    effect  = "Allow"
+    effect = "Allow"
     actions = [
       "elasticloadbalancing:AddTags",
       "elasticloadbalancing:RemoveTags"
@@ -293,7 +293,7 @@ data "aws_iam_policy_document" "alb" {
   }
 
   statement {
-    effect  = "Allow"
+    effect = "Allow"
     actions = [
       "elasticloadbalancing:AddTags",
       "elasticloadbalancing:RemoveTags"
@@ -307,7 +307,7 @@ data "aws_iam_policy_document" "alb" {
   }
 
   statement {
-    effect  = "Allow"
+    effect = "Allow"
     actions = [
       "elasticloadbalancing:ModifyLoadBalancerAttributes",
       "elasticloadbalancing:SetIpAddressType",
@@ -322,7 +322,7 @@ data "aws_iam_policy_document" "alb" {
   }
 
   statement {
-    effect  = "Allow"
+    effect = "Allow"
     actions = [
       "elasticloadbalancing:RegisterTargets",
       "elasticloadbalancing:DeregisterTargets"
@@ -331,7 +331,7 @@ data "aws_iam_policy_document" "alb" {
   }
 
   statement {
-    effect  = "Allow"
+    effect = "Allow"
     actions = [
       "elasticloadbalancing:SetWebAcl",
       "elasticloadbalancing:ModifyListener",
@@ -345,19 +345,19 @@ data "aws_iam_policy_document" "alb" {
 
 resource "kubernetes_service_account" "alb_controller" {
   metadata {
-    name = local.alb_name
+    name      = local.alb_name
     namespace = local.namespace
-    labels = local.alb_labels
+    labels    = local.alb_labels
   }
 }
 
 module "aws_permissions" {
-  source = "../../modules/kube_sa_auth_aws"
-  service_account = kubernetes_service_account.alb_controller.metadata[0].name
+  source                    = "../../modules/kube_sa_auth_aws"
+  service_account           = kubernetes_service_account.alb_controller.metadata[0].name
   service_account_namespace = local.namespace
-  eks_cluster_name = var.eks_cluster_name
-  iam_policy_json = data.aws_iam_policy_document.alb.json
-  public_outbound_ips = var.public_outbound_ips
+  eks_cluster_name          = var.eks_cluster_name
+  iam_policy_json           = data.aws_iam_policy_document.alb.json
+  public_outbound_ips       = var.public_outbound_ips
 }
 
 resource "helm_release" "alb_controller" {
@@ -382,17 +382,17 @@ resource "helm_release" "alb_controller" {
       }
       serviceAccount = {
         create = false
-        name = kubernetes_service_account.alb_controller.metadata[0].name
+        name   = kubernetes_service_account.alb_controller.metadata[0].name
       }
 
       // DOES need to be highly available to avoid ingress disruptions
       replicaCount = 2
-      tolerations = module.constants.spot_node_toleration_helm
+      tolerations  = module.constants.spot_node_toleration_helm
 
       updateStrategy = {
         type = "RollingUpdate"
         rollingUpdate = {
-          maxSurge = "50%"
+          maxSurge       = "50%"
           maxUnavailable = 0
         }
       }
@@ -400,12 +400,12 @@ resource "helm_release" "alb_controller" {
         maxUnavailable = 1
       }
       configureDefaultAffinity = true
-      priorityClassName = "system-cluster-critical"
-      clusterName = var.eks_cluster_name
-      region = data.aws_region.main.name
-      vpcId = var.vpc_id
+      priorityClassName        = "system-cluster-critical"
+      clusterName              = var.eks_cluster_name
+      region                   = data.aws_region.main.name
+      vpcId                    = var.vpc_id
       additionalLabels = merge(local.alb_labels, {
-        customizationHash = md5(join("", [for filename in sort(fileset(path.module, "alb_kustomize/*")): filesha256(filename)]))
+        customizationHash = md5(join("", [for filename in sort(fileset(path.module, "alb_kustomize/*")) : filesha256(filename)]))
       })
       deploymentAnnotations = {
         "reloader.stakater.com/auto" = "true"
@@ -419,10 +419,10 @@ resource "helm_release" "alb_controller" {
       // That means we can scope this controller to this namespace which will
       // limit the blast radius if the webhooks in this chart go down
       watchNamespace = local.namespace
-      webhookNamespaceSelectors =  [{
-        key = "module"
+      webhookNamespaceSelectors = [{
+        key      = "module"
         operator = "In"
-        values = [local.module]
+        values   = [local.module]
       }]
 
       // This is necessary for zero-downtime rollovers of the nginx ingress pods
@@ -455,9 +455,9 @@ resource "kubernetes_service" "alb_controller_healthcheck" {
   spec {
     type = "ClusterIP"
     port {
-      port = 80
+      port        = 80
       target_port = 61779 // healthcheck port
-      protocol = "TCP"
+      protocol    = "TCP"
     }
     selector = local.alb_selector
   }
@@ -465,20 +465,20 @@ resource "kubernetes_service" "alb_controller_healthcheck" {
 }
 
 resource "kubernetes_manifest" "vpa_alb" {
-  count = var.vpa_enabled ? 1: 0
+  count = var.vpa_enabled ? 1 : 0
   manifest = {
     apiVersion = "autoscaling.k8s.io/v1"
-    kind  = "VerticalPodAutoscaler"
+    kind       = "VerticalPodAutoscaler"
     metadata = {
-      name = "eks-aws-load-balancer-controller"
+      name      = "eks-aws-load-balancer-controller"
       namespace = local.namespace
-      labels = var.kube_labels
+      labels    = var.kube_labels
     }
     spec = {
       targetRef = {
         apiVersion = "apps/v1"
-        kind = "Deployment"
-        name = "eks-aws-load-balancer-controller"
+        kind       = "Deployment"
+        name       = "eks-aws-load-balancer-controller"
       }
     }
   }
@@ -489,31 +489,31 @@ resource "kubernetes_manifest" "vpa_alb" {
 ************************************************/
 
 module "webhook_cert" {
-  source = "../../modules/kube_internal_cert"
+  source        = "../../modules/kube_internal_cert"
   service_names = ["ingress-nginx-controller-admission"]
-  secret_name = local.webhook_secret
-  namespace = local.namespace
-  labels = local.nginx_labels
+  secret_name   = local.webhook_secret
+  namespace     = local.namespace
+  labels        = local.nginx_labels
 }
 
 resource "kubernetes_manifest" "ingress_cert" {
   manifest = {
     apiVersion = "cert-manager.io/v1"
-    kind = "Certificate"
+    kind       = "Certificate"
     metadata = {
-      name = local.ingress_secret
+      name      = local.ingress_secret
       namespace = local.namespace
     }
     spec = {
       secretName = local.ingress_secret
-      dnsNames = flatten([for domain in var.ingress_domains: [
+      dnsNames = flatten([for domain in var.ingress_domains : [
         domain
       ]])
 
       // We don't rotate this as frequently to both respect
       // the rate limits: https://letsencrypt.org/docs/rate-limits/
       // and to avoid getting the 30 day renewal reminders
-      duration = "2160h0m0s"
+      duration    = "2160h0m0s"
       renewBefore = "720h0m0s"
 
       privateKey = {
@@ -521,15 +521,15 @@ resource "kubernetes_manifest" "ingress_cert" {
       }
 
       issuerRef = {
-        name = "public"
-        kind = "ClusterIssuer"
+        name  = "public"
+        kind  = "ClusterIssuer"
         group = "cert-manager.io"
       }
     }
   }
   wait {
     condition {
-      type = "Ready"
+      type   = "Ready"
       status = "True"
     }
   }
@@ -539,7 +539,7 @@ resource "kubernetes_secret" "dhparam" {
   metadata {
     name      = "ingress-nginx-dhparam"
     namespace = local.namespace
-    labels    = merge(
+    labels = merge(
       local.nginx_labels,
       {
         "app.kubernetes.io/name"    = "ingress-nginx"
@@ -569,7 +569,7 @@ resource "helm_release" "nginx_ingress" {
     yamlencode({
       commonLabels = merge(local.nginx_labels,
         {
-          customizationHash = md5(join("", [for filename in sort(fileset(path.module, "nginx_kustomize/*")): filesha256(filename)]))
+          customizationHash = md5(join("", [for filename in sort(fileset(path.module, "nginx_kustomize/*")) : filesha256(filename)]))
         }
       )
       controller = {
@@ -591,21 +591,21 @@ resource "helm_release" "nginx_ingress" {
 
         // standard security headers
         addHeaders = {
-          "X-Frame-Options" = "SAMEORIGIN"
+          "X-Frame-Options"        = "SAMEORIGIN"
           "X-Content-Type-Options" = "nosniff"
-          "X-XSS-Protection" = "1"
-          "Referrer-Policy" = "no-referrer"
+          "X-XSS-Protection"       = "1"
+          "Referrer-Policy"        = "no-referrer"
 
           // TODO: These items should be configured per-ingress rather than globally
           // This is possible by using the configuration snippet annotation
           // This MUST be done before we serve HTML sites through the ingress architecture
           // It is temporarily disabled as it was blocking development
-#          "Content-Security-Policy" = join("; ", concat(
-#            [for directive, config in local.csp_config: "${directive} ${join(" ", config)}"],
-#            ["upgrade-insecure-requests"]
-#          ))
-#          "Cross-Origin-Opener-Policy" =  "same-origin-allow-popups"
-#          "Cross-Origin-Resource-Policy" = "cross-origin"
+          #          "Content-Security-Policy" = join("; ", concat(
+          #            [for directive, config in local.csp_config: "${directive} ${join(" ", config)}"],
+          #            ["upgrade-insecure-requests"]
+          #          ))
+          #          "Cross-Origin-Opener-Policy" =  "same-origin-allow-popups"
+          #          "Cross-Origin-Resource-Policy" = "cross-origin"
         }
 
         extraArgs = {
@@ -622,10 +622,10 @@ resource "helm_release" "nginx_ingress" {
 
           // Enable client-ip preservation
           proxy-add-original-uri-header = "true"
-          use-forwarded-headers = "true"
-          use-proxy-protocol = "true"
-          enable-real-ip = "true"
-          proxy-real-ip-cidr = "0.0.0.0/0"
+          use-forwarded-headers         = "true"
+          use-proxy-protocol            = "true"
+          enable-real-ip                = "true"
+          proxy-real-ip-cidr            = "0.0.0.0/0"
 
           // Use HTTP/2
           use-http2 = "true"
@@ -634,56 +634,56 @@ resource "helm_release" "nginx_ingress" {
           enable-brotli = "true"
 
           // Disable buffering
-          proxy-buffering = "off"
+          proxy-buffering         = "off"
           proxy-request-buffering = "off"
 
           // Set buffering windows in case the buffering gets enabled
-          proxy-buffer-size = "64k"
+          proxy-buffer-size    = "64k"
           proxy-buffers-number = "16"
 
           // Logging
-          log-format-escape-json = "true"
+          log-format-escape-json                = "true"
           enable-access-log-for-default-backend = "true"
-          log-format-upstream = file("${path.module}/nginx_log_format.txt")
+          log-format-upstream                   = file("${path.module}/nginx_log_format.txt")
 
           // Disable IPv6 for security
-          disable-ipv6 = "true"
+          disable-ipv6     = "true"
           disable-ipv6-dns = "true"
 
           // WAF
-          enable-modsecurity = "false" # TODO: enable
+          enable-modsecurity  = "false" # TODO: enable
           modsecurity-snippet = file("${path.module}/modsecurity.txt")
 
           // Rate limiting
-          limit-req-status-code = "429"
+          limit-req-status-code  = "429"
           limit-conn-status-code = "429"
 
           // Timeouts and performance
-          keep-alive = "${local.nginx_base_timeout}"
-          client-header-timeout = "${local.nginx_base_timeout}"
-          client-body-timeout = "${local.nginx_base_timeout}"
-          proxy-body-size = "10m"
-          proxy-connect-timeout = "${local.nginx_base_timeout}"
-          proxy-read-timeout = "${local.nginx_base_timeout}"
-          proxy-send-timeout = "${local.nginx_base_timeout}"
+          keep-alive                 = "${local.nginx_base_timeout}"
+          client-header-timeout      = "${local.nginx_base_timeout}"
+          client-body-timeout        = "${local.nginx_base_timeout}"
+          proxy-body-size            = "10m"
+          proxy-connect-timeout      = "${local.nginx_base_timeout}"
+          proxy-read-timeout         = "${local.nginx_base_timeout}"
+          proxy-send-timeout         = "${local.nginx_base_timeout}"
           proxy-next-upstream-timout = "${ceil(local.nginx_base_timeout * 2)}"
-          load-balance = "ewma"
+          load-balance               = "ewma"
 
           // SSL setup
-          ssl-ciphers = "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384"
-          ssl-protocols = "TLSv1.3"
-          ssl-session-cache = "true"
+          ssl-ciphers            = "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384"
+          ssl-protocols          = "TLSv1.3"
+          ssl-session-cache      = "true"
           ssl-session-cache-size = "100m"
-          ssl-session-tickets = "true"
-          ssl-session-timeout = "120m"
-          ssl-dh-param = "${local.namespace}/${kubernetes_secret.dhparam.metadata[0].name}" // https://kubernetes.github.io/ingress-nginx/examples/customization/ssl-dh-param/
-          enable-ocsp = "true"
+          ssl-session-tickets    = "true"
+          ssl-session-timeout    = "120m"
+          ssl-dh-param           = "${local.namespace}/${kubernetes_secret.dhparam.metadata[0].name}" // https://kubernetes.github.io/ingress-nginx/examples/customization/ssl-dh-param/
+          enable-ocsp            = "true"
 
           // HSTS setup
-          hsts = "true"
+          hsts                    = "true"
           hsts-include-subdomains = "true"
-          hsts-max-age = "${10 * 365 * 24 * 60 * 60}"
-          hsts-preload = "true"
+          hsts-max-age            = "${10 * 365 * 24 * 60 * 60}"
+          hsts-preload            = "true"
 
           // Hide identifying headers for security
           hide-headers = "server,x-powered-by"
@@ -692,16 +692,16 @@ resource "helm_release" "nginx_ingress" {
           http-snippet = file("${path.module}/nginx_status_snippet.txt")
         }
         service = {
-          name = local.nginx_name
+          name              = local.nginx_name
           loadBalancerClass = "service.k8s.aws/nlb"
           annotations = merge(local.nlb_common_annotations, {
-            "service.beta.kubernetes.io/aws-load-balancer-name" = "ingress-nginx",
+            "service.beta.kubernetes.io/aws-load-balancer-name"           = "ingress-nginx",
             "service.beta.kubernetes.io/aws-load-balancer-proxy-protocol" = "*"
           })
         }
         metrics = {
-          enabled = true
-          port = 10254
+          enabled  = true
+          port     = 10254
           portName = "metrics"
         }
 
@@ -712,14 +712,14 @@ resource "helm_release" "nginx_ingress" {
               labelSelector = {
                 matchExpressions = [
                   {
-                    key = "app.kubernetes.io/component"
+                    key      = "app.kubernetes.io/component"
                     operator = "In"
-                    values = ["controller"]
+                    values   = ["controller"]
                   },
                   {
-                    key = "app.kubernetes.io/instance"
+                    key      = "app.kubernetes.io/instance"
                     operator = "In"
-                    values = ["ingress-nginx"]
+                    values   = ["ingress-nginx"]
                   }
                 ]
               }
@@ -731,18 +731,18 @@ resource "helm_release" "nginx_ingress" {
         updateStrategy = {
           type = "RollingUpdate"
           rollingUpdate = {
-            maxSurge = "50%"
+            maxSurge       = "50%"
             maxUnavailable = 0
           }
         }
         minReadySeconds = 30
-        minAvailable = "50%"
+        minAvailable    = "50%"
         topologySpreadConstraints = [
           {
             maxSkew           = 1
             topologyKey       = "topology.kubernetes.io/zone"
             whenUnsatisfiable = "DoNotSchedule"
-            labelSelector     = {
+            labelSelector = {
               matchLabels = local.nginx_selector
             }
           },
@@ -750,7 +750,7 @@ resource "helm_release" "nginx_ingress" {
             maxSkew           = 1
             topologyKey       = "kubernetes.io/hostname"
             whenUnsatisfiable = "DoNotSchedule"
-            labelSelector     = {
+            labelSelector = {
               matchLabels = local.nginx_selector
             }
           }
@@ -762,11 +762,11 @@ resource "helm_release" "nginx_ingress" {
         // long in stopping incoming traffic
         livenessProbe = {
           failureThreshold = 3
-          periodSeconds = 10
+          periodSeconds    = 10
         }
         readinessProbe = {
           failureThreshold = 1
-          periodSeconds = 1
+          periodSeconds    = 1
         }
 
         // See https://medium.com/codecademy-engineering/kubernetes-nginx-and-zero-downtime-in-production-2c910c6a5ed8
@@ -782,40 +782,40 @@ resource "helm_release" "nginx_ingress" {
         terminationGracePeriodSeconds = local.deregistration_delay + local.nginx_base_timeout * 3
 
         allowSnippetAnnotations = true
-        priorityClassName = "system-cluster-critical"
+        priorityClassName       = "system-cluster-critical"
         ingressClassResource = {
           enabled = true
           default = false
-          name = "nginx"
+          name    = "nginx"
         }
         admissionWebhooks = {
           annotations = {
             "cert-manager.io/inject-ca-from" = "${local.namespace}/${local.webhook_secret}"
           }
           certificate = "/etc/nginx-ingress/tls.crt"
-          key = "/etc/nginx-ingress/tls.key"
+          key         = "/etc/nginx-ingress/tls.key"
           patch = {
             enabled = false
           }
         }
         resources = {
           requests = {
-            cpu = "200m"
+            cpu    = "200m"
             memory = "500M"
           }
         }
         extraVolumeMounts = [
           {
             mountPath = "/etc/nginx-ingress/tls.crt"
-            subPath = "tls.crt"
-            name = "webhook-cert"
-            readOnly = true
+            subPath   = "tls.crt"
+            name      = "webhook-cert"
+            readOnly  = true
           },
           {
             mountPath = "/etc/nginx-ingress/tls.key"
-            subPath = "tls.key"
-            name = "webhook-cert"
-            readOnly = true
+            subPath   = "tls.key"
+            name      = "webhook-cert"
+            readOnly  = true
           }
         ]
       }
@@ -833,7 +833,7 @@ resource "helm_release" "nginx_ingress" {
   #    ]
   #  }
 
-  timeout = 30 * 60
+  timeout    = 30 * 60
   depends_on = [module.webhook_cert, helm_release.alb_controller]
 }
 
@@ -846,9 +846,9 @@ resource "kubernetes_service" "nginx_healthcheck" {
   spec {
     type = "ClusterIP"
     port {
-      port = 80
+      port        = 80
       target_port = "metrics"
-      protocol = "TCP"
+      protocol    = "TCP"
     }
     selector = local.nginx_selector
   }
@@ -864,9 +864,9 @@ resource "kubernetes_service" "nginx_status" {
   spec {
     type = "ClusterIP"
     port {
-      port = 18080
+      port        = 18080
       target_port = 18080
-      protocol = "TCP"
+      protocol    = "TCP"
     }
     selector = local.nginx_selector
   }
@@ -874,20 +874,20 @@ resource "kubernetes_service" "nginx_status" {
 }
 
 resource "kubernetes_manifest" "vpa_nginx" {
-  count = var.vpa_enabled ? 1: 0
+  count = var.vpa_enabled ? 1 : 0
   manifest = {
     apiVersion = "autoscaling.k8s.io/v1"
-    kind  = "VerticalPodAutoscaler"
+    kind       = "VerticalPodAutoscaler"
     metadata = {
-      name = "ingress-nginx-controller"
+      name      = "ingress-nginx-controller"
       namespace = local.namespace
-      labels = local.nginx_labels
+      labels    = local.nginx_labels
     }
     spec = {
       targetRef = {
         apiVersion = "apps/v1"
-        kind = "Deployment"
-        name = "ingress-nginx-controller"
+        kind       = "Deployment"
+        name       = "ingress-nginx-controller"
       }
     }
   }
@@ -899,17 +899,17 @@ resource "kubernetes_manifest" "vpa_nginx" {
 
 resource "kubernetes_service_account" "bastion" {
   metadata {
-    name = local.bastion_name
+    name      = local.bastion_name
     namespace = local.namespace
-    labels = local.bastion_labels
+    labels    = local.bastion_labels
   }
 }
 
 resource "kubernetes_secret" "bastion_ca" {
   metadata {
-    name = "${local.bastion_name}-ca"
+    name      = "${local.bastion_name}-ca"
     namespace = local.namespace
-    labels = local.bastion_labels
+    labels    = local.bastion_labels
   }
   data = {
     "trusted-user-ca-keys.pem" = var.bastion_ca_keys
@@ -919,31 +919,31 @@ resource "kubernetes_secret" "bastion_ca" {
 // This doesn't get rotated so no need to use cert-manager
 resource "tls_private_key" "host" {
   algorithm = "RSA"
-  rsa_bits = 4096
+  rsa_bits  = 4096
 }
 
 resource "kubernetes_secret" "bastion_host" {
   metadata {
-    name = "${local.bastion_name}-host"
+    name      = "${local.bastion_name}-host"
     namespace = local.namespace
-    labels = local.bastion_labels
+    labels    = local.bastion_labels
   }
   data = {
-    id_rsa = tls_private_key.host.private_key_openssh
+    id_rsa       = tls_private_key.host.private_key_openssh
     "id_rsa.pub" = tls_private_key.host.public_key_openssh
   }
 }
 
 module "bastion" {
-  source = "../../modules/kube_deployment"
-  namespace = module.namespace.namespace
-  service_name = local.bastion_name
+  source          = "../../modules/kube_deployment"
+  namespace       = module.namespace.namespace
+  service_name    = local.bastion_name
   service_account = kubernetes_service_account.bastion.metadata[0].name
-  kube_labels = local.bastion_labels
+  kube_labels     = local.bastion_labels
 
-  min_replicas = 2
-  max_replicas = 2
-  tolerations = module.constants.spot_node_toleration
+  min_replicas        = 2
+  max_replicas        = 2
+  tolerations         = module.constants.spot_node_toleration
   priority_class_name = "system-cluster-critical"
 
   healthcheck_port = var.bastion_port
@@ -953,8 +953,8 @@ module "bastion" {
     // SSHD requires that root be the only
     // writer to /run/sshd and the private host key
     permissions = {
-      image = var.bastion_image
-      version = var.version_tag
+      image   = var.bastion_image
+      version = var.bastion_image_version
       command = [
         "/usr/bin/bash",
         "-c",
@@ -966,35 +966,35 @@ module "bastion" {
 
   containers = {
     bastion = {
-      image = var.bastion_image
-      version = var.version_tag
+      image   = var.bastion_image
+      version = var.bastion_image_version
       command = [
         "/usr/sbin/sshd",
         "-D", // run in foreground
-        "-e",  // print logs to stderr
+        "-e", // print logs to stderr
         "-o", "LogLevel=INFO",
         "-q", // Don't log connections (we do that at the NLB level and these logs are polluted by healthchecks)
         "-o", "TrustedUserCAKeys=/etc/ssh/vault/trusted-user-ca-keys.pem",
         "-o", "HostKey=/run/sshd/id_rsa",
         "-o", "PORT=${var.bastion_port}"
       ]
-      run_as_root = true // SSHD requires root to run
+      run_as_root        = true                               // SSHD requires root to run
       linux_capabilities = ["SYS_CHROOT", "SETGID", "SETUID"] // capabilities to allow sshd's sandboxing functionality
     }
   }
 
   secret_mounts = {
-    "${kubernetes_secret.bastion_ca.metadata[0].name}" = "/etc/ssh/vault"
+    "${kubernetes_secret.bastion_ca.metadata[0].name}"   = "/etc/ssh/vault"
     "${kubernetes_secret.bastion_host.metadata[0].name}" = "/etc/ssh/host"
   }
 
   tmp_directories = ["/run/sshd"]
-  mount_owner = 0
+  mount_owner     = 0
 
   ports = {
     ssh = {
       service_port = var.bastion_port
-      pod_port = var.bastion_port
+      pod_port     = var.bastion_port
     }
   }
 
@@ -1004,27 +1004,27 @@ module "bastion" {
 
 resource "kubernetes_service" "bastion" {
   metadata {
-    name = "${local.bastion_name}-ingress"
+    name      = "${local.bastion_name}-ingress"
     namespace = local.namespace
-    labels = local.bastion_labels
+    labels    = local.bastion_labels
     annotations = merge(local.nlb_common_annotations, {
       "service.beta.kubernetes.io/aws-load-balancer-name" = "bastion",
-      "external-dns.alpha.kubernetes.io/hostname" = var.bastion_domain
+      "external-dns.alpha.kubernetes.io/hostname"         = var.bastion_domain
     })
   }
   spec {
-    type = "LoadBalancer"
-    load_balancer_class = "service.k8s.aws/nlb"
+    type                    = "LoadBalancer"
+    load_balancer_class     = "service.k8s.aws/nlb"
     external_traffic_policy = "Cluster"
     internal_traffic_policy = "Cluster"
-    ip_families = ["IPv4"]
-    ip_family_policy = "SingleStack"
-    selector = local.bastion_selector
+    ip_families             = ["IPv4"]
+    ip_family_policy        = "SingleStack"
+    selector                = local.bastion_selector
     port {
-      name = "ssh"
-      port = var.bastion_port
+      name        = "ssh"
+      port        = var.bastion_port
       target_port = var.bastion_port
-      protocol = "TCP"
+      protocol    = "TCP"
     }
   }
   depends_on = [module.bastion]

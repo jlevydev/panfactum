@@ -15,7 +15,7 @@ dependency "vpc" {
 }
 
 inputs = {
-  eks_cluster_name = dependency.cluster.outputs.cluster_name
-  vpa_enabled = true
+  eks_cluster_name    = dependency.cluster.outputs.cluster_name
+  vpa_enabled         = true
   public_outbound_ips = dependency.vpc.outputs.nat_ips
 }

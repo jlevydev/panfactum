@@ -10,66 +10,66 @@ variable "service_name" {
 
 variable "priority_class_name" {
   description = "The priority class to use for pods in the deployment"
-  type = string
-  default = ""
+  type        = string
+  default     = ""
 }
 
 variable "deployment_update_type" {
   description = "The type of update that the deployment should use"
-  type = string
-  default = "RollingUpdate"
+  type        = string
+  default     = "RollingUpdate"
 }
 
 variable "tolerations" {
   description = "A list of tolerations for the pods"
   type = map(object({
     operator = string
-    value = string
-    effect = string
+    value    = string
+    effect   = string
   }))
   default = {}
 }
 
 variable "node_preferences" {
   description = "Node label preferences for the pods"
-  type = map(object({weight = number, operator = string, values = list(string)}))
-  default = {}
+  type        = map(object({ weight = number, operator = string, values = list(string) }))
+  default     = {}
 }
 
 variable "secrets" {
   description = "Key pair values of secrets to add to the containers as environment variables"
   type        = map(string)
-  default = {}
+  default     = {}
 }
 
 variable "environment_variables" {
   description = "Key pair values of the environment variables for each container"
   type        = map(string)
-  default = {}
+  default     = {}
 }
 
 variable "min_replicas" {
   description = "The desired (minimum) number of instances of the service"
-  type = number
-  default = 2
+  type        = number
+  default     = 2
 }
 
 variable "max_replicas" {
   description = "The maximum number of instances of the service"
-  type = number
-  default = 10
+  type        = number
+  default     = 10
 }
 
 variable "ha_enabled" {
   description = "Whether high availability parameters should be used at the tradeoff of increased cost"
-  type = bool
-  default = true
+  type        = bool
+  default     = true
 }
 
 variable "vpa_enabled" {
   description = "Whether to enable the vertical pod autoscaler"
-  type = bool
-  default = true
+  type        = bool
+  default     = true
 }
 
 
@@ -77,37 +77,37 @@ variable "ports" {
   description = "The port the application is listening on inside the container"
   type = map(object({
     service_port = number
-    pod_port = number
+    pod_port     = number
   }))
   default = {}
 }
 
 variable "healthcheck_port" {
   description = "The port for healthchecks"
-  type = number
+  type        = number
 }
 
 variable "healthcheck_route" {
   description = "The route to use for http healthchecks"
-  type = string
-  default = "/health-check"
+  type        = string
+  default     = "/health-check"
 }
 
 variable "healthcheck_type" {
   description = "The type of healthcheck to use (TCP or HTTP)"
-  type = string
-  default = "HTTP"
+  type        = string
+  default     = "HTTP"
 }
 
 variable "containers" {
   description = "A map of container names to configurations to add to the deployment"
   type = map(object({
-    image = string
-    version = string
-    command = list(string)
-    minimum_memory = optional(number, 100) #The minimum amount of memory in megabytes
-    minimum_cpu = optional(number, 10) # The minimum amount of cpu millicores
-    run_as_root = optional(bool, false) # Whether to run the container as root
+    image              = string
+    version            = string
+    command            = list(string)
+    minimum_memory     = optional(number, 100)      #The minimum amount of memory in megabytes
+    minimum_cpu        = optional(number, 10)       # The minimum amount of cpu millicores
+    run_as_root        = optional(bool, false)      # Whether to run the container as root
     linux_capabilities = optional(list(string), []) # Default is drop ALL
   }))
 }
@@ -115,12 +115,12 @@ variable "containers" {
 variable "init_containers" {
   description = "A map of init container names to configurations to add to the deployment"
   type = map(object({
-    image = string
-    version = string
-    command = list(string)
-    minimum_memory = optional(number, 50) #The minimum amount of memory in megabytes
-    minimum_cpu = optional(number, 10) # The minimum amount of cpu millicores
-    run_as_root = optional(bool, false) # Whether to run the container as root
+    image              = string
+    version            = string
+    command            = list(string)
+    minimum_memory     = optional(number, 50)       #The minimum amount of memory in megabytes
+    minimum_cpu        = optional(number, 10)       # The minimum amount of cpu millicores
+    run_as_root        = optional(bool, false)      # Whether to run the container as root
     linux_capabilities = optional(list(string), []) # Default is drop ALL
   }))
   default = {}
@@ -128,25 +128,25 @@ variable "init_containers" {
 
 variable "kube_labels" {
   description = "The default labels to use for Kubernetes resources"
-  type = map(string)
+  type        = map(string)
 }
 
 variable "tmp_directories" {
   description = "A list of paths that contain empty temporary directories"
-  type = list(string)
-  default = [ ]
+  type        = list(string)
+  default     = []
 }
 
 variable "mount_owner" {
   description = "The ID of the group that owns the mounted volumes"
-  type = number
-  default = 1000
+  type        = number
+  default     = 1000
 }
 
 variable "secret_mounts" {
   description = "A mapping of Kubernetes secret names to their absolute mount paths in the containers of the deployment"
-  type = map(string)
-  default = {}
+  type        = map(string)
+  default     = {}
 }
 
 variable "is_local" {
@@ -157,21 +157,21 @@ variable "is_local" {
 
 variable "pod_annotations" {
   description = "Annotations to add to the pods in the deployment"
-  type = map(string)
-  default = {}
+  type        = map(string)
+  default     = {}
 }
 
 variable "service_account" {
   description = "The name of the service account to use for this deployment"
-  type = string
+  type        = string
 }
 
 variable "dynamic_secrets" {
   description = "Dynamic variable secrets"
-  type = list(object({ // key is the secret provider class
+  type = list(object({             // key is the secret provider class
     secret_provider_class = string // name of the secret provider class
-    mount_path = string // absolute path of where to mount the secret
-    env_var = string // name of the env var that will have a path to the secret mount
+    mount_path            = string // absolute path of where to mount the secret
+    env_var               = string // name of the env var that will have a path to the secret mount
   }))
   default = []
 }
