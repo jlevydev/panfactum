@@ -12,6 +12,8 @@ jobs:
     runs-on: development-small
     steps:
       - uses: actions/checkout@v3
+        with:
+          lfs: 'true'
 
       - uses: ./.github/actions/build-image
         timeout-minutes: 15

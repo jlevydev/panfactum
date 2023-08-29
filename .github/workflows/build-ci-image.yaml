@@ -12,10 +12,19 @@ jobs:
     runs-on: development-small
     steps:
       - uses: actions/checkout@v3
-
       - uses: ./.github/actions/build-image
         timeout-minutes: 120
         with:
           image-repo: "ci"
           image-tag: ${{ github.sha }}
           containerfile-directory: packages/ci
+
+  deploy-dev:
+    if: ${{ github.ref }} == 'refs/heads/main'
+    needs: build
+    runs-on: development-small
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/tf-apply
+        with:
+          tg-directory: ./environments/development/us-east-2/kube_gha_arc_runners

@@ -118,28 +118,22 @@ resource "kubernetes_stateful_set" "buildkit" {
       }
       spec {
         service_account_name = kubernetes_service_account.buildkit.metadata[0].name
-        security_context {
-          fs_group = 1000
-        }
         termination_grace_period_seconds = 30 * 60
         container {
           name = "buildkitd"
-          image = "moby/buildkit:master-rootless"
+          image = "moby/buildkit:v0.12.2"
           args = [
-            "--oci-worker-no-process-sandbox",
             "--addr", "tcp://0.0.0.0:${local.port}",
-            "--addr", "unix:///run/user/1000/buildkit/buildkitd.sock"
+            "--addr", "unix:///run/buildkit/buildkitd.sock"
           ]
 
           volume_mount {
-            mount_path = "/home/user/.local/share/buildkit"
+            mount_path = "/var/lib/buildkit"
             name       = "buildkitd"
           }
 
           security_context {
-            run_as_non_root = true
-            run_as_user = 1000
-            run_as_group = 1000
+            privileged = true
           }
 
           resources {
@@ -148,6 +142,9 @@ resource "kubernetes_stateful_set" "buildkit" {
               memory = "${var.memory_mb}Mi"
             }
             limits = {
+              // we set a limit on cpu as the cpu is very
+              // bursty for builds and ends up disrupting the other services
+              cpu = "${var.cpu_millicores}m"
               memory ="${var.memory_mb}Mi"
             }
           }
@@ -223,23 +220,25 @@ resource "kubernetes_horizontal_pod_autoscaler_v2" "autoscaler" {
     min_replicas = var.min_replicas
     max_replicas = var.max_replicas
     metric {
-      type = "Resource"
-      resource {
+      type = "ContainerResource"
+      container_resource {
         name = "memory"
         target {
           type = "Utilization"
           average_utilization = 70
         }
+        container = "buildkitd"
       }
     }
     metric {
-      type = "Resource"
-      resource {
+      type = "ContainerResource"
+      container_resource {
         name = "cpu"
         target {
           type = "Utilization"
           average_utilization = 70
         }
+        container = "buildkitd"
       }
     }
     behavior {
@@ -256,7 +255,7 @@ resource "kubernetes_horizontal_pod_autoscaler_v2" "autoscaler" {
 
       scale_up {
         select_policy                = "Max"
-        stabilization_window_seconds = 300
+        stabilization_window_seconds = 60
 
         policy {
           period_seconds = 15

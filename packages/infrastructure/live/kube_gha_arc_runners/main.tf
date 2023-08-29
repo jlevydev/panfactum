@@ -210,7 +210,7 @@ resource "helm_release" "runner" {
           terminationGracePeriodSeconds = 60 * 30
           containers = [{
             name = "runner"
-            image = "487780594448.dkr.ecr.us-east-2.amazonaws.com/ci:latest"
+            image = "487780594448.dkr.ecr.us-east-2.amazonaws.com/ci:local-m0walhgf"
             command = [
               "devenv",
               "shell",
@@ -220,6 +220,10 @@ resource "helm_release" "runner" {
               {
                 name = "CI",
                 value = "true"
+              },
+              {
+                name = "DOCKER_CONFIG"
+                value = "/home/runner/.podman"
               },
               {
                 name = "RUNNER_NAME"
