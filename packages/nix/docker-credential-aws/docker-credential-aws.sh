@@ -15,11 +15,11 @@ function output() {
 
 case "$REGISTRY" in
   487780594448.dkr.ecr.us-east-2.amazonaws.com)
-    AWS_PROFILE=operations-admin
+    AWS_PROFILE=operations-superuser
     REGION=us-east-2
     ;;
   938942960544.dkr.ecr.us-east-2.amazonaws.com)
-    AWS_PROFILE=development-admin
+    AWS_PROFILE=development-superuser
     REGION=us-east-2
     ;;
   *)
