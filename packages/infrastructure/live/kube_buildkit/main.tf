@@ -119,6 +119,18 @@ resource "kubernetes_stateful_set" "buildkit" {
       spec {
         service_account_name = kubernetes_service_account.buildkit.metadata[0].name
         termination_grace_period_seconds = 30 * 60
+
+        affinity {
+          pod_anti_affinity {
+           required_during_scheduling_ignored_during_execution {
+              topology_key = "kubernetes.io/hostname"
+              label_selector {
+                match_labels = local.match_labels
+              }
+            }
+          }
+        }
+
         container {
           name = "buildkitd"
           image = "moby/buildkit:v0.12.2"
@@ -134,6 +146,12 @@ resource "kubernetes_stateful_set" "buildkit" {
 
           security_context {
             privileged = true
+          }
+
+          port {
+            container_port = 1234
+            name = "buildkitd"
+            protocol = "TCP"
           }
 
           resources {

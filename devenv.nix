@@ -10,6 +10,9 @@ let
   # Helper used to get vault tokens during terraform runs
   get-vault-token = import ./packages/nix/get-vault-token { pkgs = pkgs; };
 
+  # Helper used to get the buildkit address to use for building images
+  get-buildkit-address = import ./packages/nix/get-buildkit-address { pkgs = pkgs; };
+
   # Helper used to get the commit sha for a git_ref
   get-version-tag = import ./packages/nix/get-version-tag { pkgs = pkgs; };
 
@@ -78,6 +81,7 @@ let
     unzip # extraction utility for zip format
     zx # General purpose data compression utility
     entr # Re-running scripts when files change
+    bc # bash calculator
 
     ####################################
     # AWS Utilities
@@ -107,12 +111,20 @@ let
     ####################################
     gh # github cli
     actionlint # gha linter
+    get-buildkit-address
 
     ####################################
     # Container Utilities
     ####################################
     docker-credential-aws # our package for ecr authentication
     buildkit # used for building containers using moby/buildkit
+
+    ####################################
+    # Network Utilities
+    ####################################
+    bind # dns utilies
+    mtr # better traceroute alternative
+    iputils # ping
   ];
 
   local_dev_packages = with pkgs; [
@@ -157,9 +169,6 @@ let
     ####################################
     openssh # ssh client and server
     autossh # automatically restart tunnels
-    bind # dns utilies
-    mtr # better traceroute alternative
-    socat # socket routing
     step-cli # working with certificates
     panfactum-tunnel # for connecting to private network resources through ssh bastion
   ];

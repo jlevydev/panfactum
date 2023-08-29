@@ -210,7 +210,7 @@ resource "helm_release" "runner" {
           terminationGracePeriodSeconds = 60 * 30
           containers = [{
             name = "runner"
-            image = "487780594448.dkr.ecr.us-east-2.amazonaws.com/ci:local-m0walhgf"
+            image = "487780594448.dkr.ecr.us-east-2.amazonaws.com/ci:test6"
             command = [
               "devenv",
               "shell",
