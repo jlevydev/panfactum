@@ -31,8 +31,7 @@ RUN sudo apt-get update -y && \
   sudo rm -rf /var/lib/apt/lists/*
 
 # This ensures nix is available in subsequent steps
-ENV PATH=/home/runner/.nix-profile/bin:/home/runner/.nix-profile/sbin:/bin:/sbin:/usr/bin:/usr/sbin \
-  NIX_PATH=/nix/var/nix/profiles/per-user/runner/channels
+ENV PATH=/home/runner/.nix-profile/bin:/home/runner/.nix-profile/sbin:/bin:/sbin:/usr/bin:/usr/sbin
 
 # This command tends to take a while because it isn't using the
 # the binary cache of nixpkgs so will need to recompile everything from source
@@ -52,11 +51,5 @@ RUN mkdir -p /home/runner/.config/nix && echo "sandbox = false" >> /home/runner/
 COPY --chown=runner devenv.lock devenv.nix devenv.yaml /home/runner
 COPY --chown=runner packages/ci/devenv.ci.nix /home/runner/devenv.local.nix
 COPY --chown=runner packages/nix /home/runner/packages/nix
-RUN cd /home/runner && \
- devenv shell && \
- nix-collect-garbage --delete-old && \
- sudo nix-store --optimise && \
- sudo nix-store --verify --check-contents
-
-# This ensures the binaries installed by the development environment are available
-ENV PATH=/home/runner/.devenv/profile/bin:/home/runner/.devenv/profile/sbin:/home/runner/.nix-profile/bin:/home/runner/.nix-profile/sbin:/bin:/sbin:/usr/bin:/usr/sbin
+COPY --chown=runner packages/ci/make-path.sh /home/runner/make-path.sh
+RUN cd /home/runner && devenv shell ./make-path.sh

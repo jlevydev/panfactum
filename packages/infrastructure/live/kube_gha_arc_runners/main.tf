@@ -214,8 +214,19 @@ resource "helm_release" "runner" {
             name  = "runner"
             image = var.runner_image
             command = [
-              "/home/runner/run.sh"
+              "/usr/bin/sh",
+              "-c",
+              ". /home/runner/.profile && /home/runner/run.sh"
             ]
+            lifecycle = {
+              preStop = {
+                exec = {
+                  command = [
+                    "delete-tf-locks"
+                  ]
+                }
+              }
+            }
             env = [
               {
                 name  = "CI",
@@ -224,6 +235,14 @@ resource "helm_release" "runner" {
               {
                 name  = "DOCKER_CONFIG"
                 value = "/home/runner/.podman"
+              },
+              {
+                name  = "REGISTRY_AUTH_FILE"
+                value = "/home/runner/.podman/config.json"
+              },
+              {
+                name  = "TF_LOCK_TABLE"
+                value = var.tf_lock_table
               },
               {
                 name  = "RUNNER_NAME"

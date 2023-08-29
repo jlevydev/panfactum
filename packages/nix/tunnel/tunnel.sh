@@ -15,7 +15,7 @@ if [[ ! -f "$SSH_DIR/id_ed25519" || ! -f "$SSH_DIR/id_ed25119.pub" ]]; then
 fi
 
 # Step 2: Get a vault token for signing
-VAULT_TOKEN=$("$DEVENV_ROOT/scripts/get_vault_token.sh")
+VAULT_TOKEN=$(get-vault-token)
 export VAULT_TOKEN
 
 # Step 3: Sign our keys with vault to allow access to the bastion

@@ -162,6 +162,11 @@ let
     # Devenv Setup
     ####################################
     (customModule "enter-shell-ci")
+
+    ####################################
+    # CI Util
+    ####################################
+    (customModule "delete-tf-locks") # cleanup tf locks on failure
   ];
 
 in
@@ -188,20 +193,20 @@ in
 
   pre-commit.hooks = {
     actionlint-custom = {
-      enable = true;
+      enable = config.env.CI != "true";
       entry = "actionlint";
       description = "Github actions and workflow linting";
       files = "^.github";
       pass_filenames = false;
     };
     terragrunt-custom = {
-      enable = true;
+      enable = config.env.CI != "true";
       entry = "precommit-terragrunt-fmt";
       description = "Terragrunt linting";
       files = "^environments/(.*).hcl$";
     };
     terraform-custom = {
-      enable = true;
+      enable = config.env.CI != "true";
       entry = "precommit-terraform-fmt";
       description = "Terraform linting";
       files = "^packages/infrastructure/(.*).tf$";

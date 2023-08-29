@@ -5,7 +5,7 @@ include "shared" {
 
 locals {
   #version_hash = include.shared.locals.version_hash
-  version_hash = "test8-29-1"
+  version_hash = "test8-29-4"
   runner_image = "487780594448.dkr.ecr.us-east-2.amazonaws.com/ci:${local.version_hash}"
 }
 
@@ -57,4 +57,5 @@ inputs = {
   }
   gha_runner_env_prefix   = "development"
   gha_runner_max_replicas = 10
+  tf_lock_table           = include.shared.locals.environment_vars.tf_state_lock_table
 }

@@ -107,3 +107,8 @@ variable "runner_image" {
   description = "The runner image to use"
   type        = string
 }
+
+variable "tf_lock_table" {
+  description = "The tf lock table to clear when runners are terminated"
+  type        = string
+}
