@@ -202,18 +202,18 @@ resource "helm_release" "runner" {
         metadata = {
           labels = {
             "azure.workload.identity/use" = "true"
+            module                        = local.name
+            submodule                     = each.key
           }
         }
         spec = {
           tolerations                   = module.constants.spot_node_toleration_helm
           serviceAccountName            = kubernetes_service_account.runners.metadata[0].name
-          terminationGracePeriodSeconds = 60 * 15
+          terminationGracePeriodSeconds = 60
           containers = [{
             name  = "runner"
             image = var.runner_image
             command = [
-              "devenv",
-              "shell",
               "/home/runner/run.sh"
             ]
             env = [
@@ -286,4 +286,23 @@ resource "helm_release" "runner" {
     })
 
   ]
+}
+
+// We never want a runner to be evicted when it is running
+resource "kubernetes_pod_disruption_budget_v1" "runners" {
+  for_each = local.runners
+  metadata {
+    name      = each.key
+    namespace = local.namespace
+    labels    = local.labels
+  }
+  spec {
+    min_available = "100%"
+    selector {
+      match_labels = {
+        module    = local.name
+        submodule = each.key
+      }
+    }
+  }
 }

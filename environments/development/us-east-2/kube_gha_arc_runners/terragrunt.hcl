@@ -41,7 +41,7 @@ inputs = {
   runner_image                             = "487780594448.dkr.ecr.us-east-2.amazonaws.com/ci:${local.version_hash}"
   small_runner_config = {
     min_replicas   = 1
-    cpu_millicores = 100
+    cpu_millicores = 250
     memory_mb      = 1000
     tmp_space_gb   = 20
   }
