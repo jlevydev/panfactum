@@ -5,7 +5,7 @@ include "shared" {
 
 locals {
   #version_hash = include.shared.locals.version_hash
-  version_hash = "test8-29-4"
+  version_hash = "test8-29-5"
   runner_image = "487780594448.dkr.ecr.us-east-2.amazonaws.com/ci:${local.version_hash}"
 }
 

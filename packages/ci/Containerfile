@@ -51,5 +51,5 @@ RUN mkdir -p /home/runner/.config/nix && echo "sandbox = false" >> /home/runner/
 COPY --chown=runner devenv.lock devenv.nix devenv.yaml /home/runner
 COPY --chown=runner packages/ci/devenv.ci.nix /home/runner/devenv.local.nix
 COPY --chown=runner packages/nix /home/runner/packages/nix
-COPY --chown=runner packages/ci/make-path.sh /home/runner/make-path.sh
-RUN cd /home/runner && devenv shell ./make-path.sh
+COPY --chown=runner packages/ci/make-profile.sh /home/runner/make-profile.sh
+RUN cd /home/runner && devenv shell ./make-profile.sh

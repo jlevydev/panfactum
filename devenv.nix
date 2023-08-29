@@ -159,11 +159,6 @@ let
 
   ci_packages = with pkgs; [
     ####################################
-    # Devenv Setup
-    ####################################
-    (customModule "enter-shell-ci")
-
-    ####################################
     # CI Util
     ####################################
     (customModule "delete-tf-locks") # cleanup tf locks on failure
@@ -172,12 +167,7 @@ let
 in
 {
   enterShell = ''
-    source ${(if config.env.CI == "true" then "enter-shell-ci" else "enter-shell-local")}
-
-    # We provide a custom credential helper so we can avoid
-    # the nuisance of the ECR login flow
-    export REGISTRY_AUTH_FILE="$DEVENV_ROOT/.podman/config.json"
-    export DOCKER_CONFIG="$DEVENV_ROOT/.podman" # Needed for buildkit to work
+    ${(if config.env.CI == "true" then "" else " source enter-shell-local")}
   '';
 
   scripts = {

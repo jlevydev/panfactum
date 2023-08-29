@@ -222,7 +222,9 @@ resource "helm_release" "runner" {
               preStop = {
                 exec = {
                   command = [
-                    "delete-tf-locks"
+                    "/usr/bin/sh",
+                    "-c",
+                    ". /home/runner/.profile && delete-tf-locks"
                   ]
                 }
               }
