@@ -17,4 +17,4 @@ echo "sed -i \"s/@role_arn@/\${AWS_ROLE_ARN//\//\\\\/}/g\" /home/runner/.aws/con
 echo "sed -i \"s/@role_session_name@/\${RUNNER_NAME//\//\\\\/}/g\" /home/runner/.aws/config" >> ~/.profile
 
 # Create the tf plugin cache dir
-echo "mkdir -p \"$TF_PLUGIN_CACHE_DIR\"" >> ~/.profile
+echo "mkdir -p \"\$TF_PLUGIN_CACHE_DIR\"" >> ~/.profile

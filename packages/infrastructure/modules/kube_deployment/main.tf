@@ -630,17 +630,22 @@ resource "kubernetes_service" "service" {
   }
 }
 
-resource "kubernetes_pod_disruption_budget_v1" "pdb" {
-  metadata {
-    name      = var.service_name
-    namespace = var.namespace
-    labels    = local.service_labels
-  }
-  spec {
-    selector {
-      match_labels = local.match_labels
+resource "kubernetes_manifest" "pdb" {
+  manifest = {
+    apiVersion = "policy/v1"
+    kind       = "PodDisruptionBudget"
+    metadata = {
+      name      = "${var.service_name}-pdb"
+      namespace = var.namespace
+      labels    = local.service_labels
     }
-    max_unavailable = "50%" // Rounds up
+    spec = {
+      selector = {
+        matchLabels = local.match_labels
+      }
+      maxUnavailable             = "50%" // Rounds up
+      unhealthyPodEvictionPolicy = "AlwaysAllow"
+    }
   }
 }
 

@@ -9,7 +9,7 @@ defaults:
 
 jobs:
   build:
-    runs-on: development-medium
+    runs-on: development-small
     steps:
       - uses: actions/checkout@v3
         with:
