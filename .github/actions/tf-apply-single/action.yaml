@@ -11,7 +11,7 @@ runs:
       uses: ./.github/actions/setup-tf-creds
 
     - name: "Terragrunt apply"
-      run: 'terragrunt apply --input=false -compact-warnings --terragrunt-non-interactive --terragrunt-include-external-dependencies --terragrunt-fetch-dependency-output-from-state --terragrunt-use-partial-parse-config-cache'
+      run: 'terragrunt apply --input=false -auto-approve -compact-warnings --terragrunt-non-interactive --terragrunt-include-external-dependencies --terragrunt-fetch-dependency-output-from-state --terragrunt-use-partial-parse-config-cache'
       working-directory: ${{ inputs.tg-directory }}
       shell: bash
       env:

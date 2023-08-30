@@ -243,6 +243,10 @@ resource "helm_release" "runner" {
                 value = "/home/runner/.podman/config.json"
               },
               {
+                name  = "KUBE_CONFIG_PATH"
+                value = "/home/runner/.kube/config"
+              },
+              {
                 name  = "TF_LOCK_TABLE"
                 value = var.tf_lock_table
               },
