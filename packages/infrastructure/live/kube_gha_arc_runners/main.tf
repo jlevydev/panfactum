@@ -147,6 +147,8 @@ module "aad_permissions" {
   eks_cluster_name          = var.eks_cluster_name
   aad_sp_object_owners      = var.aad_sp_object_owners
   public_outbound_ips       = var.public_outbound_ips
+  service_principal_groups  = [var.aad_group]
+  msgraph_roles             = ["Policy.Read.All", "Policy.ReadWrite.ConditionalAccess", "Application.Read.All"]
 }
 
 /***************************************

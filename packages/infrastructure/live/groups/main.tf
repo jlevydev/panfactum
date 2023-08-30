@@ -7,6 +7,27 @@ terraform {
   }
 }
 
+locals {
+  azure_roles = toset(concat(
+    flatten([for _, config in var.role_group_config : config.azure_roles]),
+    ["Application Developer", "Global Reader", "Global Administrator", "Conditional Access Administrator"]
+  ))
+
+  role_assignments_list = flatten([for name, config in var.role_group_config : [
+    for role in config.azure_roles : { group = name, role = role }
+  ]])
+  role_assignments = { for config in local.role_assignments_list : "${config.group}-${config.role}" => config }
+}
+
+###########################################################################
+## Azure Roles
+###########################################################################
+
+resource "azuread_directory_role" "roles" {
+  for_each     = local.azure_roles
+  display_name = each.key
+}
+
 ###########################################################################
 ## Azure AD Group Creation
 ###########################################################################
@@ -22,6 +43,12 @@ resource "azuread_group" "role_groups" {
   lifecycle {
     ignore_changes = [members]
   }
+}
+
+resource "azuread_directory_role_assignment" "role_groups" {
+  for_each            = local.role_assignments
+  role_id             = azuread_directory_role.roles[each.value.role].template_id
+  principal_object_id = azuread_group.role_groups[each.value.group].object_id
 }
 
 resource "azuread_group" "dynamic_groups" {
@@ -54,46 +81,30 @@ resource "azuread_group" "ci_group_config" {
   }
 }
 
-resource "azuread_directory_role" "app_developer" {
-  display_name = "Application Developer"
-}
-
-resource "azuread_directory_role" "global_reader" {
-  display_name = "Global Reader"
-}
-
-resource "azuread_directory_role" "admin" {
-  display_name = "Global Administrator"
-}
-
-resource "azuread_directory_role" "conditional_access_admin" {
-  display_name = "Conditional Access Administrator"
-}
-
 resource "azuread_directory_role_assignment" "ci_group_admins" {
   for_each            = { for group, config in var.ci_group_config : group => config if config.global_admin }
-  role_id             = azuread_directory_role.admin.template_id
+  role_id             = azuread_directory_role.roles["Global Administrator"].template_id
   principal_object_id = azuread_group.ci_group_config[each.key].object_id
 }
 
 // All CI users are automatically app developers so they can create apps
 resource "azuread_directory_role_assignment" "ci_group_app_developers" {
   for_each            = var.ci_group_config
-  role_id             = azuread_directory_role.app_developer.template_id
+  role_id             = azuread_directory_role.roles["Application Developer"].template_id
   principal_object_id = azuread_group.ci_group_config[each.key].object_id
 }
 
 // All CI users have read access to the entire AAD directory
 resource "azuread_directory_role_assignment" "ci_group_global_readers" {
   for_each            = var.ci_group_config
-  role_id             = azuread_directory_role.global_reader.template_id
+  role_id             = azuread_directory_role.roles["Global Reader"].template_id
   principal_object_id = azuread_group.ci_group_config[each.key].object_id
 }
 
 // All CI users have the ability to change conditional access parameters for ip blocks
 resource "azuread_directory_role_assignment" "ci_group_global_conditional_access_admin" {
   for_each            = var.ci_group_config
-  role_id             = azuread_directory_role.conditional_access_admin.template_id
+  role_id             = azuread_directory_role.roles["Conditional Access Administrator"].template_id
   principal_object_id = azuread_group.ci_group_config[each.key].object_id
 }
 

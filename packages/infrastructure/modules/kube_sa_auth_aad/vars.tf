@@ -28,3 +28,15 @@ variable "public_outbound_ips" {
   description = "A list of the public ips for outbound cluster traffic"
   type        = list(string)
 }
+
+variable "service_principal_groups" {
+  description = "The groups that this service principal will join"
+  type        = set(string)
+  default     = []
+}
+
+variable "msgraph_roles" {
+  description = "Roles to assign to the service principal from MS graph"
+  type        = set(string)
+  default     = []
+}

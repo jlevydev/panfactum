@@ -6,12 +6,30 @@ inputs = {
   role_group_config = {
     engineers = {
       description = "Basic level engineering role."
+      azure_roles = [
+        "Global Reader",
+        "Security Reader",
+        "Application Developer"
+      ]
     }
     engineering_admins = {
       description = "Elevated access to engineering systems, including write access to production."
+      azure_roles = [
+        "Global Reader",
+        "Security Administrator",
+        "Application Administrator",
+        "Conditional Access Administrator",
+        "Groups Administrator",
+        "User Administrator"
+      ]
     }
     superusers = {
       description = "Complete access to all systems."
+      azure_roles = [
+        "Global Administrator",
+        "Conditional Access Administrator",
+        "Security Administrator"
+      ]
     }
   }
   dynamic_group_config = {

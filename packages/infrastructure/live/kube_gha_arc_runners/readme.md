@@ -29,13 +29,12 @@ As a result, there are a handful of manual steps required
 to give the runners the right AAD permissions they need
 to manage environment-specific AAD resources:
 
+- This module must first be applied locally by a `Global Administrator`
+  in order to assign the right permissions.
 - The `sp_object_ids` output from this module will
   need to be input into the environment's `environment.yaml`
   ([example](../../../../environments/development/environment.yaml))
   and the environment's infrastructure will need to be re-applied.
-- The service principals will need to be manually added to the relevant
-  `ci_` group in AAD that is appropriate for the deployment environment
-  (e.g., `ci_development`).
 
 These steps MUST be executed any time new runner groups are created
 or they will not have access to AAD resources.

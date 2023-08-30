@@ -2,6 +2,7 @@ variable "role_group_config" {
   description = "Role groups are groups that define a user's role and access controls in the organization."
   type = map(object({
     description = string
+    azure_roles = optional(list(string), [])
   }))
 }
 

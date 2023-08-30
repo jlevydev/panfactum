@@ -7,6 +7,7 @@ locals {
   #version_hash = include.shared.locals.version_hash
   version_hash = "test8-30-2"
   runner_image = "487780594448.dkr.ecr.us-east-2.amazonaws.com/ci:${local.version_hash}"
+  environment  = include.shared.locals.environment_vars.environment
 }
 
 dependency "arc_systems" {
@@ -55,7 +56,8 @@ inputs = {
     memory_mb      = 16000
     tmp_space_gb   = 20
   }
-  gha_runner_env_prefix   = "development"
+  gha_runner_env_prefix   = local.environment
   gha_runner_max_replicas = 10
   tf_lock_table           = include.shared.locals.environment_vars.tf_state_lock_table
+  aad_group               = "ci_${local.environment}"
 }

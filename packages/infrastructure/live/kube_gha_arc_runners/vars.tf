@@ -112,3 +112,8 @@ variable "tf_lock_table" {
   description = "The tf lock table to clear when runners are terminated"
   type        = string
 }
+variable "aad_group" {
+  description = "The group the GHA runner service principal should join"
+  type        = string
+}
+
