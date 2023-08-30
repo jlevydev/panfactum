@@ -4,13 +4,24 @@ inputs:
   tg-directory:
     description: 'The directory in which to run "terragrunt apply"'
     required: true
+  target:
+    description: 'The resource to target in the apply'
+    required: true
+    default: ""
 runs:
   using: "composite"
   steps:
     - name: "Setup credentials"
       uses: ./.github/actions/setup-tf-creds
 
-    - name: "Terragrunt apply"
+    - name: "Terragrunt apply (module)"
+      if: ${{ inputs.target }} == ""
       run: 'terragrunt apply --input=false -auto-approve -compact-warnings --terragrunt-non-interactive --terragrunt-include-external-dependencies --terragrunt-fetch-dependency-output-from-state'
+      working-directory: ${{ inputs.tg-directory }}
+      shell: bash
+
+    - name: "Terragrunt apply (target)"
+      if: ${{ inputs.target }} != ""
+      run: 'terragrunt apply --target ${{ inputs.target }} --input=false -auto-approve -compact-warnings --terragrunt-non-interactive --terragrunt-include-external-dependencies --terragrunt-fetch-dependency-output-from-state'
       working-directory: ${{ inputs.tg-directory }}
       shell: bash

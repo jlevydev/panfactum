@@ -35,3 +35,4 @@ jobs:
       - uses: ./.github/actions/tf-apply-single
         with:
           tg-directory: ./environments/development/us-east-2/panfactum_internal_docs_deployment
+          target: module.deployment

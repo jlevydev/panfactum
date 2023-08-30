@@ -1,13 +1,13 @@
 name: Run Terraform Init
 description: Runs terragrunt init for an directory tree
 inputs:
-  tg-directory:
-    description: 'The directory in which to run "terragrunt run-all init"'
+  tg-init-directory:
+    description: 'The directory in which to run "terragrunt init"'
     required: true
 runs:
   using: "composite"
   steps:
     - name: "Terragrunt init"
       run: 'terragrunt init --input=false -compact-warnings --terragrunt-non-interactive --terragrunt-include-external-dependencies --terragrunt-use-partial-parse-config-cache'
-      working-directory: ${{ inputs.tg-directory }}
+      working-directory: ${{ inputs.tg-init-directory }}
       shell: bash

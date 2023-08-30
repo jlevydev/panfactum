@@ -32,3 +32,4 @@ jobs:
       - uses: ./.github/actions/tf-apply-single
         with:
           tg-directory: ./environments/development/us-east-2/kube_gha_arc_runners
+          target: helm_release.runner
