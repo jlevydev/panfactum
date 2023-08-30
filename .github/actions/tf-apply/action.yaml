@@ -19,6 +19,6 @@ runs:
         tg-init-directory: ${{ inputs.tg-init-directory }}
 
     - name: "Terragrunt apply"
-      run: 'terragrunt run-all apply --input=false -compact-warnings --terragrunt-non-interactive --terragrunt-include-external-dependencies --terragrunt-use-partial-parse-config-cache --terragrunt-parallelism 4'
+      run: 'terragrunt run-all apply --input=false -compact-warnings --terragrunt-non-interactive --terragrunt-include-external-dependencies --terragrunt-parallelism 4'
       working-directory: ${{ inputs.tg-directory }}
       shell: bash
