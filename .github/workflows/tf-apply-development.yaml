@@ -21,10 +21,11 @@ concurrency:
 
 jobs:
   apply:
-    runs-on: development-small
+    runs-on: development-medium
     steps:
       - uses: actions/checkout@v3
 
       - uses: ./.github/actions/tf-apply
+        timeout-minutes: 60
         with:
           tg-directory: ./environments/development

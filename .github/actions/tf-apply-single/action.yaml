@@ -1,0 +1,18 @@
+name: Run Terraform Apply (Single)
+description: Runs terragrunt apply on a single module
+inputs:
+  tg-directory:
+    description: 'The directory in which to run "terragrunt apply"'
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: "Setup credentials"
+      uses: ./.github/actions/setup-tf-creds
+
+    - name: "Terragrunt apply"
+      run: 'terragrunt apply --input=false -compact-warnings --terragrunt-non-interactive --terragrunt-include-external-dependencies --terragrunt-fetch-dependency-output-from-state --terragrunt-use-partial-parse-config-cache'
+      working-directory: ${{ inputs.tg-directory }}
+      shell: bash
+      env:
+        TERRAGRUNT_DOWNLOAD: "/home/runner/_work/.terragrunt-cache"

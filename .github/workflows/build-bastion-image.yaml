@@ -9,7 +9,7 @@ defaults:
 
 jobs:
   build:
-    runs-on: development-small
+    runs-on: development-medium
     steps:
       - uses: actions/checkout@v3
 
@@ -20,13 +20,9 @@ jobs:
           image-tag: ${{ github.sha }}
           containerfile-directory: packages/bastion
 
-  deploy-dev:
-    if: ${{ github.ref }} == 'refs/heads/main'
-    needs: build
-    runs-on: development-small
-    steps:
-      - uses: actions/checkout@v3
-      - uses: ./.github/actions/tf-apply
+      - uses: ./.github/actions/tf-apply-single
+        if: ${{ github.ref }} == 'refs/heads/main'
+        timeout-minutes: 30
         with:
           tg-directory: ./environments/development/us-east-2/kube_ingress_controllers
 
