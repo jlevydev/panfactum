@@ -7,6 +7,11 @@ inputs:
   target:
     description: 'The resource to target in the apply'
     required: false
+  refresh:
+    description: 'Whether to refresh the state or not'
+    required: false
+    default: "true"
+
 runs:
   using: "composite"
   steps:
@@ -15,12 +20,12 @@ runs:
 
     - name: "Terragrunt apply (module)"
       if: ${{ inputs.target == '' }}
-      run: 'terragrunt apply --input=false -auto-approve -compact-warnings --terragrunt-non-interactive --terragrunt-include-external-dependencies --terragrunt-fetch-dependency-output-from-state'
+      run: 'terragrunt apply --refresh=${{ inputs.refresh }} --input=false -auto-approve -compact-warnings --terragrunt-non-interactive --terragrunt-include-external-dependencies --terragrunt-fetch-dependency-output-from-state'
       working-directory: ${{ inputs.tg-directory }}
       shell: bash
 
     - name: "Terragrunt apply (target)"
       if: ${{ inputs.target  != '' }}
-      run: 'terragrunt apply --target ${{ inputs.target }} --input=false -auto-approve -compact-warnings --terragrunt-non-interactive --terragrunt-include-external-dependencies --terragrunt-fetch-dependency-output-from-state'
+      run: 'terragrunt apply --refresh=${{ inputs.refresh }} --target ${{ inputs.target }} --input=false -auto-approve -compact-warnings --terragrunt-non-interactive --terragrunt-include-external-dependencies --terragrunt-fetch-dependency-output-from-state'
       working-directory: ${{ inputs.tg-directory }}
       shell: bash

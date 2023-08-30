@@ -34,3 +34,4 @@ jobs:
         with:
           tg-directory: ./environments/development/us-east-2/panfactum_primary_api_deployment
           target: module.deployment
+          refresh: "false"

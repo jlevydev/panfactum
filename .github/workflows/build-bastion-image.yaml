@@ -34,3 +34,4 @@ jobs:
         with:
           tg-directory: ./environments/development/us-east-2/kube_ingress_controllers
           target: module.bastion
+          refresh: "false"
