@@ -1,6 +1,13 @@
 include "shared" {
-  path = find_in_parent_folders()
+  path   = find_in_parent_folders()
+  expose = true
 }
+
+# We do not run this in our CI workloads
+# b/c our CI workloads run ON the cluster
+# and changes to the nodes would cause the CI
+# job to fail halfway through the apply
+skip = include.shared.locals.is_ci
 
 locals {
   worker_template = {

@@ -247,6 +247,14 @@ resource "helm_release" "runner" {
                 value = "/home/runner/.kube/config"
               },
               {
+                name  = "TERRAGRUNT_DOWNLOAD"
+                value = "/home/runner/_work/.terragrunt-cache"
+              },
+              {
+                name  = "TF_PLUGIN_CACHE_DIR"
+                value = "/home/runner/_work/.tfplugins"
+              },
+              {
                 name  = "TF_LOCK_TABLE"
                 value = var.tf_lock_table
               },

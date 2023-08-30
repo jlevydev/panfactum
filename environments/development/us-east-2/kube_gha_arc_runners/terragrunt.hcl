@@ -5,7 +5,7 @@ include "shared" {
 
 locals {
   #version_hash = include.shared.locals.version_hash
-  version_hash = "test8-29-6"
+  version_hash = "test8-30-1"
   runner_image = "487780594448.dkr.ecr.us-east-2.amazonaws.com/ci:${local.version_hash}"
 }
 
@@ -42,7 +42,7 @@ inputs = {
   small_runner_config = {
     min_replicas   = 1
     cpu_millicores = 250
-    memory_mb      = 1000
+    memory_mb      = 1500
     tmp_space_gb   = 20
   }
   medium_runner_config = {

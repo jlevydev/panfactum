@@ -1,0 +1,10 @@
+source: /live/init
+providers:
+  aws: true
+  azuread: true
+  kubernetes: true
+  time: true
+  random: true
+  tls: true
+  vault: true
+  helm: true

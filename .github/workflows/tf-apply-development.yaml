@@ -29,3 +29,4 @@ jobs:
         timeout-minutes: 60
         with:
           tg-directory: ./environments/development
+          tg-init-directory: ./environments/development/global/init

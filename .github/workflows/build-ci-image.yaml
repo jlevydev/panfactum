@@ -19,8 +19,16 @@ jobs:
           image-tag: ${{ github.sha }}
           containerfile-directory: packages/ci
 
+  apply-dev:
+    runs-on: development-small
+    if: ${{ github.ref }} == 'refs/heads/main'
+    timeout-minutes: 30
+    concurrency:
+      group: apply-dev-ci
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v3
+
       - uses: ./.github/actions/tf-apply-single
-        if: ${{ github.ref }} == 'refs/heads/main'
-        timeout-minutes: 30
         with:
           tg-directory: ./environments/development/us-east-2/kube_gha_arc_runners
