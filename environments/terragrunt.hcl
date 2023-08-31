@@ -62,7 +62,7 @@ locals {
   is_local            = local.environment_vars.environment == "local"
 
   # get vault_token
-  vault_address = lookup(local.region_vars, "vault_address", get_env("VAULT_ADDR"))
+  vault_address = local.is_ci ? get_env("VAULT_ADDR") : lookup(local.region_vars, "vault_address", get_env("VAULT_ADDR"))
   vault_token   = local.enable_vault ? get_env("VAULT_TOKEN", run_cmd("--terragrunt-quiet", "get-vault-token", local.vault_address)) : ""
 
   # get aad service principle owners
