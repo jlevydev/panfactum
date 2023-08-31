@@ -11,7 +11,7 @@ import { AUTH_COOKIE_NAME } from './routes/auth/constants'
 import { AuthInfoRoute } from './routes/auth/info'
 import { AuthLogoutRoute } from './routes/auth/logout'
 import { getDB } from './db/db'
-import {HealthzRoute} from "./routes/health/healthz";
+import { HealthzRoute } from './routes/health/healthz'
 
 const server = Fastify().withTypeProvider<TypeBoxTypeProvider>()
 void server.register(cors, {})

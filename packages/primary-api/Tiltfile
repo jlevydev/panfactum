@@ -5,6 +5,10 @@ LABELS = ['api']
 TF_DIR = "{}/panfactum_primary_api_deployment".format(TF_ROOT_DIR)
 IMAGE = "{}/primary-api".format(REGISTRY)
 
+################################################
+# Cluster resources
+################################################
+
 podman_build(
   IMAGE,
   "../..",
@@ -58,3 +62,35 @@ k8s_resource(
     "{}.dev.panfactum.com/api/docs".format(NAMESPACE)
   ]
 )
+
+################################################
+# Local resources
+################################################
+local_resource(
+  "primary-api-db-tunnel",
+  "",
+  serve_cmd = "tunnel primary-api-pg-rw.{}-primary-api:5432 9876".format(NAMESPACE),
+  serve_env = {
+    "VAULT_ADDR": "https://vault.dev.panfactum.com"
+  },
+  auto_init = True,
+  allow_parallel = True,
+  readiness_probe = probe(
+   tcp_socket = tcp_socket_action(9876)
+  ),
+  resource_deps=["primary-api"],
+  labels=LABELS,
+  links=["tcp://localhost:9876"]
+)
+
+local_resource(
+  "primary-api-db-creds",
+  "get-db-creds writer-{}-primary-api-primary-api-pg".format(NAMESPACE),
+  env = {
+    "VAULT_ADDR": "https://vault.dev.panfactum.com"
+  },
+  trigger_mode = TRIGGER_MODE_MANUAL,
+  auto_init = False,
+  labels=LABELS
+)
+

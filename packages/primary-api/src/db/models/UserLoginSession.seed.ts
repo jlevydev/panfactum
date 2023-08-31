@@ -1,4 +1,3 @@
-
 import { faker } from '@faker-js/faker'
 import type { Kysely } from 'kysely'
 import type { Database } from './Database'

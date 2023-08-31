@@ -9,15 +9,20 @@ module.exports = {
     parser: '@typescript-eslint/parser',
     plugins: ['@typescript-eslint', 'react'],
     rules: {
-        indent: ["error", 2],
-        "no-void": "off",
-        "camelcase": "off",
-        "@typescript-eslint/no-misused-promises": [
-          "error",
-          {
-            "checksVoidReturn": false
-          }
-        ],
+      indent: ["error", 2],
+      "no-void": "off",
+      "camelcase": "off",
+      "@typescript-eslint/no-misused-promises": [
+        "error",
+        {
+          "checksVoidReturn": false
+        }
+      ],
+      "@typescript-eslint/no-unused-vars": ["error", {
+        "argsIgnorePattern": "^_",
+        "destructuredArrayIgnorePattern": "^_",
+        "varsIgnorePattern": "^_$"
+      }],
       "react/jsx-max-props-per-line": ["warn", {"maximum": 1, "when": "always"}],
       "react/jsx-first-prop-new-line": ["warn", "multiline"],
       "react/jsx-closing-tag-location": ["warn", true],

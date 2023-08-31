@@ -6,7 +6,10 @@ import {
 } from 'kysely'
 import { getDB } from './db/db'
 
+// Environment variables
+/* eslint-disable */
 const NODE_ENV = process.env['NODE_ENV'] ?? 'development'
+/* eslint-enable */
 
 export async function migrateToLatest () {
   const migrator = new Migrator({
@@ -104,7 +107,7 @@ export async function run () {
     await migrateToLatest()
   }
 
-  console.log("Migrations completed successfully")
+  console.log('Migrations completed successfully')
   await getDB().then(db => db.destroy())
   process.exit(0)
 }

@@ -16,3 +16,45 @@ include('./packages/internal-docs/Tiltfile')
 include('./packages/primary-api/Tiltfile')
 include('./packages/public-app/Tiltfile')
 
+################################################
+# Global resources
+################################################
+local_resource(
+  "pgadmin4",
+  "",
+  serve_cmd="pgadmin4",
+  auto_init = True,
+  allow_parallel = True,
+  readiness_probe = probe(
+   http_get = http_get_action(5050, path = "/misc/ping")
+  ),
+  labels=['local'],
+  links=["http://localhost:5050"]
+)
+
+local_resource(
+  "pnpm",
+  "pnpm install",
+  auto_init = True,
+  allow_parallel = True,
+  deps = [
+    ".npmrc",
+    "pnpm-lock.yaml",
+    "pnpm-workspace.yaml",
+    "packages/build/package.json",
+    "packages/build/pnpm-lock.yaml",
+    "packages/eslint/package.json",
+    "packages/eslint/pnpm-lock.yaml",
+    "packages/internal-docs/package.json",
+    "packages/internal-docs/pnpm-lock.yaml",
+    "packages/primary-api/package.json",
+    "packages/primary-api/pnpm-lock.yaml",
+    "packages/public-app/package.json",
+    "packages/public-app/pnpm-lock.yaml",
+    "pnpm-workspace.yaml",
+    "package"
+  ],
+  labels=['local'],
+  links=["http://localhost:5050"]
+)
+

@@ -46,4 +46,9 @@ precommit-node-deps
 (cd "$DEVENV_ROOT/packages/public-app"; ./node_modules/.bin/eslint --fix src)
 >&2 echo "Finished public-app linting!"
 
-
+#######################################
+## Primary api
+#######################################
+>&2 echo "Starting primary-api linting..."
+(cd "$DEVENV_ROOT/packages/primary-api"; ./node_modules/.bin/eslint --fix src)
+>&2 echo "Finished primary-api linting!"

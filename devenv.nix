@@ -1,4 +1,4 @@
-{ pkgs, config, ... }:
+{ pkgs, config, inputs, ... }:
 let
 
   customModule = module: import ./packages/nix/${module} { pkgs = pkgs; };
@@ -111,6 +111,11 @@ let
     (customModule "precommit-public-app")
 
     ####################################
+    # Primary API Scripts
+    ####################################
+    (customModule "precommit-primary-api")
+
+    ####################################
     # Programming Languages
     ####################################
     nodejs-18_x # nodejs
@@ -136,6 +141,7 @@ let
     ####################################
     pgadmin4-desktopmode # web UI for interacting with postgres
     pgcli # postgres cli tools
+    (customModule "get-db-creds") # cli for using vault to get db creds
 
     ####################################
     # Container Management
@@ -173,7 +179,9 @@ let
 in
 {
   enterShell = ''
-    ${(if config.env.CI == "true" then "" else " source enter-shell-local")}
+    unset PYTHONPATH # fix for the issue posted here https://github.com/cachix/devenv/pull/745#issuecomment-1701526176
+
+    ${(if config.env.CI == "true" then "" else "source enter-shell-local")}
   '';
 
   scripts = {
@@ -185,6 +193,7 @@ in
     LOCAL_DEV_NAMESPACE = mkDefault "@INVALID@";
     CI = mkDefault "false";
     GITHUB_TOKEN = mkDefault "@INVALID@";
+    VAULT_ADDR = mkDefault "@INVALID@";
   };
 
   pre-commit.hooks = {
@@ -211,7 +220,14 @@ in
       enable = config.env.CI != "true";
       entry = "precommit-public-app";
       description = "Checks for public-app";
-      files = "^packages/(public-app|primary-api)/(.*)";
+      files = "^packages/(public-app|primary-api|build|eslint)/(.*)";
+      pass_filenames = false;
+    };
+    primary-api = {
+      enable = config.env.CI != "true";
+      entry = "precommit-primary-api";
+      description = "Checks for primary-api";
+      files = "^packages/(primary-api|build|eslint)/(.*)";
       pass_filenames = false;
     };
     node-deps = {
