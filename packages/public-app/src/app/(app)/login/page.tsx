@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from 'next/link'
 
 export default function Page () {
   return (
@@ -8,9 +8,15 @@ export default function Page () {
           Panfactum is currently in an invite-only alpha
         </h1>
         <p className="text-lg md:text-xl my-8">
-          To get access email "jack" at the domain: panfactum.com.
+          To get access email &quot;jack&quot; at the domain: panfactum.com.
         </p>
-        <Link className="btn" href="/"> Back to main site</Link>
+        <Link
+          className="btn"
+          href="/"
+        >
+          {' '}
+          Back to main site
+        </Link>
       </div>
     </div>
   )

@@ -7,6 +7,10 @@ dependency "cluster" {
   config_path = "../../../development/us-east-2/aws_eks"
 }
 
+dependency "vpc" {
+  config_path = "../../../development/us-east-2/aws_vpc"
+}
+
 locals {
   namespace     = include.shared.locals.local_dev_namespace
   image         = get_env("TILT_IMAGE_0", ":")
@@ -34,5 +38,6 @@ inputs = {
   ingress_domains     = ["${local.namespace}.dev.panfactum.com"]
   ingress_path_prefix = "/api"
 
-  eks_cluster_name = dependency.cluster.outputs.cluster_name
+  eks_cluster_name    = dependency.cluster.outputs.cluster_name
+  public_outbound_ips = dependency.vpc.outputs.nat_ips
 }

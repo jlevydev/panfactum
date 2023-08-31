@@ -157,7 +157,7 @@ resource "random_password" "superuser_password" {
 resource "kubernetes_secret" "superuser" {
   type = "kubernetes.io/basic-auth"
   metadata {
-    name      = "${var.pg_cluster_name}-superuser"
+    name      = "${var.pg_cluster_name}-superuser-${sha256(random_password.superuser_password.result)}"
     namespace = var.pg_cluster_namespace
   }
 
@@ -178,7 +178,7 @@ resource "kubernetes_manifest" "postgres_cluster" {
       namespace = var.pg_cluster_namespace
       labels    = var.kube_labels
       annotations = {
-        // We cannot disable native postgres encryption in this operator
+        // We cannot disable native postgres tls encryption in this operator
         // so we will disable our service mesh overlay
         "linkerd.io/inject" = "disabled"
       }

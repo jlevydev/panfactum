@@ -104,6 +104,20 @@ let
     bind # dns utilies
     mtr # better traceroute alternative
     iputils # ping
+
+    ####################################
+    # Public App Scripts
+    ####################################
+    (customModule "precommit-public-app")
+
+    ####################################
+    # Programming Languages
+    ####################################
+    nodejs-18_x # nodejs
+    nodePackages_latest.pnpm # nodejs package manager
+    nodePackages.typescript # Typescipt compiler (tsc)
+    nodePackages.ts-node # Typescript execution environment and repl
+    (customModule "precommit-node-deps")
   ];
 
   local_dev_packages = with pkgs; [
@@ -122,14 +136,6 @@ let
     ####################################
     pgadmin4-desktopmode # web UI for interacting with postgres
     pgcli # postgres cli tools
-
-    ####################################
-    # Programming Languages
-    ####################################
-    nodejs-18_x # nodejs
-    nodePackages_latest.pnpm # nodejs package manager
-    nodePackages.typescript # Typescipt compiler (tsc)
-    nodePackages.ts-node # Typescript execution environment and repl
 
     ####################################
     # Container Management
@@ -186,20 +192,34 @@ in
       enable = config.env.CI != "true";
       entry = "actionlint";
       description = "Github actions and workflow linting";
-      files = "^.github";
+      files = "^.github/(.*)";
       pass_filenames = false;
     };
     terragrunt-custom = {
       enable = config.env.CI != "true";
       entry = "precommit-terragrunt-fmt";
       description = "Terragrunt linting";
-      files = "^environments/(.*).hcl$";
+      files = "^environments/(.*)\.hcl$";
     };
     terraform-custom = {
       enable = config.env.CI != "true";
       entry = "precommit-terraform-fmt";
       description = "Terraform linting";
-      files = "^packages/infrastructure/(.*).tf$";
+      files = "^packages/infrastructure/(.*)\.tf$";
+    };
+    public-app = {
+      enable = config.env.CI != "true";
+      entry = "precommit-public-app";
+      description = "Checks for public-app";
+      files = "^packages/(public-app|primary-api)/(.*)";
+      pass_filenames = false;
+    };
+    node-deps = {
+      enable = config.env.CI != "true";
+      entry = "precommit-node-deps";
+      description = "Checks node dependency consistency";
+      files = "^(.*)(package.json|pnpm-lock.yaml)$";
+      pass_filenames = false;
     };
   };
 

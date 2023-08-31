@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from 'next/link'
 
 export default function Page () {
   return (
@@ -10,7 +10,13 @@ export default function Page () {
         <p className="text-lg md:text-xl my-8">
           Coming soon...
         </p>
-        <Link className="btn" href="/"> Back to main site</Link>
+        <Link
+          className="btn"
+          href="/"
+        >
+          {' '}
+          Back to main site
+        </Link>
       </div>
     </div>
   )

@@ -20,6 +20,7 @@ packages/**/result
 .pnp
 **/.docusaurus
 **/build
+!packages/build
 devenv.local.nix
 .ssh
 .devenv

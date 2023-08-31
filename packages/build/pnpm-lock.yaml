@@ -1,4 +1,4 @@
-lockfileVersion: '6.1'
+lockfileVersion: '6.0'
 
 settings:
   autoInstallPeers: true
@@ -6,7 +6,7 @@ settings:
 
 dependencies:
   '@tsconfig/node18-strictest-esm':
-    specifier: ^1.0.1
+    specifier: 1.0.1
     version: 1.0.1
 
 packages:

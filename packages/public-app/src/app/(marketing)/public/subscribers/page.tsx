@@ -1,8 +1,8 @@
-import {HomeHospital} from "iconoir-react";
-import Image from 'next/image';
+import { HomeHospital } from 'iconoir-react'
+import Image from 'next/image'
 
-import centralizeDependencyIcon from "./centralizeDependencyIcon.png";
-import keyIcon from "./keyIcon.png";
+import centralizeDependencyIcon from './centralizeDependencyIcon.png'
+import keyIcon from './keyIcon.png'
 
 export default function Page () {
   return (
@@ -17,7 +17,7 @@ export default function Page () {
             sizes="200px"
             fill
             style={{
-              objectFit: "contain"
+              objectFit: 'contain'
             }}
             alt="Graphic for centralizing dependencies"
             className="m-auto h-full"
@@ -54,7 +54,7 @@ export default function Page () {
             sizes="200px"
             fill
             style={{
-              objectFit: "contain"
+              objectFit: 'contain'
             }}
             alt="Graphic for centralizing dependencies"
             className="m-auto h-full"
@@ -65,7 +65,10 @@ export default function Page () {
         className="bg-neutral flex flex-row flex-wrap px-8 py-8 md:py-16"
       >
         <div className="h-36 md:h-48 basis-full md:basis-1/3 relative m-auto">
-          <HomeHospital width="100%" height="100%"/>
+          <HomeHospital
+            width="100%"
+            height="100%"
+          />
         </div>
         <div className="mt-8 basis-full md:basis-2/3 flex flex-col gap-4 md:px-8">
           <h2 className="text-primary text-2xl md:text-4xl font-semibold">

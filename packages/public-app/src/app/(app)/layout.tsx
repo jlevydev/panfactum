@@ -1,9 +1,8 @@
 import '../globals.css'
-import {Kanit} from 'next/font/google'
+import { Kanit } from 'next/font/google'
 import type { ReactNode } from 'react'
 
-const kanit = Kanit({weight: "300", preload: false})
-
+const kanit = Kanit({ weight: '300', preload: false })
 
 export const metadata = {
   title: 'Panfactum',

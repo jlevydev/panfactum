@@ -2,25 +2,48 @@
 
 set -eo pipefail
 
-# Performs all of the linting for the project
+# Performs all of the linting for the monorepo
 
 #######################################
 ## Github Actions
 #######################################
->&2 echo "Starting Github Actions Linting..."
+>&2 echo "Starting Github Actions linting..."
 (cd "$DEVENV_ROOT"; actionlint)
->&2 echo "Finished Github Actions Linting!"
+>&2 echo "Finished Github Actions linting!"
 
 #######################################
 ## Terragrunt
 #######################################
->&2 echo "Starting Terragrunt Linting..."
+>&2 echo "Starting Terragrunt linting..."
 (cd "$DEVENV_ROOT/environments"; terragrunt hclfmt)
->&2 echo "Finished Terragrunt Linting!"
+>&2 echo "Finished Terragrunt linting!"
 
 #######################################
 ## Terraform
 #######################################
->&2 echo "Starting Terraform Linting..."
+>&2 echo "Starting Terraform linting..."
 (cd "$DEVENV_ROOT/packages/infrastructure"; terraform fmt -write=true -recursive)
->&2 echo "Finished Terraform Linting!"
+>&2 echo "Finished Terraform linting!"
+
+#######################################
+## Ensure node packages are up-to-date for node linting
+#######################################
+>&2 echo "Installing node modules..."
+(cd "$DEVENV_ROOT"; pnpm install)
+>&2 echo "Finished installing node modules!"
+
+#######################################
+## Check Dependency Consistency
+#######################################
+>&2 echo "Checking for node module version consistency..."
+precommit-node-deps
+>&2 echo "Finished checking node modules!"
+
+#######################################
+## Public app
+#######################################
+>&2 echo "Starting public-app linting..."
+(cd "$DEVENV_ROOT/packages/public-app"; ./node_modules/.bin/eslint --fix src)
+>&2 echo "Finished public-app linting!"
+
+
