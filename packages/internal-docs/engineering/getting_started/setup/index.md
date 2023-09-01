@@ -1,22 +1,30 @@
 # Local Development Setup
 
-This guide aims to take you through the setup steps necessary to begin working on the panfactum project.
+This guide aims to take you through the setup steps necessary to begin working on the Panfactum project.
+
+## Prerequisites
+
+All of the below steps can be completed without any prior work.
+
+However, in order to authenticate to the resources necessary for our local development workflows, you will need to complete the following.
+
+- Provision your Panfactum AAD account (TODO)
+- Be assigned to the correct role group (TODO)
+- Join the pPanfactum GitHub Organization](https://github.com/Panfactum) (TODO)
 
 ## Supported Systems
 
-Currently we only "officially" support linux-based systems as we rely heavily on packages and virtualization technologies that are linux-based. There are MacOS and WSL versions of all of our utilities, but we have not tested them for compatibility. They will likely cause undocumented issues.
-
 #### Recommended Hardware Requirements
 
-- 8+ core CPU
+- 4+ core CPU
 
-- 32+ GB RAM
+- 16+ GB RAM
 
 - 200+ GB SSD Storage
 
 #### Recommended Operating Systems
 
-- [Ubuntu](https://ubuntu.com/tutorials/install-ubuntu-desktop)
+- [Ubuntu](https://ubuntu.com/tutorials/install-ubuntu-desktop) (or WSLv2)
 
 - [NixOS](https://nixos.org/manual/nixos/stable/index.html#ch-installation)
 
@@ -55,16 +63,6 @@ This section covers the required tooling that you will need to have installed. U
   
   - Ensure that you are not using the VFS storage driver which has issues in rootless mode (see the [docs](https://github.com/containers/podman/blob/main/docs/tutorials/rootless_tutorial.md#ensure-fuse-overlayfs-is-installed))
 
-- Once you have the proper configuration for rootless podman, you will need to ensure that you set up a user-level `systemd` service that automatically runs the podman API server on login. This is required for docker compatibility as docker runs a daemon called `dockerd`. 
-  
-  - You may want to review the [docs](https://docs.podman.io/en/latest/markdown/podman-system-service.1.html) for `podman system service`.
-  
-  - An example `podman.service` file is provided <a target="\_blank" href={require('./podman.service').default}>here</a>, and you should ensure it is placed in the appropriate location for user system services on your distribution (e.g., `/etc/systemd/user/podman.service`).
-  
-  - You may also need a `podman.socket` file such as <a target="\_blank" href={require('./podman.socket').default}>this one</a> if one was not automatically installed for you.
-  
-  - If everything is running correctly, you should have a socketfile at `$XDG_RUNTIME_DIR/podman/podman.sock`.
-
 - By default, not all of the system capabilities needed to run our utilities are provided to run some our utilities. Please execute the following guides:
   
   - [Rootless `kind` guide](https://kind.sigs.k8s.io/docs/user/rootless/#host-requirements) (Just the host requirements section)
@@ -83,19 +81,27 @@ This section covers the required tooling that you will need to have installed. U
 
   - `kernel.dmesg_restrict` set to `0`
 
-- We use podman to bind some servers to privileged ports (i.e., `80` and `443`). To enable this, update the `sysctl` setting  `net.ipv4.ip_unprivileged_port_start` to `80`.
-
 #### `devenv`
 
 - Do **not** install `cachix`; it is not needed
 
 ## Downloading the Monorepo
 
-You will need to download the [panfactum monorepo](https://github.com/jclangst/panfactum) to your local machine.
+You will need to clone the [panfactum monorepo](https://github.com/Panfactum/panfactum) to your local machine.
 
-You can do this by running the command `git clone git@github.com:jclangst/panfactum.git`.
+You can do this by running the command `git@github.com:Panfactum/panfactum.git`.
 
-If everything is working correctly, once you `cd` into the cloned directory, you should see the a `devenv` script immediately run. It will look similar to the below:
+`cd` into the cloned directory.
+
+You may now see an error message that looks like the following:
+
+```
+direnv: error /home/jack/repos/panfactum/.envrc is blocked. Run `direnv allow` to approve its content
+```
+
+Run `direnv allow`.
+
+At this point, the `devenv` environment setup script should immediately run. It will look similar to the below:
 
 ```text
 direnv: loading ~/repos/panfactum/panfactum/.envrc
@@ -114,7 +120,7 @@ DEVENV_PROFILE=/nix/store/x9rx3384qckjrrp7668w89bds52xi6vs-devenv-profile
 DEVENV_STATE=/home/jack/repos/panfactum/panfactum/.devenv/state
 ```
 
-Note that your values will be specific to your machine and the above is just an example.
+**Your values will be specific to your machine and the above is just an example.**
 
 ## Setting up User Variables
 
@@ -127,25 +133,22 @@ Here is an example:
 {
   # Add your environment variable key pairs in here
   env = {
-    ROUTER_USER = "<your user>"; # Just an example
+    LOCAL_DEV_NAMESPACE = "jack";
+    CI = "false";
+    GITHUB_TOKEN = "XXXXXX";
+    VAULT_ADDR = "https://vault.dev.panfactum.com";
   };
 }
 ```
 
 Replace the `env` values with your values based on the table below:
 
-| Value            | Description                                                                                                                   |
-|------------------|-------------------------------------------------------------------------------------------------------------------------------|
-|    | ||
-
-
-## Setting up SSH (Optional)
-
-If you are going to connect directly to networking hardware or the bare metal servers, this step is <u>required</u>.
-
-We dynamically generate a user-specific [SSH config file](https://linux.die.net/man/5/ssh_config) at `.ssh/config` inside the repo.
-If you want to use our ssh convenience functions, you will need to add `Include <repo_absolute_path>/.ssh/config` to the top of your
-`~/.ssh/config` file. Replace `<repo_absolute_path>` with the absolute path to the panfactum repo on your development machine.
+| Value                 | Description                                                                                                                                                                                                |
+|-----------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `LOCAL_DEV_NAMESPACE` | A short name code that should be unique to you. Used for spinning up personal development stacks in our development cluster.                                                                               |
+| `CI`                  | Should be set to `"false"` unless you are attempting to emulate / test the CI system.                                                                                                                      |
+| `GITHUB_TOKEN`        | Your GitHub [Personal Access Token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens). Secret used for interacting with the GitHub API. |
+| `VAULT_ADDR`          | The vault instance to connect to for authentication to our systems. For local development, you will want to use `"https://vault.dev.panfactum.com"`.                                                       |
 
 ## Editor Setup (Optional)
 
