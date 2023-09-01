@@ -26,13 +26,6 @@ set -eo pipefail
 >&2 echo "Finished Terraform linting!"
 
 #######################################
-## Ensure node packages are up-to-date for node linting
-#######################################
->&2 echo "Installing node modules..."
-(cd "$DEVENV_ROOT"; pnpm install)
->&2 echo "Finished installing node modules!"
-
-#######################################
 ## Check Dependency Consistency
 #######################################
 >&2 echo "Checking for node module version consistency..."

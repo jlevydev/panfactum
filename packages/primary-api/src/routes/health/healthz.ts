@@ -10,7 +10,7 @@ export const HealthzRoute: RouteOptions = {
   handler: async (_, res): Promise<Static<typeof HealthzReturnType>> => {
     res.statusCode = 200
     return {
-      status: 'goodss'
+      status: 'ok'
     }
   },
   schema: {

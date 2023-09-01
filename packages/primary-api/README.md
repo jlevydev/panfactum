@@ -1,27 +1,30 @@
+# Primary API
 
-# Environment Variables
+The primary API server is the main BE coordination system. It exposes
+an HTTP API via [fastify](https://fastify.dev/docs/latest/)
+and fronts our main postgres database which holds most of our relational data.
 
-| Variable    | Description                                                                                               |
-|-------------|-----------------------------------------------------------------------------------------------------------|
-| PG_HOSTNAME | Postgres hostname                                                                                         |
-| PG_PORT     | Postgres port                                                                                             |
-| PG_USERNAME | Postgres username                                                                                         |
-| PG_PASSWORD | Postgres password                                                                                         |
-| PG_DATABASE | Postgres database                                                                                         |
+## Environment Variables
 
+| Variable                | Description                                                                                                                         |
+|-------------------------|-------------------------------------------------------------------------------------------------------------------------------------|
+| `PG_HOSTNAME`           | Postgres DBMS hostname                                                                                                              |
+| `PG_PORT`               | Postgres DBMS port (default: `5432`)                                                                                                |
+| `PG_DATABASE`           | Postgres database inside the DBMS to use (default: `app`)                                                                           |
+| `PG_CREDS_PATH`         | A directory containing the files `username` and `password` containing the username and password respectively for the postgres login |
+| `PG_DATABASE`           | Postgres database inside the DBMS to use                                                                                            |
+| `COOKIE_SIGNING_SECRET` | Secret used to sign the provisioned cookies for authentication                                                                      |
 
-# Local Development
+## Local Development
 
-To launch local development environment and dependencies, run `podman-compose up -d`.
+**Ensure that you have Tilt running via `tilt up`**!
+
+You can find the primary api's Tilt resources under the `api` label.
 
 ## Database Management
 
 ### Postgres DBMS
 
-#### Connecting
-
-Connection URL (Outside container): `postgresql://user:password@localhost:8001/db`
-Connection URL (Inside container): `postgresql://user:password@database:5432/db`
 
 #### Schema Updates
 
@@ -31,31 +34,14 @@ migrations are intended to be implemented.
 
 Migration files are indexed from `00001.ts` to `99999.ts` and are applied synchronously in-order.
 
+For local development, the last schema migration is
+unapplied and reapplied _every_ time the schema files change. This
+allows rapid iteration and testing of schema updates.
+
 #### Seeding and Resetting Data
 
 TODO
 
-### pgAdmin4
+### Database Introspection
 
-A web UI running locally that allows for introspection and manipulation of the database.
-
-To connect to the web GUI:
-
-- URL: `http://localhost:8002`
-- Web UI Login: `pg@panfori.com`
-- Password: `password`
-
-To connect to the database inside the GUI:
-
-- Select `Servers > Register > Server...`
-- Under `General`, add arbitrary name
-- Under `Connection`
-  - Set `Hostname` to `database`
-  - Set `Port` to `5243`
-  - Set `Username` to `user`
-  - Set `Password` to `password`
-- Click `Save` to connect
-
-*Settings will persist between sessions. To hard reset, nuke the data volume via `podman volume rm panfori-api_pgadmin4-data`*
-
-Maintainer note: See [docs](https://www.pgadmin.org/docs/pgadmin4/latest/container_deployment.html) for setting up the local development environment.
+TODO

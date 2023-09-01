@@ -2,6 +2,7 @@ import { Pool } from 'pg'
 import { Kysely, PostgresDialect } from 'kysely'
 import type { Database } from './models/Database'
 import { readFile, watch } from 'fs/promises'
+import { PG_CREDS_PATH, PG_DATABASE, PG_HOSTNAME, PG_PORT } from '../environment'
 
 /*************************************
  * Public function for getting the db instance
@@ -9,14 +10,18 @@ import { readFile, watch } from 'fs/promises'
 
 let db: Kysely<Database> | null = null
 export const getDB = async ():Promise<Kysely<Database>> => {
+  // If the DB was null, updateDB ensures that it gets updated
+  // with a valid db
   if (db === null) {
     await updateDB()
   }
 
-  // If the DB was null, updateDB ensures that it gets updated
-  // with a valid db
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  return db!
+  // If the DB is still null, something has gone terribly wrong!
+  if (db === null) {
+    throw new Error('Database was not properly initialized (db is null)!')
+  }
+
+  return db
 }
 
 /*************************************
@@ -25,19 +30,11 @@ export const getDB = async ():Promise<Kysely<Database>> => {
  * we utilize dynamic credentials provisioned by Vault
  * ***********************************/
 
-// Environment variables
-/* eslint-disable */
-const credsPath = process.env['PG_CREDS_PATH'] ?? '/not-defined'
-const hostName = process.env['PG_HOSTNAME'] ?? 'not-defined'
-const pgPort = parseInt(process.env['PG_PORT'] ?? '5432')
-const pgDB = process.env['PG_DATABASE'] ?? 'app'
-/* eslint-enable */
-
-const passwordPath = `${credsPath}/password`
+const passwordPath = `${PG_CREDS_PATH}/password`
 const getPassword = async (): Promise<string> => {
   return readFile(passwordPath, 'utf-8')
 }
-const usernamePath = `${credsPath}/username`
+const usernamePath = `${PG_CREDS_PATH}/username`
 const getUsername = async (): Promise<string> => {
   return readFile(usernamePath, 'utf-8')
 }
@@ -53,11 +50,11 @@ const updateDB = async () => {
   if (db === null || newUsername !== username || newPassword !== password) {
     console.log(`Found new postgres username and password (${newUsername}). Updating DB...`)
     const postgresPool = new Pool({
-      host: hostName,
+      host: PG_HOSTNAME,
       user: newUsername,
       password: newPassword,
-      port: pgPort,
-      database: pgDB
+      port: PG_PORT,
+      database: PG_DATABASE
     })
 
     // Close the old connections after a minute
@@ -80,7 +77,7 @@ const updateDB = async () => {
 // db if the file changes
 void (async () => {
   try {
-    const watcher = watch(credsPath, { recursive: true })
+    const watcher = watch(PG_CREDS_PATH, { recursive: true })
     for await (const _ of watcher) {
       await updateDB()
     }

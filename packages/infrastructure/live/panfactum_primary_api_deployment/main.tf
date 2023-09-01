@@ -99,6 +99,10 @@ module "db_access_admin" {
 * Deployment
 ***************************************/
 
+resource "random_password" "cookie_signing_secret" {
+  length = 32
+}
+
 resource "kubernetes_service_account" "service" {
   metadata {
     name      = local.service
@@ -119,10 +123,11 @@ module "deployment" {
   tolerations = module.constants.spot_node_toleration
 
   environment_variables = {
-    NODE_ENV    = local.is_local ? "development" : "production"
-    PG_HOSTNAME = "${local.service}-pg-rw.${local.namespace}"
-    PG_PORT     = "5432"
-    PG_DATABASE = "app"
+    NODE_ENV              = local.is_local ? "development" : "production"
+    PG_HOSTNAME           = "${local.service}-pg-rw.${local.namespace}"
+    PG_PORT               = "5432"
+    PG_DATABASE           = "app"
+    COOKIE_SIGNING_SECRET = random_password.cookie_signing_secret.result
   }
 
   // TODO: Separate init secrets from main container runtime

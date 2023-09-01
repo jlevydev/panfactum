@@ -3,8 +3,6 @@ import cors from '@fastify/cors'
 import type { TypeBoxTypeProvider } from '@fastify/type-provider-typebox'
 import type { Static } from '@sinclair/typebox'
 
-import { AggregateStatsRoute } from './routes/stats/aggregate'
-import { CreatorStatsRoute } from './routes/stats/creator'
 import type { FastifyCookieOptions } from '@fastify/cookie'
 import { AuthLoginRoute, LoginReturnType } from './routes/auth/login'
 import { AUTH_COOKIE_NAME } from './routes/auth/constants'
@@ -12,6 +10,7 @@ import { AuthInfoRoute } from './routes/auth/info'
 import { AuthLogoutRoute } from './routes/auth/logout'
 import { getDB } from './db/db'
 import { HealthzRoute } from './routes/health/healthz'
+import { COOKIE_SIGNING_SECRET } from './environment'
 
 const server = Fastify().withTypeProvider<TypeBoxTypeProvider>()
 void server.register(cors, {})
@@ -24,8 +23,8 @@ void server.register(require('@fastify/swagger'), {
   openapi: {
     info: {
       title: 'Panfactum API',
-      description: 'testing the fastify swagger api',
-      version: '0.1.0'
+      description: 'The primary API server powering Panfactum',
+      version: '1.0.0'
     },
     servers: [{
       url: 'http://localhost/api'
@@ -60,8 +59,8 @@ void server.register(require('@fastify/swagger-ui'), {
  *******************************************************************/
 // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
 void server.register(require('@fastify/cookie'), {
-  secret: 'my-secret', // for cookies signature
-  hook: 'onRequest' // set to false to disable cookie autoparsing or set autoparsing on any of the following hooks: 'onRequest', 'preParsing', 'preHandler', 'preValidation'. default: 'onRequest'
+  secret: COOKIE_SIGNING_SECRET, // for cookies signature
+  hook: 'onRequest'
 } as FastifyCookieOptions)
 
 /********************************************************************
@@ -101,7 +100,7 @@ server.addHook('onRequest', async (req, res) => {
 
   if (!valid) {
     // If the cookie's signature was invalid, then we should just immediately
-    // return a 403 and we should clear the cookie
+    // return a 403, and we should clear the cookie
     res.statusCode = 403
     void res.clearCookie(AUTH_COOKIE_NAME)
     void res.send()
@@ -132,8 +131,6 @@ server.addHook('onRequest', async (req, res) => {
  * Route Bindings
  *******************************************************************/
 void server.register((app, _, done) => {
-  app.route(AggregateStatsRoute)
-  app.route(CreatorStatsRoute)
   app.route(AuthLoginRoute)
   app.route(AuthInfoRoute)
   app.route(AuthLogoutRoute)
