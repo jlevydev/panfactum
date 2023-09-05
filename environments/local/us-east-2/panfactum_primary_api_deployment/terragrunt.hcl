@@ -40,4 +40,9 @@ inputs = {
 
   eks_cluster_name    = dependency.cluster.outputs.cluster_name
   public_outbound_ips = dependency.vpc.outputs.nat_ips
+
+  environment_variables = {
+    ENV      = "development"
+    NODE_ENV = "development"
+  }
 }

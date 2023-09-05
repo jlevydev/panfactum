@@ -122,13 +122,13 @@ module "deployment" {
 
   tolerations = module.constants.spot_node_toleration
 
-  environment_variables = {
+  environment_variables = merge({
     NODE_ENV              = local.is_local ? "development" : "production"
     PG_HOSTNAME           = "${local.service}-pg-rw.${local.namespace}"
     PG_PORT               = "5432"
     PG_DATABASE           = "app"
     COOKIE_SIGNING_SECRET = random_password.cookie_signing_secret.result
-  }
+  }, var.environment_variables)
 
   // TODO: Separate init secrets from main container runtime
   dynamic_secrets = [{

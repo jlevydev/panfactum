@@ -11,6 +11,8 @@ export const PG_HOSTNAME = process.env['PG_HOSTNAME'] ?? undefinedMarker
 export const PG_PORT = parseInt(process.env['PG_PORT'] ?? '5432')
 export const PG_DATABASE = process.env['PG_DATABASE'] ?? 'app'
 export const COOKIE_SIGNING_SECRET = process.env['COOKIE_SIGNING_SECRET'] ?? undefinedMarker
+export const NODE_ENV = process.env['NODE_ENV'] ?? undefinedMarker
+export const ENV = process.env['ENV'] ?? undefinedMarker
 /* eslint-enable */
 
 // Checks to ensure that environment variables were properly set

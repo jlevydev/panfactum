@@ -68,3 +68,10 @@ variable "image_version" {
   description = "The version of the image to use for the deployment"
   type        = string
 }
+
+variable "environment_variables" {
+  description = "Key pair values of the environment variables for each container"
+  type        = map(string)
+  default     = {}
+}
+

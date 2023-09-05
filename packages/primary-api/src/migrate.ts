@@ -5,11 +5,7 @@ import {
   FileMigrationProvider
 } from 'kysely'
 import { getDB } from './db/db'
-
-// Environment variables
-/* eslint-disable */
-const NODE_ENV = process.env['NODE_ENV'] ?? 'development'
-/* eslint-enable */
+import { ENV, NODE_ENV } from './environment'
 
 export async function migrateToLatest () {
   const migrator = new Migrator({
@@ -98,9 +94,10 @@ export async function seedData () {
 }
 
 export async function run () {
-  // If in local development, we want to run the seed data
+  // In development environments, we want to run the seed data
   // migration AFTER the schema updates to ensure that the database is populated
-  if (NODE_ENV === 'development') {
+  // with some test data
+  if (NODE_ENV === 'development' || ENV === 'development') {
     await migrateToLatest()
     await seedData()
   } else {

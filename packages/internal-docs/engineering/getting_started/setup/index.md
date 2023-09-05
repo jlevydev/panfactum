@@ -4,13 +4,14 @@ This guide aims to take you through the setup steps necessary to begin working o
 
 ## Prerequisites
 
-All of the below steps can be completed without any prior work.
+All the below steps can be completed without any prior work.
 
-However, in order to authenticate to the resources necessary for our local development workflows, you will need to complete the following.
+However, in order to authenticate to the resources necessary for our
+local development workflows, you will need to complete the following:
 
 - Provision your Panfactum AAD account (TODO)
 - Be assigned to the correct role group (TODO)
-- Join the pPanfactum GitHub Organization](https://github.com/Panfactum) (TODO)
+- Join the Panfactum GitHub Organization](https://github.com/Panfactum) (TODO)
 
 ## Supported Systems
 
@@ -46,16 +47,6 @@ This section covers the required tooling that you will need to have installed. U
 ### Installation Notes
 
 `podman`
-
-- Some of our tools expect `podman` instead of `docker` for container management. Fortunately, `podman` has a compatible API, so we can just use `podman` as a `docker` drop-in. To do this, globally alias `docker` to `podman` . 
-  
-  - Ensure that you do not already have `docker` installed your system. If it is installed, remove it. 
-    
-    - To find the location of `docker`, run `whereis docker`.
-    
-    - Remember that sometimes, the `docker` install may be managed outside of your system package manager via Docker/Rancher desktop.
-  
-  - Create a symlink (see [ln](https://man7.org/linux/man-pages/man1/ln.1.html)) from a location on your `PATH` (e.g., `/usr/local/bin/docker` ) to your podman binary.
 
 - Once you do the default `podman` install, you will need to follow [this guide](https://github.com/containers/podman/blob/main/docs/tutorials/rootless_tutorial.md) for enabling rootless podman. This enables you to run `podman` as a non-root user (e.g., without `sudo`) as well as utilize user-specific podman settings.
   
