@@ -6,6 +6,7 @@ import {
 } from 'kysely'
 import { getDB } from './db/db'
 import { ENV, NODE_ENV } from './environment'
+import { populateData, truncateData } from './db/seed'
 
 export async function migrateToLatest () {
   const migrator = new Migrator({
@@ -50,47 +51,9 @@ export async function migrateToLatest () {
 }
 
 export async function seedData () {
-  const migrator = new Migrator({
-    db: await getDB(),
-    migrationTableName: 'kysely_seed',
-    migrationLockTableName: 'kysely_seed_lock',
-    provider: new FileMigrationProvider({
-      fs,
-      path,
-      migrationFolder: path.resolve(__dirname, 'db/seed_migrations')
-    })
-  })
-
-  if (NODE_ENV === 'development') {
-    // When we are doing development, always drop the last
-    // migration before migrating to latest to allow us to test out seed
-    // changes rapidly
-    const migrations = await migrator.getMigrations()
-    if (migrations.length > 1) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      await migrator.migrateTo(migrations[migrations.length - 1]!.name)
-    } else {
-      await migrator.migrateDown()
-    }
-
-    console.log('Successfully reverted last data seeding')
-  }
-
-  const { error, results } = await migrator.migrateToLatest()
-
-  results?.forEach((it) => {
-    if (it.status === 'Success') {
-      console.log(`Data seeding migration "${it.migrationName}" was executed successfully`)
-    } else if (it.status === 'Error') {
-      console.error(`Failed to seed data "${it.migrationName}"`)
-    }
-  })
-
-  if (error) {
-    console.error('Failed to seed data')
-    // eslint-disable-next-line @typescript-eslint/no-throw-literal
-    throw error
-  }
+  const db = await getDB()
+  await truncateData(db)
+  await populateData(db)
 }
 
 export async function run () {

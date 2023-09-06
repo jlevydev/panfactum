@@ -1,21 +1,26 @@
-import type { RouteOptions } from 'fastify'
 import { Static, Type } from '@sinclair/typebox'
+import type { FastifyPluginAsync } from 'fastify'
 
-export const HealthzReturnType = Type.Object({
+export const Healthz = Type.Object({
   status: Type.String()
 })
-export const HealthzRoute: RouteOptions = {
-  method: 'GET',
-  url: '/healthz',
-  handler: async (_, res): Promise<Static<typeof HealthzReturnType>> => {
-    res.statusCode = 200
-    return {
-      status: 'ok'
+export type HealthzType = Static<typeof Healthz>
+
+export const HealthzRoute:FastifyPluginAsync = async (fastify) => {
+  void fastify.get<{Reply: HealthzType}>(
+    '',
+    {
+      schema: {
+        response: {
+          200: Healthz
+        }
+      }
+    },
+    async (_, reply) => {
+      reply.statusCode = 200
+      return {
+        status: 'ok'
+      }
     }
-  },
-  schema: {
-    response: {
-      200: HealthzReturnType
-    }
-  }
+  )
 }

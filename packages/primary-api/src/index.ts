@@ -4,13 +4,14 @@ import type { TypeBoxTypeProvider } from '@fastify/type-provider-typebox'
 import type { Static } from '@sinclair/typebox'
 
 import type { FastifyCookieOptions } from '@fastify/cookie'
-import { AuthLoginRoute, LoginReturnType } from './routes/auth/login'
+import type { LoginReply } from './routes/auth/login'
 import { AUTH_COOKIE_NAME } from './routes/auth/constants'
-import { AuthInfoRoute } from './routes/auth/info'
-import { AuthLogoutRoute } from './routes/auth/logout'
 import { getDB } from './db/db'
-import { HealthzRoute } from './routes/health/healthz'
-import { COOKIE_SIGNING_SECRET } from './environment'
+import { COOKIE_SIGNING_SECRET, ENV, PUBLIC_URL } from './environment'
+import { errorHandler } from './handlers/error'
+import { UserRoutes } from './routes/user'
+import { HealthRoutes } from './routes/health'
+import { AuthRoutes } from './routes/auth'
 
 const server = Fastify().withTypeProvider<TypeBoxTypeProvider>()
 void server.register(cors, {})
@@ -18,41 +19,43 @@ void server.register(cors, {})
 /********************************************************************
  * Swagger Configuration
  *******************************************************************/
-// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-void server.register(require('@fastify/swagger'), {
-  openapi: {
-    info: {
-      title: 'Panfactum API',
-      description: 'The primary API server powering Panfactum',
-      version: '1.0.0'
-    },
-    servers: [{
-      url: 'http://localhost/api'
-    }],
-    components: {
-      securitySchemes: {
-        apiKey: {
-          type: 'apiKey',
-          name: 'apiKey',
-          in: 'header'
+if (ENV === 'development') {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+  void server.register(require('@fastify/swagger'), {
+    openapi: {
+      info: {
+        title: 'Panfactum API',
+        description: 'The primary API server powering Panfactum',
+        version: '1.0.0'
+      },
+      servers: [{
+        url: PUBLIC_URL
+      }],
+      components: {
+        securitySchemes: {
+          apiKey: {
+            type: 'apiKey',
+            name: 'apiKey',
+            in: 'header'
+          }
         }
       }
-    }
-  },
-  hideUntagged: false,
-  exposeRoute: true
-})
+    },
+    hideUntagged: false,
+    exposeRoute: true
+  })
 
-// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-void server.register(require('@fastify/swagger-ui'), {
-  routePrefix: '/docs',
-  uiConfig: {
-    docExpansion: 'list',
-    deepLinking: true
-  },
-  staticCSP: true,
-  transformSpecificationClone: true
-})
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+  void server.register(require('@fastify/swagger-ui'), {
+    routePrefix: '/docs',
+    uiConfig: {
+      docExpansion: 'list',
+      deepLinking: true
+    },
+    staticCSP: true,
+    transformSpecificationClone: true
+  })
+}
 
 /********************************************************************
  * Cookie Handling
@@ -130,13 +133,15 @@ server.addHook('onRequest', async (req, res) => {
 /********************************************************************
  * Route Bindings
  *******************************************************************/
-void server.register((app, _, done) => {
-  app.route(AuthLoginRoute)
-  app.route(AuthInfoRoute)
-  app.route(AuthLogoutRoute)
-  app.route(HealthzRoute)
-  done()
-}, { prefix: '/v1' })
+const prefix = '/v1'
+void server.register(HealthRoutes, { prefix })
+void server.register(UserRoutes, { prefix })
+void server.register(AuthRoutes, { prefix })
+
+/********************************************************************
+ * Error Handlers
+ *******************************************************************/
+server.setErrorHandler(errorHandler)
 
 /********************************************************************
  * Server Startup
@@ -153,4 +158,5 @@ server.listen({ host: '0.0.0.0', port: 8080 }, (err, address) => {
  * Test Exports
  *******************************************************************/
 
-export type LoginReturnType = Static<typeof LoginReturnType>
+export type LoginReturnType = Static<typeof LoginReply>
+export type { UserOrganizationsReplyType } from './routes/user/organizations'

@@ -128,6 +128,7 @@ module "deployment" {
     PG_PORT               = "5432"
     PG_DATABASE           = "app"
     COOKIE_SIGNING_SECRET = random_password.cookie_signing_secret.result
+    PUBLIC_URL            = "https://${var.ingress_domains[0]}${var.ingress_path_prefix}"
   }, var.environment_variables)
 
   // TODO: Separate init secrets from main container runtime

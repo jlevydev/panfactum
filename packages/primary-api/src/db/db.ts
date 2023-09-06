@@ -59,8 +59,9 @@ const updateDB = async () => {
 
     // Close the old connections after a minute
     // to allow running queries to complete
+    const oldDB = db
     setTimeout(() => {
-      void db?.destroy()
+      void oldDB?.destroy()
     }, 60 * 1000)
 
     db = new Kysely<Database>({

@@ -12,6 +12,7 @@ export default function Page () {
           <ul className="list-disc pl-4">
             <li>
               Panfactum is
+              {' '}
               <b className="font-bold">free</b>
               {' '}
               to get started. No payment info needed.
@@ -25,6 +26,7 @@ export default function Page () {
             <li>From what&apos;s left, we charge a 10% platform fee to cover our overhead.</li>
             <li>
               You get the rest via
+              {' '}
               <Link
                 href="https://stripe.com/connect"
                 className="link"

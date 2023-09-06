@@ -13,13 +13,15 @@ export const PG_DATABASE = process.env['PG_DATABASE'] ?? 'app'
 export const COOKIE_SIGNING_SECRET = process.env['COOKIE_SIGNING_SECRET'] ?? undefinedMarker
 export const NODE_ENV = process.env['NODE_ENV'] ?? undefinedMarker
 export const ENV = process.env['ENV'] ?? undefinedMarker
+export const PUBLIC_URL = process.env['PUBLIC_URL'] ?? undefinedMarker
 /* eslint-enable */
 
 // Checks to ensure that environment variables were properly set
 const MUST_BE_DEFINED: {[name: string]: string} = {
   PG_CREDS_PATH,
   PG_HOSTNAME,
-  COOKIE_SIGNING_SECRET
+  COOKIE_SIGNING_SECRET,
+  PUBLIC_URL
 }
 for (const envVar in MUST_BE_DEFINED) {
   if (MUST_BE_DEFINED[envVar] === undefinedMarker) {

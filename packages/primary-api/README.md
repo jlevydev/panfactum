@@ -10,6 +10,7 @@ and fronts our main postgres database which holds most of our relational data.
 |-------------------------|-------------------------------------------------------------------------------------------------------------------------------------|
 | `NODE_ENV` | `development` if running in local development; `production` otherwise.                                                              |
 | `ENV`                   | The name of the environment where the service is deployed. One of: `development`, `production`.                                     |
+|`PUBLIC_URL` | The url where the api can be reached.                                                                                               |
 | `PG_HOSTNAME`           | Postgres DBMS hostname                                                                                                              |
 | `PG_PORT`               | Postgres DBMS port (default: `5432`)                                                                                                |
 | `PG_DATABASE`           | Postgres database inside the DBMS to use (default: `app`)                                                                           |
