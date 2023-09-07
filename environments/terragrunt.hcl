@@ -191,6 +191,11 @@ remote_state {
 terraform_version_constraint  = "~> 1.1"
 terragrunt_version_constraint = "~> 0.36"
 
+// If running in the CI system, enable retries on all of the errors
+retryable_errors         = local.is_ci ? [".*"] : []
+retry_max_attempts       = 3
+retry_sleep_interval_sec = 30
+
 ################################################################
 ### Default Module Inputs
 ################################################################
