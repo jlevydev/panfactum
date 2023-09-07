@@ -11,7 +11,7 @@ COPY --chown=1000 packages/public-app/package.json packages/public-app/pnpm-lock
 COPY --chown=1000 packages/eslint/ packages/eslint/
 COPY --chown=1000 packages/build/ packages/build/
 COPY --chown=1000 packages/primary-api/ packages/primary-api/
-RUN --mount=type=cache,target=/code/.pnp pnpm install --frozen-lockfile
+RUN --mount=type=cache,target=/code/.pnp,uid=1000,gid=1000 pnpm install --frozen-lockfile
 
 # Build
 COPY --chown=1000 packages/public-app/ packages/public-app/
