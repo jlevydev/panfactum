@@ -4,8 +4,8 @@ FROM node:18-bullseye-slim as development
 RUN npm i -g pnpm@8.6.12
 
 # Install Dependencies
-WORKDIR /code
 USER 1000
+WORKDIR /code
 COPY --chown=1000 package.json pnpm-lock.yaml .npmrc pnpm-workspace.yaml .
 COPY --chown=1000 packages/public-app/package.json packages/public-app/pnpm-lock.yaml packages/public-app/
 COPY --chown=1000 packages/eslint/ packages/eslint/
