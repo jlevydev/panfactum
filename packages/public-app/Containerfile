@@ -17,6 +17,8 @@ COPY packages/public-app/ packages/public-app/
 WORKDIR packages/public-app
 
 FROM development as production
+COPY packages/public-app/scripts/start.sh start.sh
+ENTRYPOINT ["/code/packages/public-app/start.sh"]
 RUN npx next build
 
 # TODO: Create an actual production build without all the dev dependencies
