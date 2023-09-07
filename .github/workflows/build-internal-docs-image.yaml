@@ -28,7 +28,7 @@ jobs:
     timeout-minutes: 30
     concurrency:
       group: apply-dev-internal-docs
-      cancel-in-progress: false
+      cancel-in-progress: true
     steps:
       - uses: actions/checkout@v3
 
