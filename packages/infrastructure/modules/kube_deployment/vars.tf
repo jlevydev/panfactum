@@ -109,6 +109,7 @@ variable "containers" {
     minimum_cpu        = optional(number, 10)       # The minimum amount of cpu millicores
     run_as_root        = optional(bool, false)      # Whether to run the container as root
     linux_capabilities = optional(list(string), []) # Default is drop ALL
+    readonly           = optional(bool, true)       # Whether to use a readonly file system
   }))
 }
 
@@ -122,6 +123,7 @@ variable "init_containers" {
     minimum_cpu        = optional(number, 10)       # The minimum amount of cpu millicores
     run_as_root        = optional(bool, false)      # Whether to run the container as root
     linux_capabilities = optional(list(string), []) # Default is drop ALL
+    readonly           = optional(bool, true)       # Whether to use a readonly file system
   }))
   default = {}
 }

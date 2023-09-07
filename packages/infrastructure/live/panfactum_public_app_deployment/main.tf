@@ -103,6 +103,7 @@ module "deployment" {
         "start",
         "-p", local.port
       ]
+      readonly       = false
       minimum_memory = local.is_local ? 2000 : 1000
     }
   }

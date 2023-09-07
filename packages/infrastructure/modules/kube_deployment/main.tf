@@ -133,10 +133,9 @@ resource "kubernetes_deployment" "deployment" {
           for_each = var.containers
           content {
 
-            name              = container.key
-            image             = "${container.value.image}:${container.value.version}"
-            command           = container.value.command
-            image_pull_policy = "Always"
+            name    = container.key
+            image   = "${container.value.image}:${container.value.version}"
+            command = container.value.command
 
             // NOTE: The order that these env blocks is defined in
             // is incredibly important. Do NOT move them around unless you know what you are doing.
@@ -271,11 +270,13 @@ resource "kubernetes_deployment" "deployment" {
 
             resources {
               requests = {
-                cpu    = "${container.value.minimum_cpu}m"
-                memory = "${container.value.minimum_memory}Mi"
+                cpu               = "${container.value.minimum_cpu}m"
+                memory            = "${container.value.minimum_memory}Mi"
+                ephemeral-storage = "100Mi"
               }
               limits = {
-                memory = "${container.value.minimum_memory}Mi"
+                memory            = "${container.value.minimum_memory}Mi"
+                ephemeral-storage = "100Mi"
               }
             }
 
@@ -288,7 +289,7 @@ resource "kubernetes_deployment" "deployment" {
               run_as_user                = container.value.run_as_root ? 0 : var.is_local ? 0 : 1000
               run_as_non_root            = !container.value.run_as_root && !var.is_local
               allow_privilege_escalation = container.value.run_as_root || var.is_local
-              read_only_root_filesystem  = !var.is_local
+              read_only_root_filesystem  = !var.is_local && container.value.readonly
               capabilities {
                 add  = container.value.linux_capabilities
                 drop = var.is_local ? [] : ["ALL"]
@@ -323,10 +324,9 @@ resource "kubernetes_deployment" "deployment" {
         dynamic "init_container" {
           for_each = var.init_containers
           content {
-            name              = init_container.key
-            image             = "${init_container.value.image}:${init_container.value.version}"
-            command           = init_container.value.command
-            image_pull_policy = "Always"
+            name    = init_container.key
+            image   = "${init_container.value.image}:${init_container.value.version}"
+            command = init_container.value.command
 
             // NOTE: The order that these env blocks is defined in
             // is incredibly important. Do NOT move them around unless you know what you are doing.
@@ -401,11 +401,13 @@ resource "kubernetes_deployment" "deployment" {
 
             resources {
               requests = {
-                cpu    = "${init_container.value.minimum_cpu}m"
-                memory = "${init_container.value.minimum_memory}Mi"
+                cpu               = "${init_container.value.minimum_cpu}m"
+                memory            = "${init_container.value.minimum_memory}Mi"
+                ephemeral-storage = "100Mi"
               }
               limits = {
-                memory = "${init_container.value.minimum_memory}Mi"
+                memory            = "${init_container.value.minimum_memory}Mi"
+                ephemeral-storage = "100Mi"
               }
             }
 
@@ -418,7 +420,7 @@ resource "kubernetes_deployment" "deployment" {
               run_as_user                = init_container.value.run_as_root ? 0 : var.is_local ? 0 : 1000
               run_as_non_root            = !init_container.value.run_as_root && !var.is_local
               allow_privilege_escalation = init_container.value.run_as_root || var.is_local
-              read_only_root_filesystem  = !var.is_local
+              read_only_root_filesystem  = !var.is_local && init_container.value.readonly
               capabilities {
                 add  = init_container.value.linux_capabilities
                 drop = var.is_local ? [] : ["ALL"]
