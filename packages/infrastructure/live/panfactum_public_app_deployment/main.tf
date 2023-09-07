@@ -98,6 +98,7 @@ module "deployment" {
         "dev",
         "-p", local.port
         ] : [
+        "./entrypoint.sh",
         "node_modules/.bin/next",
         "start",
         "-p", local.port
