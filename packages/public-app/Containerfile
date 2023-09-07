@@ -5,19 +5,20 @@ RUN npm i -g pnpm@8.6.12
 
 # Install Dependencies
 WORKDIR /code
-COPY package.json pnpm-lock.yaml .npmrc pnpm-workspace.yaml .
-COPY packages/public-app/package.json packages/public-app/pnpm-lock.yaml packages/public-app/
-COPY packages/eslint/ packages/eslint/
-COPY packages/build/ packages/build/
-COPY packages/primary-api/ packages/primary-api/
+USER 1000
+COPY --chown=1000 package.json pnpm-lock.yaml .npmrc pnpm-workspace.yaml .
+COPY --chown=1000 packages/public-app/package.json packages/public-app/pnpm-lock.yaml packages/public-app/
+COPY --chown=1000 packages/eslint/ packages/eslint/
+COPY --chown=1000 packages/build/ packages/build/
+COPY --chown=1000 packages/primary-api/ packages/primary-api/
 RUN --mount=type=cache,target=/code/.pnp pnpm install --frozen-lockfile
 
 # Build
-COPY packages/public-app/ packages/public-app/
+COPY --chown=1000 packages/public-app/ packages/public-app/
 WORKDIR packages/public-app
 
 FROM development as production
-COPY packages/public-app/src/entrypoint.sh entrypoint.sh
+COPY --chown=1000 packages/public-app/src/entrypoint.sh entrypoint.sh
 ENTRYPOINT ["/code/packages/public-app/entrypoint.sh"]
 RUN npx next build
 
