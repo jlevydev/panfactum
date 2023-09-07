@@ -1,6 +1,7 @@
 import '../globals.css'
 import { Kanit } from 'next/font/google'
 import type { ReactNode } from 'react'
+import { RootClientLayout } from './layoutClient'
 
 const kanit = Kanit({ weight: '300', preload: false })
 
@@ -15,7 +16,9 @@ export default function RootLayout (
   return (
     <html lang="en">
       <body className={`${kanit.className}`}>
-        {children}
+        <RootClientLayout>
+          {children}
+        </RootClientLayout>
       </body>
     </html>
   )

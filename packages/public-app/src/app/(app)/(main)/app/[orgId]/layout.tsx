@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react'
 import { useContext, useEffect } from 'react'
-import { ActiveOrganizationContext } from '../../../../../lib/contexts/ActiveOrganizationContext'
+import { ActiveOrganizationContext } from '@/lib/contexts/ActiveOrganizationContext'
 
 export default function AppWithOrgIdLayout (
   { children, params } : {children: ReactNode, params: {orgId: string}}

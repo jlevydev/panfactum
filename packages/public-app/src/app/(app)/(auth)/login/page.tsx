@@ -2,23 +2,18 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-
-import { postLogin } from '../../../../clients/api/postLogin'
+import { useLoginMutation } from '../../../../lib/hooks/mutations/useLoginMutation'
 
 export default function Page () {
-  const router = useRouter()
   const [email, setEmail] = useState<string>('')
   const [password, setPassword] = useState<string>('')
   const [loginStatus, setLoginStatus] = useState<'unsubmitted' | 'failed' | 'success'>('unsubmitted')
-
-  const onLogin = async (): Promise<void> => {
-    if (await postLogin(email, password)) {
-      setLoginStatus('success')
-      router.replace('/app')
-    } else {
-      setLoginStatus('failed')
-    }
+  const loginMutation = useLoginMutation({
+    onSuccess: () => setLoginStatus('success'),
+    onError: () => setLoginStatus('failed')
+  })
+  const onLogin = () => {
+    loginMutation.mutate({ email, password })
   }
 
   return (

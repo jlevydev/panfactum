@@ -1,4 +1,3 @@
-import { useUserOrganizations } from '../../../../lib/hooks/useUserOrganizations'
 import { useContext, useEffect, useRef, useState } from 'react'
 import {
   autoUpdate, FloatingFocusManager, FloatingPortal,
@@ -10,13 +9,14 @@ import {
   useTypeahead
 } from '@floating-ui/react'
 import { Check, NavArrowDown } from 'iconoir-react'
-import { ActiveOrganizationContext } from '../../../../lib/contexts/ActiveOrganizationContext'
+import { ActiveOrganizationContext } from '@/lib/contexts/ActiveOrganizationContext'
+import { useUserOrganizationsQuery } from '@/lib/hooks/queries/useUserOrganizationsQuery'
 
 const UNITARY_ORG_DISPLAY_NAME = 'Personal'
 
 export function OrganizationSelector () {
   // Global Data
-  const { data: userOrgs = [], isLoading } = useUserOrganizations()
+  const { data: userOrgs = [], isLoading } = useUserOrganizationsQuery()
   const { setActiveOrganizationId, activeOrganizationId } = useContext(ActiveOrganizationContext)
 
   // Set the options for the selector

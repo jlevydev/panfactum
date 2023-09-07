@@ -1,5 +1,5 @@
 import { createContext } from 'react'
-import type { useActiveOrganizationId } from '../hooks/useActiveOrganizationId'
+import type { useActiveOrganizationId } from '@/lib/hooks/state/useActiveOrganizationId'
 
 export const ActiveOrganizationContext = createContext<{
   setActiveOrganizationId: ReturnType<typeof useActiveOrganizationId>['setActiveOrganizationId'],

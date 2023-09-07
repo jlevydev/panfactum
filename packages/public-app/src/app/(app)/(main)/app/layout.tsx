@@ -1,11 +1,12 @@
 'use client'
 
 import type { ReactNode } from 'react'
-import { useAuth } from '../../../../lib/hooks/useAuth'
 import { Header } from './header'
 import { Sidebar } from './sidebar'
-import { ActiveOrganizationContext } from '../../../../lib/contexts/ActiveOrganizationContext'
-import { useActiveOrganizationId } from '../../../../lib/hooks/useActiveOrganizationId'
+import { ActiveOrganizationContext } from '@/lib/contexts/ActiveOrganizationContext'
+import { useActiveOrganizationId } from '@/lib/hooks/state/useActiveOrganizationId'
+import { useAuthInfoQuery } from '@/lib/hooks/queries/useAuthInfoQuery'
+import { useAuthRedirect } from '@/lib/hooks/effects/useAuthRedirect'
 
 export default function AppLayout (
   { children } : {children: ReactNode}
@@ -14,7 +15,8 @@ export default function AppLayout (
   const { activeOrganizationId, setActiveOrganizationId } = useActiveOrganizationId()
 
   // Authentication Info
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated } = useAuthInfoQuery()
+  useAuthRedirect(isAuthenticated)
 
   // We should never get to this point
   // TODO: Add error page

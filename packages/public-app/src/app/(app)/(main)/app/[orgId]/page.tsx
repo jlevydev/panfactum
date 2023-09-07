@@ -1,17 +1,20 @@
 'use client'
 
-// This page is simply meant to redirect the user
-// depending on their context
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 
+/*
+This page is just a stub that powers routing side effects. If a user reaches this page,
+we need to redirect them to a _real_ page based on their organization context.
+ */
 export default function Page () {
   const router = useRouter()
+  const path = usePathname()
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      router.replace(`${window.location.pathname}/subscriptions`)
+      router.replace(`${path}/subscriptions`)
     }, 0)
     return () => clearTimeout(timeoutId)
-  })
+  }, [router, path])
   return null
 }
