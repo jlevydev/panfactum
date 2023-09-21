@@ -51,3 +51,9 @@ variable "vpa_enabled" {
   type        = bool
   default     = true
 }
+
+variable "backups_enabled" {
+  description = "Whether this database has backups enabled"
+  type        = bool
+  default     = true
+}

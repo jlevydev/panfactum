@@ -42,6 +42,8 @@ locals {
 
   port              = 3000
   healthcheck_route = "/"
+
+  minimum_memory = local.is_local ? 1024 * 12 : 1024
 }
 
 module "constants" {
@@ -88,7 +90,6 @@ module "deployment" {
     NODE_ENV            = local.is_local ? "development" : "production"
     NEXT_PUBLIC_API_URL = var.primary_api_url
   }
-
   containers = {
     server = {
       image   = var.image_repo
@@ -96,6 +97,7 @@ module "deployment" {
       command = local.is_local ? [
         "node_modules/.bin/next",
         "dev",
+        "--turbo",
         "-p", local.port
         ] : [
         "./entrypoint.sh",
@@ -103,14 +105,21 @@ module "deployment" {
         "start",
         "-p", local.port
       ]
-      readonly       = false
-      minimum_memory = local.is_local ? 2000 : 1000
+      readonly       = local.is_local // in our nonlocal deployment, we do env subst so it cannot be readonly
+      minimum_memory = local.minimum_memory
+      env = {
+        NODE_OPTIONS = "--max-old-space-size=${local.minimum_memory * 0.75}"
+      }
+      healthcheck_interval_seconds = local.is_local ? 10 : 1
+
     }
   }
 
-  tmp_directories = local.is_local ? [
-    "/code/packages/public-app/.next"
-  ] : []
+  tmp_directories = local.is_local ? {
+    "/code/packages/public-app/.next" : {
+      size_gb = 5
+    }
+  } : {}
   healthcheck_port  = local.port
   healthcheck_route = local.healthcheck_route
 
@@ -125,7 +134,7 @@ module "deployment" {
       service_port = local.port
     }
   }
-
+  allow_disruptions = !local.is_local
 }
 
 module "ingress" {
@@ -140,4 +149,8 @@ module "ingress" {
     service      = module.deployment.service
     service_port = local.port
   }]
+
+  // Disable ratelimiting in local development due to the number
+  // of files needing to be served by the dev server
+  enable_ratelimiting = !local.is_local
 }

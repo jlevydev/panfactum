@@ -34,3 +34,9 @@ variable "ingress_configs" {
     })), [])
   }))
 }
+
+variable "enable_ratelimiting" {
+  description = "Whether to enable ratelimiting"
+  type        = bool
+  default     = true
+}

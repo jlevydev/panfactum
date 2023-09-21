@@ -24,7 +24,8 @@ podman_build(
      "package.json",
      "pnpm-lock.yaml",
      "tsconfig.json",
-     "Containerfile"
+     "Containerfile",
+     "tilt.trigger"
    ],
    live_update = [
      sync('src', '/code/packages/public-app/src'),
@@ -52,7 +53,14 @@ cmd_button('force-apply-public-app',
           argv=["bash", "-c", "cd {}; terragrunt init".format(TF_DIR)],
           resource='public-app',
           icon_name='arrow_circle_up',
-          text='force apply',
+          text='Force Apply',
+)
+
+cmd_button('force-build-public-app',
+          argv=["bash", "-c", "cd packages/public-app; echo $RANDOM > tilt.trigger"],
+          resource='public-app',
+          icon_name='deployed_code',
+          text='Force Rebuild',
 )
 
 k8s_resource(

@@ -1,3 +1,4 @@
+import Button from '@mui/material/Button'
 import Link from 'next/link'
 
 function Links () {
@@ -6,7 +7,7 @@ function Links () {
       <li>
         <Link
           href="/public/subscribers"
-          className="text-lg font-bold"
+          className="text-lg font-bold no-underline"
         >
           For Subscribers
         </Link>
@@ -14,7 +15,7 @@ function Links () {
       <li>
         <Link
           href="/blog"
-          className="text-lg font-bold"
+          className="text-lg font-bold no-underline"
         >
           Blog
         </Link>
@@ -22,7 +23,7 @@ function Links () {
       <li>
         <Link
           href="/docs"
-          className="text-lg font-bold"
+          className="text-lg font-bold no-underline"
         >
           Documentation
         </Link>
@@ -30,7 +31,7 @@ function Links () {
       <li>
         <Link
           href="/public/pricing"
-          className="text-lg font-bold"
+          className="text-lg font-bold no-underline"
         >
           Pricing
         </Link>
@@ -41,51 +42,53 @@ function Links () {
 
 export default function Navbar () {
   return (
-    <div className="navbar border-b-4 border-b-base-300 md:px-8">
-      <div className="flex navbar-start">
-        <div className="dropdown">
-          <label
-            tabIndex={0}
-            className="btn btn-ghost lg:hidden mr-4"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-8 md:h-10 w-8 md:w-10"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M4 6h16M4 12h8m-8 6h16"
-              />
-            </svg>
-          </label>
-          <ul
-            tabIndex={0}
-            className="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 w-52"
-          >
-            <Links/>
-          </ul>
-        </div>
+    <div className="flex border-b-4 border-b-base-300 md:px-8 justify-between pt-2">
+      <div className="flex">
+        {/* <div className="dropdown"> */}
+        {/*  <label */}
+        {/*    tabIndex={0} */}
+        {/*    className="btn btn-ghost lg:hidden mr-4" */}
+        {/*  > */}
+        {/*    <svg */}
+        {/*      xmlns="http://www.w3.org/2000/svg" */}
+        {/*      className="h-8 md:h-10 w-8 md:w-10" */}
+        {/*      fill="none" */}
+        {/*      viewBox="0 0 24 24" */}
+        {/*      stroke="currentColor" */}
+        {/*    > */}
+        {/*      <path */}
+        {/*        strokeLinecap="round" */}
+        {/*        strokeLinejoin="round" */}
+        {/*        strokeWidth="2" */}
+        {/*        d="M4 6h16M4 12h8m-8 6h16" */}
+        {/*      /> */}
+        {/*    </svg> */}
+        {/*  </label> */}
+        {/*  <ul */}
+        {/*    tabIndex={0} */}
+        {/*    className="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 w-52" */}
+        {/*  > */}
+        {/*    <Links/> */}
+        {/*  </ul> */}
+        {/* </div> */}
         <Link
           href="/"
-          className="text-primary font-semibold text-3xl md:text-5xl"
+          className="text-primary font-semibold text-3xl md:text-5xl no-underline"
         >
           Panfactum
         </Link>
       </div>
-      <div className="navbar-end basis-full">
-        <ul className="hidden lg:flex  menu menu-horizontal px-8">
+      <div className="flex">
+        <ul className="hidden lg:flex px-8 list-none gap-8">
           <Links/>
         </ul>
         <Link
-          href="/login"
+          href="/app/login"
           className="text-xl font-bold py-2 px-4 btn btn-primary"
         >
-          Login
+          <Button variant="contained">
+            Login
+          </Button>
         </Link>
       </div>
     </div>

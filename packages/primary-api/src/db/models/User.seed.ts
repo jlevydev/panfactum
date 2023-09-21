@@ -1,34 +1,56 @@
 import type { UserTable } from './User'
 import { faker } from '@faker-js/faker'
-import type { Kysely } from 'kysely'
-import type { Database } from './Database'
 import { createPasswordHash, createPasswordSalt } from '../../util/password'
+import { getDB } from '../db'
 
-export function createRandomUser (): UserTable {
-  const email = faker.internet.email().toLowerCase()
+export function createDevAdminUser (): UserTable {
   const salt = createPasswordSalt()
   const hash = createPasswordHash('password', salt)
   return {
-    id: faker.datatype.uuid(),
-    email,
-    first_name: faker.name.firstName(),
-    last_name: faker.name.firstName(),
-    added_at: faker.date.between('2020-01-01T00:00:00.000Z', '2023-01-01T00:00:00.000Z'),
-    password_hash: hash,
-    password_salt: salt
+    id: faker.string.uuid(),
+    email: 'dev@panfactum.com',
+    firstName: 'Panfactum',
+    lastName: 'Developer',
+    createdAt: faker.date.between({ from: '2020-01-01T00:00:00.000Z', to: '2023-01-01T00:00:00.000Z' }),
+    passwordHash: hash,
+    passwordSalt: salt,
+    panfactumRole: 'admin'
   }
 }
 
-export async function seedUserTable (db: Kysely<Database>, count = 50) {
-  faker.seed(123)
-  const users = [...Array(count).keys()].map(() => createRandomUser())
-  await db.insertInto('user')
+export function createRandomUser (emailCache: Set<string>): UserTable {
+  let email = faker.internet.email().toLowerCase()
+  while (emailCache.has(email)) {
+    email = faker.internet.email().toLowerCase()
+  }
+  emailCache.add(email)
+
+  const salt = createPasswordSalt()
+  const hash = createPasswordHash('password', salt)
+  return {
+    id: faker.string.uuid(),
+    email,
+    firstName: faker.person.firstName(),
+    lastName: faker.person.firstName(),
+    createdAt: faker.date.between({ from: '2020-01-01T00:00:00.000Z', to: '2023-01-01T00:00:00.000Z' }),
+    passwordHash: hash,
+    passwordSalt: salt,
+    panfactumRole: null
+  }
+}
+
+export async function seedUserTable (count = 50) {
+  const emailCache: Set<string> = new Set()
+  const users = [...Array(count).keys()]
+    .map(() => createRandomUser(emailCache))
+    .concat([createDevAdminUser()])
+  await (await getDB()).insertInto('user')
     .values(users)
     .execute()
   return users
 }
 
-export async function truncateUserTable (db: Kysely<Database>) {
-  await db.deleteFrom('user')
+export async function truncateUserTable () {
+  await (await getDB()).deleteFrom('user')
     .execute()
 }

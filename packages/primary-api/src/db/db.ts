@@ -1,8 +1,8 @@
 import { Pool } from 'pg'
-import { Kysely, PostgresDialect } from 'kysely'
+import { CamelCasePlugin, Kysely, PostgresDialect } from 'kysely'
 import type { Database } from './models/Database'
 import { readFile, watch } from 'fs/promises'
-import { PG_CREDS_PATH, PG_DATABASE, PG_HOSTNAME, PG_PORT } from '../environment'
+import { NODE_ENV, PG_CREDS_PATH, PG_DATABASE, PG_HOSTNAME, PG_PORT } from '../environment'
 
 /*************************************
  * Public function for getting the db instance
@@ -42,6 +42,7 @@ const getUsername = async (): Promise<string> => {
 // Updates the db returned from getDB above
 let username: string | null = null
 let password: string | null = null
+export let dbDestroyPromise: Promise<void> | null = null
 const updateDB = async () => {
   const newUsername = await getUsername()
   const newPassword = await getPassword()
@@ -60,14 +61,24 @@ const updateDB = async () => {
     // Close the old connections after a minute
     // to allow running queries to complete
     const oldDB = db
-    setTimeout(() => {
-      void oldDB?.destroy()
-    }, 60 * 1000)
+    dbDestroyPromise = new Promise((resolve) => {
+      setTimeout(async () => {
+        await oldDB?.destroy()
+        resolve()
+      }, 60 * 1000)
+    })
 
     db = new Kysely<Database>({
       dialect: new PostgresDialect({
         pool: postgresPool
-      })
+      }),
+      log (event) {
+        if (NODE_ENV === 'development' && event.level === 'query') {
+          console.log(event.query.sql)
+          console.log(event.query.parameters)
+        }
+      },
+      plugins: [new CamelCasePlugin()]
     })
     username = newUsername
     password = newPassword

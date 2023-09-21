@@ -91,3 +91,9 @@ variable "public_outbound_ips" {
   description = "A list of the public ips for outbound cluster traffic"
   type        = list(string)
 }
+
+variable "ingress_timeout" {
+  description = "The timeout for connections flowing through the ingress"
+  type        = number
+  default     = 60
+}

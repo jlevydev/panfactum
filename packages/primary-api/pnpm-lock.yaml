@@ -6,8 +6,8 @@ settings:
 
 dependencies:
   '@faker-js/faker':
-    specifier: 7.6.0
-    version: 7.6.0
+    specifier: 8.0.2
+    version: 8.0.2
   '@fastify/cookie':
     specifier: 8.3.0
     version: 8.3.0
@@ -30,16 +30,13 @@ dependencies:
     specifier: 4.12.0
     version: 4.12.0
   kysely:
-    specifier: 0.23.4
-    version: 0.23.4
+    specifier: 0.26.3
+    version: 0.26.3
   pg:
     specifier: 8.9.0
     version: 8.9.0
 
 devDependencies:
-  '@panfactum/build':
-    specifier: workspace:*
-    version: link:../build
   '@panfactum/eslint-config':
     specifier: workspace:*
     version: link:../eslint
@@ -76,6 +73,9 @@ devDependencies:
   eslint-plugin-react:
     specifier: 7.32.2
     version: 7.32.2(eslint@8.47.0)
+  eslint-plugin-unused-imports:
+    specifier: 3.0.0
+    version: 3.0.0(@typescript-eslint/eslint-plugin@6.5.0)(eslint@8.47.0)
   nodemon:
     specifier: 3.0.0
     version: 3.0.0
@@ -134,9 +134,9 @@ packages:
     engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
     dev: true
 
-  /@faker-js/faker@7.6.0:
-    resolution: {integrity: sha512-XK6BTq1NDMo9Xqw/YkYyGjSsg44fbNwYRx7QK2CuoQgyy+f1rrTDHoExVM5PsyXCtfl2vs2vVJ0MN0yN6LppRw==}
-    engines: {node: '>=14.0.0', npm: '>=6.0.0'}
+  /@faker-js/faker@8.0.2:
+    resolution: {integrity: sha512-Uo3pGspElQW91PCvKSIAXoEgAUlRnH29sX2/p89kg7sP1m2PzCufHINd0FhTXQf6DYGiUlVncdSPa2F9wxed2A==}
+    engines: {node: ^14.17.0 || ^16.13.0 || >=18.0.0, npm: '>=6.14.13'}
     dev: false
 
   /@fastify/accept-negotiator@1.1.0:
@@ -1122,9 +1122,6 @@ packages:
     engines: {node: ^14.18.0 || >=16.0.0}
     peerDependencies:
       eslint: '>=8'
-    peerDependenciesMeta:
-      eslint:
-        optional: true
     dependencies:
       '@eslint-community/eslint-utils': 4.4.0(eslint@8.47.0)
       '@eslint-community/regexpp': 4.8.0
@@ -1139,8 +1136,6 @@ packages:
       eslint: ^2 || ^3 || ^4 || ^5 || ^6 || ^7.2.0 || ^8
     peerDependenciesMeta:
       '@typescript-eslint/parser':
-        optional: true
-      eslint:
         optional: true
     dependencies:
       '@typescript-eslint/parser': 6.5.0(eslint@8.47.0)(typescript@4.9.5)
@@ -1199,9 +1194,6 @@ packages:
     engines: {node: '>=16.0.0'}
     peerDependencies:
       eslint: '>=7.0.0'
-    peerDependenciesMeta:
-      eslint:
-        optional: true
     dependencies:
       '@eslint-community/eslint-utils': 4.4.0(eslint@8.47.0)
       builtins: 5.0.1
@@ -1219,9 +1211,6 @@ packages:
     engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
     peerDependencies:
       eslint: ^7.0.0 || ^8.0.0
-    peerDependenciesMeta:
-      eslint:
-        optional: true
     dependencies:
       eslint: 8.47.0
     dev: true
@@ -1240,9 +1229,6 @@ packages:
     engines: {node: '>=4'}
     peerDependencies:
       eslint: ^3 || ^4 || ^5 || ^6 || ^7 || ^8
-    peerDependenciesMeta:
-      eslint:
-        optional: true
     dependencies:
       array-includes: 3.1.6
       array.prototype.flatmap: 1.3.1
@@ -1260,6 +1246,26 @@ packages:
       resolve: 2.0.0-next.4
       semver: 6.3.0
       string.prototype.matchall: 4.0.8
+    dev: true
+
+  /eslint-plugin-unused-imports@3.0.0(@typescript-eslint/eslint-plugin@6.5.0)(eslint@8.47.0):
+    resolution: {integrity: sha512-sduiswLJfZHeeBJ+MQaG+xYzSWdRXoSw61DpU13mzWumCkR0ufD0HmO4kdNokjrkluMHpj/7PJeN35pgbhW3kw==}
+    engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
+    peerDependencies:
+      '@typescript-eslint/eslint-plugin': ^6.0.0
+      eslint: ^8.0.0
+    peerDependenciesMeta:
+      '@typescript-eslint/eslint-plugin':
+        optional: true
+    dependencies:
+      '@typescript-eslint/eslint-plugin': 6.5.0(@typescript-eslint/parser@6.5.0)(eslint@8.47.0)(typescript@4.9.5)
+      eslint: 8.47.0
+      eslint-rule-composer: 0.3.0
+    dev: true
+
+  /eslint-rule-composer@0.3.0:
+    resolution: {integrity: sha512-bt+Sh8CtDmn2OajxvNO+BX7Wn4CIWMpTRm3MaiKPCQcnnlm0CS2mhui6QaoeQugs+3Kj2ESKEEGJUdVafwhiCg==}
+    engines: {node: '>=4.0.0'}
     dev: true
 
   /eslint-scope@7.2.2:
@@ -2019,8 +2025,8 @@ packages:
       object.assign: 4.1.4
     dev: true
 
-  /kysely@0.23.4:
-    resolution: {integrity: sha512-3icLnj1fahUtZsP9zzOvF4DcdhekGsLX4ZaoBaIz0ZeHegyRDdbwpJD7zezAJ+KwQZNDeKchel6MikFNLsSZIA==}
+  /kysely@0.26.3:
+    resolution: {integrity: sha512-yWSgGi9bY13b/W06DD2OCDDHQmq1kwTGYlQ4wpZkMOJqMGCstVCFIvxCCVG4KfY1/3G0MhDAcZsip/Lw8/vJWw==}
     engines: {node: '>=14.0.0'}
     dev: false
 

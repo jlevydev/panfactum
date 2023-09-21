@@ -50,6 +50,7 @@ inputs = {
   public_outbound_ips   = dependency.vpc.outputs.nat_ips
   dhparam               = yamldecode(sops_decrypt_file("${get_terragrunt_dir()}/dhparam.development.yaml")).dhparam
   ingress_domains       = flatten([for domain in keys(dependency.aws_hosted_zones.outputs.zones) : [domain, "*.${domain}"]])
+  ingress_timeout       = 120
   min_replicas          = 2 // having less than two is disruptive to dns + development workflows when updates occur
   ha_enabled            = false
   vpa_enabled           = true

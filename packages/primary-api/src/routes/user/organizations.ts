@@ -1,7 +1,7 @@
 import type { FastifyPluginAsync, FastifyRequest } from 'fastify'
 import { Static, Type } from '@sinclair/typebox'
 import { DEFAULT_SCHEMA_CODES } from '../constants'
-import { getLoginInfo } from '../../util/getLoginInfo'
+import { getAuthInfo } from '../../util/getAuthInfo'
 import { getDB } from '../../db/db'
 
 /**********************************************************************
@@ -31,18 +31,18 @@ export const UserOrganizationsRoute:FastifyPluginAsync = async (fastify) => {
       }
     },
     async (req: FastifyRequest) => {
-      const { userId } = getLoginInfo(req)
+      const { userId } = getAuthInfo(req)
       const db = await getDB()
       return await db
-        .selectFrom('user_organization')
-        .innerJoin('organization', 'organization.id', 'user_organization.organization_id')
+        .selectFrom('userOrganization')
+        .innerJoin('organization', 'organization.id', 'userOrganization.organizationId')
         .select([
           'organization.id as id',
           'organization.name as name',
-          'organization.is_unitary as isUnitary'
+          'organization.isUnitary as isUnitary'
         ])
-        .where('user_organization.user_id', '=', userId)
-        .where('user_organization.active', '=', true)
+        .where('userOrganization.userId', '=', userId)
+        .where('userOrganization.active', '=', true)
         .execute()
     }
   )

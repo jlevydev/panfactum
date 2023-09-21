@@ -1,7 +1,8 @@
 import { LoginReply, LoginReplyType } from './login'
 import type { FastifyPluginAsync } from 'fastify'
 import { DEFAULT_SCHEMA_CODES } from '../constants'
-import { getLoginInfo } from '../../util/getLoginInfo'
+import { getAuthInfo } from '../../util/getAuthInfo'
+import { getUserInfoById } from '../../db/queries/getUserInfoById'
 
 /**********************************************************************
  * Route Logic
@@ -19,7 +20,28 @@ export const AuthInfoRoute:FastifyPluginAsync = async (fastify) => {
       }
     },
     async (req) => {
-      return getLoginInfo(req)
+      const { masqueradingUserId, userId, loginSessionId } = getAuthInfo(req)
+      const userInfo = await getUserInfoById(userId)
+
+      if (masqueradingUserId === null) {
+        return {
+          userId,
+          loginSessionId,
+          ...userInfo
+        }
+      } else {
+        const { panfactumRole } = await getUserInfoById(masqueradingUserId)
+        if (panfactumRole === null) {
+          throw new Error('The panfactumRole of a masquerading user should never be null!')
+        }
+        return {
+          userId,
+          loginSessionId,
+          ...userInfo,
+          masqueradingUserId,
+          masqueradingPanfactumRole: panfactumRole
+        }
+      }
     }
   )
 }

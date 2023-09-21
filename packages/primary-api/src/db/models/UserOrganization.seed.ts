@@ -1,63 +1,67 @@
 import type { UserTable } from './User'
 import { faker } from '@faker-js/faker'
-import type { Kysely } from 'kysely'
-import type { Database } from './Database'
 import type { OrganizationTable } from './Organization'
 import type { UserOrganizationTable } from './UserOrganization'
+import { getDB } from '../db'
 
-export function createRandomUserOrganization (users: UserTable[], organizations:OrganizationTable[]): UserOrganizationTable {
+export function createRandomUserOrganization (users: UserTable[], organization:OrganizationTable): UserOrganizationTable {
   const user = faker.helpers.arrayElement(users)
   return {
-    user_id: user.id,
-    organization_id: faker.helpers.arrayElement(organizations).id,
+    userId: user.id,
+    organizationId: organization.id,
     role: faker.helpers.arrayElement(['admin', 'manager', 'viewer']),
-    active: faker.datatype.number({ min: 0, max: 100 }) > 10,
-    added_at: faker.date.future(1, user.added_at)
+    active: faker.number.int({ min: 0, max: 100 }) > 10,
+    createdAt: faker.date.future({ years: 1, refDate: user.createdAt })
   }
 }
 
 export function createUnitaryUserOrganization (user: UserTable, organizations:OrganizationTable[]): UserOrganizationTable {
   return {
-    user_id: user.id,
+    userId: user.id,
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    organization_id: organizations.find(org => org.name === user.id)!.id,
+    organizationId: organizations.find(org => org.name === user.id)!.id,
     role: 'admin',
     active: true,
-    added_at: user.added_at
+    createdAt: user.createdAt
   }
 }
 
-export async function seedUserOrganizationTable (db: Kysely<Database>, users: UserTable[], organizations:OrganizationTable[], count = 250) {
-  faker.seed(123)
-
+export async function seedUserOrganizationTable (users: UserTable[], organizations:OrganizationTable[], maxPerOrg = 20) {
   // Seed the teams
   const pkCache: Record<string, string[]> = {}
-  const nonUnitaryOrganizations = organizations.filter(org => !org.is_unitary)
-  const links = [...Array(count).keys()]
-    .map(() => createRandomUserOrganization(users, nonUnitaryOrganizations))
-  // Removes the duplicate users in the org which would violate the PK constraint
-    .filter((link) => {
-      const usersInOrg = pkCache[link.organization_id] ?? []
-      if (usersInOrg.includes(link.user_id)) {
-        return false
-      }
-      pkCache[link.organization_id] = usersInOrg.concat([link.user_id])
-      return true
-    })
-  await db.insertInto('user_organization')
+  const teamOrgs = organizations.filter(org => !org.isUnitary)
+  const links = teamOrgs.map(org => {
+    return [...Array(faker.number.int({ min: 1, max: maxPerOrg })).keys()]
+      .map(() => createRandomUserOrganization(users, org))
+      // Removes the duplicate users in the org which would violate the PK constraint
+      .filter((link) => {
+        const usersInOrg = pkCache[link.organizationId] ?? []
+        if (usersInOrg.includes(link.userId)) {
+          return false
+        }
+        pkCache[link.organizationId] = usersInOrg.concat([link.userId])
+        return true
+      })
+  }).flat()
+
+  await (await getDB()).insertInto('userOrganization')
     .values(links)
     .execute()
 
+  return links
+}
+
+export async function seedUserOrganizationTableUnitary (users: UserTable[], organizations:OrganizationTable[]) {
   // Seed the unitary organizations
   const unitaryOrganizationLinks = users.map((user) => createUnitaryUserOrganization(user, organizations))
-  await db.insertInto('user_organization')
+  await (await getDB()).insertInto('userOrganization')
     .values(unitaryOrganizationLinks)
     .execute()
 
-  return links.concat(unitaryOrganizationLinks)
+  return unitaryOrganizationLinks
 }
 
-export async function truncateUserOrganizationTable (db: Kysely<Database>) {
-  await db.deleteFrom('user_organization')
+export async function truncateUserOrganizationTable () {
+  await (await getDB()).deleteFrom('userOrganization')
     .execute()
 }

@@ -1,8 +1,37 @@
 {
-  "extends": "@panfactum/build/tsconfig.json",
   "compilerOptions": {
+    /* Language Options */
+    "target": "es2022",
+    "lib": ["ESNext"],
+
+    /* Output Options */
     "rootDir": "./src",
     "outDir": "./out",
-    "sourceMap": true
+    "sourceMap": true,
+    "incremental": false,
+    "removeComments": true,
+
+    /* Modules */
+    "module": "nodenext",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+
+    /* Strict Checkers */
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "allowUnusedLabels": false,
+    "allowUnreachableCode": false,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noUncheckedIndexedAccess": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "importsNotUsedAsValues": "error",
+    "allowJs": true,
+    "checkJs": true,
+    "isolatedModules": true,
+    "exactOptionalPropertyTypes": false
   },
 }

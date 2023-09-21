@@ -14,16 +14,9 @@ terraform {
 locals {
   environment = var.kube_labels["environment"]
   cors_envs   = ["dev", "ops", "prod"]
-  common_annotations = {
+  common_annotations = merge({
     // Since we use regex in all our ingress routing, this MUST be set to true
     "nginx.ingress.kubernetes.io/use-regex" = "true"
-
-    // very basic DOS protection via rate-limiting (https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/annotations/#rate-limiting)
-    "nginx.ingress.kubernetes.io/limit-connections"      = "20"
-    "nginx.ingress.kubernetes.io/limit-rps"              = "60"
-    "nginx.ingress.kubernetes.io/limit-rpm"              = "1000"
-    "nginx.ingress.kubernetes.io/limit-burst-multiplier" = "3"
-    "nginx.ingress.kubernetes.io/limit-whitelist"        = join(", ", [])
 
     // Enable CORS handling
     "nginx.ingress.kubernetes.io/enable-cors"         = "true",
@@ -69,7 +62,14 @@ locals {
       "https://*.panfactum.com",
       "https://panfactum.com",
     ]))))
-  }
+    }, var.enable_ratelimiting ? {
+    // very basic DOS protection via rate-limiting (https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/annotations/#rate-limiting)
+    "nginx.ingress.kubernetes.io/limit-connections"      = "60"
+    "nginx.ingress.kubernetes.io/limit-rps"              = "60"
+    "nginx.ingress.kubernetes.io/limit-rpm"              = "1000"
+    "nginx.ingress.kubernetes.io/limit-burst-multiplier" = "3"
+    "nginx.ingress.kubernetes.io/limit-whitelist"        = join(", ", [])
+  } : null)
 
   rewrite_configs = flatten([for config in var.ingress_configs : [for rewrite_rule in config.rewrite_rules : merge(config, rewrite_rule)]])
 

@@ -78,6 +78,7 @@ resource "helm_release" "secrets_csi_driver" {
       logVerbosity         = 2
       logFormatJSON        = true
       enableSecretRotation = true
+      rotationPollInterval = "60m"
       syncSecret = {
         enabled = true
       }

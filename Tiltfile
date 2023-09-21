@@ -10,7 +10,7 @@ load('packages/tilt/common.tiltfile', 'REGISTRY', 'NAMESPACE', 'TF_ROOT_DIR')
 ################################################
 allow_k8s_contexts("development-primary")
 default_registry (REGISTRY)
-update_settings ( max_parallel_updates = 3 , k8s_upsert_timeout_secs = 300 , suppress_unused_image_warnings = None )
+update_settings ( max_parallel_updates = 3 , k8s_upsert_timeout_secs = 900 , suppress_unused_image_warnings = None )
 
 include('./packages/internal-docs/Tiltfile')
 include('./packages/primary-api/Tiltfile')

@@ -81,10 +81,12 @@ terraform {
 
   # Force Terraform to keep trying to acquire a lock for
   # up to 30 minutes if someone else already has the lock
-  extra_arguments "retry_lock" {
+  # and disable locking entirely if running against a local environment
+  # module
+  extra_arguments "lock" {
     commands = get_terraform_commands_that_need_locking()
     arguments = [
-      "-lock-timeout=30m"
+      local.is_local ? "-lock=false" : "-lock-timeout=30m"
     ]
   }
 }

@@ -1,44 +1,47 @@
 import { faker } from '@faker-js/faker'
-import type { Kysely } from 'kysely'
-import type { Database } from './Database'
 import type { OrganizationTable } from './Organization'
 import type { UserTable } from './User'
+import { getDB } from '../db'
 
 export function createRandomOrganization (): OrganizationTable {
   return {
-    id: faker.datatype.uuid(),
+    id: faker.string.uuid(),
     name: faker.company.name(),
-    is_unitary: false // these are the team organizations
+    isUnitary: false, // these are the team organizations
+    createdAt: faker.date.between({ from: '2020-01-01T00:00:00.000Z', to: '2023-01-01T00:00:00.000Z' })
   }
 }
 
-export function createUnitaryOrganization (user: UserTable) {
+export function createUnitaryOrganization (user: UserTable): OrganizationTable {
   return {
-    id: faker.datatype.uuid(),
+    id: faker.string.uuid(),
     name: user.id,
-    is_unitary: true
+    isUnitary: true,
+    createdAt: user.createdAt
   }
 }
 
-export async function seedOrganizationTable (db: Kysely<Database>, users: UserTable[], count = 50) {
-  faker.seed(123)
-
-  // Create the unitary organizations
-  const unitaryOrganizations = users.map(createUnitaryOrganization)
-  await db.insertInto('organization')
-    .values(unitaryOrganizations)
-    .execute()
-
+export async function seedOrganizationTable (count = 50) {
   // Create the team organizations
   const organizations = [...Array(count).keys()].map(() => createRandomOrganization())
-  await db.insertInto('organization')
+  await (await getDB()).insertInto('organization')
     .values(organizations)
     .execute()
 
-  return organizations.concat(unitaryOrganizations)
+  return organizations
 }
 
-export async function truncateOrganizationTable (db: Kysely<Database>) {
-  await db.deleteFrom('organization')
+export async function seedOrganizationTableUnitary (users: UserTable[]) {
+  // Create the unitary organizations
+  const unitaryOrganizations = users.map(createUnitaryOrganization)
+  await (await getDB()).insertInto('organization')
+    .values(unitaryOrganizations)
+    .execute()
+
+  return unitaryOrganizations
+}
+
+export async function truncateOrganizationTable () {
+  await (await getDB()).deleteFrom('organization')
     .execute()
 }

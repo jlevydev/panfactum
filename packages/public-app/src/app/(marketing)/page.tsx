@@ -29,7 +29,7 @@ export default function Page () {
       </div>
       <div className="flex flex-col px-8 py-8 md:py-16">
         <h2 className="text-primary text-4xl text-center w-full">Deliver real value to your subscribers</h2>
-        <div className="flex flex-row w-full flex-wrap">
+        <div className="flex flex-row flex-wrap">
           <div className="basis-full md:basis-1/3 flex flex-col p-4 gap-2">
             <PackageLock
               width="50%"

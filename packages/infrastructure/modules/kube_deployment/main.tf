@@ -34,8 +34,12 @@ locals {
   )
 
   dynamic_env_secrets_by_provider = { for config in var.dynamic_secrets : config.secret_provider_class => config }
+  tolerations                     = merge(var.tolerations, module.constants.spot_node_toleration)
 
-  tolerations = merge(var.tolerations, module.constants.spot_node_toleration)
+  containers      = { for container, config in var.containers : container => config if config != null }
+  init_containers = { for container, config in var.init_containers : container => config if config != null }
+
+  total_tmp_storage_mb = sum([for dir, config in var.tmp_directories : config.size_gb * 1024])
 }
 
 module "constants" {
@@ -130,7 +134,7 @@ resource "kubernetes_deployment" "deployment" {
         }
 
         dynamic "container" {
-          for_each = var.containers
+          for_each = local.containers
           content {
 
             name    = container.key
@@ -184,6 +188,15 @@ resource "kubernetes_deployment" "deployment" {
               }
             }
 
+            // Static env variables (non-secret, container-specific)
+            dynamic "env" {
+              for_each = container.value.env
+              content {
+                name  = env.key
+                value = env.value
+              }
+            }
+
             // Static env variables (secret)
             dynamic "env" {
               for_each = var.secrets
@@ -227,56 +240,58 @@ resource "kubernetes_deployment" "deployment" {
               period_seconds    = 1
               timeout_seconds   = 3
             }
-            liveness_probe {
-              dynamic "http_get" {
-                for_each = var.healthcheck_type == "HTTP" ? [1] : []
-                content {
-                  path   = var.healthcheck_route
-                  port   = var.healthcheck_port
-                  scheme = "HTTP"
-                }
-              }
-              dynamic "tcp_socket" {
-                for_each = var.healthcheck_type == "TCP" ? [1] : []
-                content {
-                  port = var.healthcheck_port
-                }
-              }
-              success_threshold = 1
-              failure_threshold = 15
-              period_seconds    = 1
-              timeout_seconds   = 3
-            }
-            readiness_probe {
-              dynamic "http_get" {
-                for_each = var.healthcheck_type == "HTTP" ? [1] : []
-                content {
-                  path   = var.healthcheck_route
-                  port   = var.healthcheck_port
-                  scheme = "HTTP"
-                }
-              }
-              dynamic "tcp_socket" {
-                for_each = var.healthcheck_type == "TCP" ? [1] : []
-                content {
-                  port = var.healthcheck_port
-                }
-              }
-              success_threshold = 1
-              failure_threshold = 3
-              period_seconds    = 1
-              timeout_seconds   = 3
-            }
+            // TOOD: Reintall these when using a deployment manifest
+            // and provide the ability to disable
+            #            liveness_probe {
+            #              dynamic "http_get" {
+            #                for_each = var.healthcheck_type == "HTTP" ? [1] : []
+            #                content {
+            #                  path   = var.healthcheck_route
+            #                  port   = var.healthcheck_port
+            #                  scheme = "HTTP"
+            #                }
+            #              }
+            #              dynamic "tcp_socket" {
+            #                for_each = var.healthcheck_type == "TCP" ? [1] : []
+            #                content {
+            #                  port = var.healthcheck_port
+            #                }
+            #              }
+            #              success_threshold = 1
+            #              failure_threshold = 15
+            #              period_seconds    = container.value.healthcheck_interval_seconds
+            #              timeout_seconds   = 3
+            #            }
+            #            readiness_probe {
+            #              dynamic "http_get" {
+            #                for_each = var.healthcheck_type == "HTTP" ? [1] : []
+            #                content {
+            #                  path   = var.healthcheck_route
+            #                  port   = var.healthcheck_port
+            #                  scheme = "HTTP"
+            #                }
+            #              }
+            #              dynamic "tcp_socket" {
+            #                for_each = var.healthcheck_type == "TCP" ? [1] : []
+            #                content {
+            #                  port = var.healthcheck_port
+            #                }
+            #              }
+            #              success_threshold = 1
+            #              failure_threshold = 3
+            #              period_seconds    = container.value.healthcheck_interval_seconds
+            #              timeout_seconds   = 3
+            #            }
 
             resources {
               requests = {
                 cpu               = "${container.value.minimum_cpu}m"
                 memory            = "${container.value.minimum_memory}Mi"
-                ephemeral-storage = "100Mi"
+                ephemeral-storage = "${local.total_tmp_storage_mb + (container.value.readonly ? 0 : 100)}Mi"
               }
               limits = {
                 memory            = "${container.value.minimum_memory}Mi"
-                ephemeral-storage = "100Mi"
+                ephemeral-storage = "${local.total_tmp_storage_mb + (container.value.readonly ? 0 : 100)}Mi"
               }
             }
 
@@ -299,8 +314,8 @@ resource "kubernetes_deployment" "deployment" {
             dynamic "volume_mount" {
               for_each = var.tmp_directories
               content {
-                name       = replace(volume_mount.value, "/[^a-z0-9]/", "")
-                mount_path = volume_mount.value
+                name       = replace(volume_mount.key, "/[^a-z0-9]/", "")
+                mount_path = volume_mount.key
               }
             }
             dynamic "volume_mount" {
@@ -322,7 +337,7 @@ resource "kubernetes_deployment" "deployment" {
           }
         }
         dynamic "init_container" {
-          for_each = var.init_containers
+          for_each = local.init_containers
           content {
             name    = init_container.key
             image   = "${init_container.value.image}:${init_container.value.version}"
@@ -375,6 +390,15 @@ resource "kubernetes_deployment" "deployment" {
               }
             }
 
+            // Static env variables (non-secret, container-specific)
+            dynamic "env" {
+              for_each = init_container.value.env
+              content {
+                name  = env.key
+                value = env.value
+              }
+            }
+
             // Static env variables (secret)
             dynamic "env" {
               for_each = var.secrets
@@ -403,11 +427,11 @@ resource "kubernetes_deployment" "deployment" {
               requests = {
                 cpu               = "${init_container.value.minimum_cpu}m"
                 memory            = "${init_container.value.minimum_memory}Mi"
-                ephemeral-storage = "100Mi"
+                ephemeral-storage = "${local.total_tmp_storage_mb + (init_container.value.readonly ? 0 : 100)}Mi"
               }
               limits = {
                 memory            = "${init_container.value.minimum_memory}Mi"
-                ephemeral-storage = "100Mi"
+                ephemeral-storage = "${local.total_tmp_storage_mb + (init_container.value.readonly ? 0 : 100)}Mi"
               }
             }
 
@@ -430,8 +454,8 @@ resource "kubernetes_deployment" "deployment" {
             dynamic "volume_mount" {
               for_each = var.tmp_directories
               content {
-                name       = replace(volume_mount.value, "/[^a-z0-9]/", "")
-                mount_path = volume_mount.value
+                name       = replace(volume_mount.key, "/[^a-z0-9]/", "")
+                mount_path = volume_mount.key
               }
             }
             dynamic "volume_mount" {
@@ -457,9 +481,9 @@ resource "kubernetes_deployment" "deployment" {
           for_each = var.tmp_directories
           content {
             empty_dir {
-              size_limit = "1Gi"
+              size_limit = "${volume.value.size_gb}Gi"
             }
-            name = replace(volume.value, "/[^a-z0-9]/", "")
+            name = replace(volume.key, "/[^a-z0-9]/", "")
           }
         }
         dynamic "volume" {
@@ -532,7 +556,7 @@ resource "kubernetes_manifest" "vpa_server" {
         updateMode = "Auto"
       }
       resourcePolicy = {
-        containerPolicies = [for name, config in merge(var.containers, var.init_containers) : {
+        containerPolicies = [for name, config in merge(local.containers, local.init_containers) : {
           containerName = name
           minAllowed = {
             memory = "${config.minimum_memory}Mi"
@@ -645,8 +669,8 @@ resource "kubernetes_manifest" "pdb" {
       selector = {
         matchLabels = local.match_labels
       }
-      maxUnavailable             = "50%" // Rounds up
-      unhealthyPodEvictionPolicy = "AlwaysAllow"
+      maxUnavailable             = var.allow_disruptions ? "50%" : "0%" // Rounds up
+      unhealthyPodEvictionPolicy = var.allow_disruptions ? "AlwaysAllow" : "IfHealthyBudget"
     }
   }
 }

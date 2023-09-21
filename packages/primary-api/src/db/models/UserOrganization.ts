@@ -1,7 +1,7 @@
 export interface UserOrganizationTable {
-    user_id: string;
-    organization_id: string;
+    userId: string;
+    organizationId: string;
     role: 'admin' | 'manager' | 'viewer';
     active: boolean;
-    added_at: Date
+    createdAt: Date
 }

@@ -6,17 +6,18 @@ and fronts our main postgres database which holds most of our relational data.
 
 ## Environment Variables
 
-| Variable                | Description                                                                                                                         |
-|-------------------------|-------------------------------------------------------------------------------------------------------------------------------------|
-| `NODE_ENV` | `development` if running in local development; `production` otherwise.                                                              |
-| `ENV`                   | The name of the environment where the service is deployed. One of: `development`, `production`.                                     |
-|`PUBLIC_URL` | The url where the api can be reached.                                                                                               |
-| `PG_HOSTNAME`           | Postgres DBMS hostname                                                                                                              |
-| `PG_PORT`               | Postgres DBMS port (default: `5432`)                                                                                                |
-| `PG_DATABASE`           | Postgres database inside the DBMS to use (default: `app`)                                                                           |
-| `PG_CREDS_PATH`         | A directory containing the files `username` and `password` containing the username and password respectively for the postgres login |
-| `PG_DATABASE`           | Postgres database inside the DBMS to use                                                                                            |
-| `COOKIE_SIGNING_SECRET` | Secret used to sign the provisioned cookies for authentication                                                                      |
+| Variable                | Description                                                                                                                                    |
+|-------------------------|------------------------------------------------------------------------------------------------------------------------------------------------|
+| `FUNCTION`              | What mode the compiled code should run in. `db-migrate`: perform the database migrations and exit. `http-sever` (default): run the http sever. |
+| `NODE_ENV`              | `development` if running in local development; `production` otherwise.                                                                         |
+| `ENV`                   | The name of the environment where the service is deployed. One of: `development`, `production`.                                                |
+| `PUBLIC_URL`            | The url where the api can be reached.                                                                                                          |
+| `PG_HOSTNAME`           | Postgres DBMS hostname                                                                                                                         |
+| `PG_PORT`               | Postgres DBMS port (default: `5432`)                                                                                                           |
+| `PG_DATABASE`           | Postgres database inside the DBMS to use (default: `app`)                                                                                      |
+| `PG_CREDS_PATH`         | A directory containing the files `username` and `password` containing the username and password respectively for the postgres login            |
+| `PG_DATABASE`           | Postgres database inside the DBMS to use                                                                                                       |
+| `COOKIE_SIGNING_SECRET` | Secret used to sign the provisioned cookies for authentication                                                                                 |
 
 ## Local Development
 

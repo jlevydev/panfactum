@@ -1,12 +1,12 @@
-import { AUTH_COOKIE_NAME } from './constants'
 import type { FastifyPluginAsync } from 'fastify'
+import { clearAuthCookie } from './authCookie'
 
 /**********************************************************************
  * Route Logic
  **********************************************************************/
 
 export const AuthLogoutRoute:FastifyPluginAsync = async (fastify) => {
-  void fastify.get<{Reply: null}>(
+  void fastify.post<{Reply: null}>(
     '/logout',
     {
       schema: {
@@ -19,7 +19,7 @@ export const AuthLogoutRoute:FastifyPluginAsync = async (fastify) => {
       }
     },
     async (_, reply) => {
-      void reply.clearCookie(AUTH_COOKIE_NAME)
+      clearAuthCookie(reply)
       void reply.send()
     }
   )

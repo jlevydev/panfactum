@@ -8,7 +8,6 @@ WORKDIR /code
 COPY package.json pnpm-lock.yaml .npmrc pnpm-workspace.yaml .
 COPY packages/primary-api/package.json packages/primary-api/pnpm-lock.yaml packages/primary-api/
 COPY packages/eslint/ packages/eslint/
-COPY packages/build/ packages/build/
 RUN --mount=type=cache,target=/code/.pnp pnpm install --frozen-lockfile
 
 # Execute the build

@@ -62,7 +62,7 @@ locals {
 
   // Number of seconds to wait for data before terminating connections;
   // Used for both upstream and downstream logic
-  nginx_base_timeout = 20
+  nginx_base_timeout = var.ingress_timeout
 
   // Number of seconds it takes to de-register targets from the NLB
   // (even though you can set this to < 5 minutes, there appears to be a consistent floor of about 5 minutes)

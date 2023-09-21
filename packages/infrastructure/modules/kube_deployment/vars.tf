@@ -102,14 +102,16 @@ variable "healthcheck_type" {
 variable "containers" {
   description = "A map of container names to configurations to add to the deployment"
   type = map(object({
-    image              = string
-    version            = string
-    command            = list(string)
-    minimum_memory     = optional(number, 100)      #The minimum amount of memory in megabytes
-    minimum_cpu        = optional(number, 10)       # The minimum amount of cpu millicores
-    run_as_root        = optional(bool, false)      # Whether to run the container as root
-    linux_capabilities = optional(list(string), []) # Default is drop ALL
-    readonly           = optional(bool, true)       # Whether to use a readonly file system
+    image                        = string
+    version                      = string
+    command                      = list(string)
+    minimum_memory               = optional(number, 100)      #The minimum amount of memory in megabytes
+    minimum_cpu                  = optional(number, 10)       # The minimum amount of cpu millicores
+    run_as_root                  = optional(bool, false)      # Whether to run the container as root
+    linux_capabilities           = optional(list(string), []) # Default is drop ALL
+    readonly                     = optional(bool, true)       # Whether to use a readonly file system
+    env                          = optional(map(string), {})  # Environment variables specific to the container
+    healthcheck_interval_seconds = optional(number, 1)        # Number of seconds between each probe
   }))
 }
 
@@ -124,6 +126,7 @@ variable "init_containers" {
     run_as_root        = optional(bool, false)      # Whether to run the container as root
     linux_capabilities = optional(list(string), []) # Default is drop ALL
     readonly           = optional(bool, true)       # Whether to use a readonly file system
+    env                = optional(map(string), {})  # Environment variables specific to the container
   }))
   default = {}
 }
@@ -135,8 +138,10 @@ variable "kube_labels" {
 
 variable "tmp_directories" {
   description = "A list of paths that contain empty temporary directories"
-  type        = list(string)
-  default     = []
+  type = map(object({
+    size_gb = optional(number, 1)
+  }))
+  default = {}
 }
 
 variable "mount_owner" {
@@ -176,4 +181,10 @@ variable "dynamic_secrets" {
     env_var               = string // name of the env var that will have a path to the secret mount
   }))
   default = []
+}
+
+variable "allow_disruptions" {
+  description = "True iff disruptions of pods should be allowed"
+  type        = bool
+  default     = true
 }

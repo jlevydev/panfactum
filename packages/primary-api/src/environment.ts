@@ -14,6 +14,7 @@ export const COOKIE_SIGNING_SECRET = process.env['COOKIE_SIGNING_SECRET'] ?? und
 export const NODE_ENV = process.env['NODE_ENV'] ?? undefinedMarker
 export const ENV = process.env['ENV'] ?? undefinedMarker
 export const PUBLIC_URL = process.env['PUBLIC_URL'] ?? undefinedMarker
+export const FUNCTION = process.env['FUNCTION'] ?? 'http-server'
 /* eslint-enable */
 
 // Checks to ensure that environment variables were properly set

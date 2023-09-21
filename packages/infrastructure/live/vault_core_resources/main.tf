@@ -84,8 +84,8 @@ resource "vault_jwt_auth_backend" "oidc" {
   oidc_discovery_url = "https://login.microsoftonline.com/${var.azuread_tenant_id}/v2.0"
   default_role       = "default"
   tune {
-    max_lease_ttl     = "2h"
-    default_lease_ttl = "2h"
+    max_lease_ttl     = "${var.oidc_auth_token_lifetime_seconds}s"
+    default_lease_ttl = "${var.oidc_auth_token_lifetime_seconds}s"
     token_type        = "default-service"
   }
 }
@@ -98,7 +98,7 @@ resource "vault_jwt_auth_backend_role" "default" {
   allowed_redirect_uris  = local.redirect_uris
   oidc_scopes            = ["https://graph.microsoft.com/.default"]
   max_age                = 60 * 60 * 8
-  token_explicit_max_ttl = 60 * 60 * 2
+  token_explicit_max_ttl = var.oidc_auth_token_lifetime_seconds
 }
 
 
@@ -299,8 +299,8 @@ resource "vault_mount" "ssh" {
   path                      = "ssh"
   type                      = "ssh"
   description               = "Configured to sign ssh keys for bastion authentication"
-  default_lease_ttl_seconds = 60 * 60 * 24
-  max_lease_ttl_seconds     = 60 * 60 * 24
+  default_lease_ttl_seconds = var.ssh_cert_lifetime_seconds
+  max_lease_ttl_seconds     = var.ssh_cert_lifetime_seconds
 }
 
 resource "vault_ssh_secret_backend_ca" "ssh" {
@@ -335,8 +335,8 @@ resource "vault_ssh_secret_backend_role" "ssh" {
   default_user  = "panfactum"
 
   // They are only valid for a single day
-  ttl     = 60 * 60 * 24
-  max_ttl = 60 * 60 * 24
+  ttl     = var.ssh_cert_lifetime_seconds
+  max_ttl = var.ssh_cert_lifetime_seconds
 }
 
 

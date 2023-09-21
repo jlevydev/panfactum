@@ -1,7 +1,0 @@
-{
-  "name": "@panfactum/build",
-  "private": true,
-  "dependencies": {
-    "@tsconfig/node18-strictest-esm": "1.0.1"
-  }
-}

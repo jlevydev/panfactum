@@ -140,9 +140,26 @@ resource "kubernetes_storage_class" "standard" {
   storage_provisioner    = "ebs.csi.aws.com"
   volume_binding_mode    = "WaitForFirstConsumer"
   allow_volume_expansion = true
+  reclaim_policy         = "Delete"
   parameters = {
     type      = "gp3"
     encrypted = true
+    tagSpecification_1 : "Name={{ .PVCNamespace }}/{{ .PVCName }}"
+  }
+}
+
+resource "kubernetes_storage_class" "standard_retained" {
+  metadata {
+    name = "ebs-standard-retain"
+  }
+  storage_provisioner    = "ebs.csi.aws.com"
+  volume_binding_mode    = "WaitForFirstConsumer"
+  allow_volume_expansion = true
+  reclaim_policy         = "Retain"
+  parameters = {
+    type      = "gp3"
+    encrypted = true
+    tagSpecification_1 : "Name={{ .PVCNamespace }}/{{ .PVCName }}"
   }
 }
 

@@ -16,10 +16,12 @@ export default function RootLayout (
   return (
     <html
       lang="en"
-      data-theme="business"
       className="h-screen"
+      id="root"
     >
-      <body className={`${kanit.className} bg-base-300 min-h-screen`}>
+      <body
+        className={`${kanit.className} bg-base-300 min-h-screen`}
+      >
         <div className="max-w-7xl mx-auto bg-base-100">
           <Navbar/>
           {children}

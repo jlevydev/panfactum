@@ -18,5 +18,7 @@ inputs = {
     "rbac_engineers",
     "rbac_superusers"
   ]
-  kubernetes_url = dependency.cluster.outputs.cluster_url
+  kubernetes_url                   = dependency.cluster.outputs.cluster_url
+  oidc_auth_token_lifetime_seconds = 60 * 60 * 24
+  ssh_cert_lifetime_seconds        = 60 * 60 * 24
 }

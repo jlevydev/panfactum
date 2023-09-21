@@ -22,7 +22,8 @@ podman_build(
      "package.json",
      "pnpm-lock.yaml",
      "tsconfig.json",
-     "Containerfile"
+     "Containerfile",
+     "tilt.trigger"
    ],
    live_update = [
      sync('src', '/code/packages/primary-api/src')
@@ -51,6 +52,12 @@ cmd_button('force-apply-primary-api',
           resource='primary-api',
           icon_name='arrow_circle_up',
           text='force apply',
+)
+cmd_button('force-build-primary-api',
+          argv=["bash", "-c", "cd packages/primary-api; echo $RANDOM > tilt.trigger"],
+          resource='primary-api',
+          icon_name='deployed_code',
+          text='Force Rebuild',
 )
 
 k8s_resource(
@@ -85,7 +92,7 @@ local_resource(
 
 local_resource(
   "primary-api-db-creds",
-  "get-db-creds writer-{}-primary-api-primary-api-pg".format(NAMESPACE),
+  "get-db-creds admin-{}-primary-api-primary-api-pg".format(NAMESPACE),
   env = {
     "VAULT_ADDR": "https://vault.dev.panfactum.com"
   },

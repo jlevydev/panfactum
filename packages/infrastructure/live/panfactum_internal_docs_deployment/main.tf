@@ -79,13 +79,13 @@ module "deployment" {
       minimum_memory = local.is_local ? 400 : 25
     }
   }
-  tmp_directories = local.is_local ? [
-    "/home/node/.npm",
-    "/code/packages/internal-docs/.docusaurus"
-    ] : [
-    "/var/cache/nginx",
-    "/var/run"
-  ]
+  tmp_directories = local.is_local ? {
+    "/home/node/.npm"                          = {}
+    "/code/packages/internal-docs/.docusaurus" = {}
+    } : {
+    "/var/cache/nginx" = {}
+    "/var/run"         = {}
+  }
   healthcheck_port  = local.port
   healthcheck_route = local.healthcheck_route
 
@@ -96,10 +96,11 @@ module "deployment" {
     }
   }
 
-  min_replicas = var.min_replicas
-  max_replicas = var.max_replicas
-  vpa_enabled  = var.vpa_enabled
-  ha_enabled   = var.ha_enabled
+  min_replicas      = var.min_replicas
+  max_replicas      = var.max_replicas
+  vpa_enabled       = var.vpa_enabled
+  ha_enabled        = var.ha_enabled
+  allow_disruptions = !local.is_local
 }
 
 module "ingress" {

@@ -37,13 +37,15 @@ module "constants" {
 ***************************************/
 
 resource "random_id" "bucket_name" {
+  count       = var.backups_enabled ? 1 : 0
   byte_length = 8
   prefix      = "${var.pg_cluster_name}-backups-"
 }
 
 module "s3_bucket" {
+  count                           = var.backups_enabled ? 1 : 0
   source                          = "../aws_s3_private_bucket"
-  bucket_name                     = random_id.bucket_name.hex
+  bucket_name                     = random_id.bucket_name[0].hex
   description                     = "Backups for the ${var.pg_cluster_name} cluster."
   versioning_enabled              = false
   audit_log_enabled               = true
@@ -52,22 +54,24 @@ module "s3_bucket" {
 }
 
 data "aws_iam_policy_document" "s3_access" {
+  count = var.backups_enabled ? 1 : 0
   statement {
     effect  = "Allow"
     actions = ["s3:*"]
     resources = [
-      module.s3_bucket.bucket_arn,
-      "${module.s3_bucket.bucket_arn}/*"
+      module.s3_bucket[0].bucket_arn,
+      "${module.s3_bucket[0].bucket_arn}/*"
     ]
   }
 }
 
 module "irsa" {
+  count                     = var.backups_enabled ? 1 : 0
   source                    = "../kube_sa_auth_aws"
   eks_cluster_name          = var.eks_cluster_name
   service_account           = var.pg_cluster_name
   service_account_namespace = var.pg_cluster_namespace
-  iam_policy_json           = data.aws_iam_policy_document.s3_access.json
+  iam_policy_json           = data.aws_iam_policy_document.s3_access[0].json
   public_outbound_ips       = var.public_outbound_ips
 
   // Due to a limitation in the cluster resource api, the cluster resource is the one that creates
@@ -183,7 +187,7 @@ resource "kubernetes_manifest" "postgres_cluster" {
         "linkerd.io/inject" = "disabled"
       }
     }
-    spec = {
+    spec = merge({
       imageName             = "ghcr.io/cloudnative-pg/postgresql:${var.pg_version}"
       instances             = var.pg_instances
       primaryUpdateStrategy = "unsupervised"
@@ -205,31 +209,9 @@ resource "kubernetes_manifest" "postgres_cluster" {
         })
       }
 
-      // Backups
-      serviceAccountTemplate = {
-        metadata = {
-          annotations = {
-            "eks.amazonaws.com/role-arn" = module.irsa.role_arn
-          }
-        }
-      }
-      backup = {
-        barmanObjectStore = {
-          destinationPath = "s3://${module.s3_bucket.bucket_name}/"
-          s3Credentials = {
-            inheritFromIAMRole = true
-          }
-          wal = {
-            compression = "bzip2"
-            maxParallel = 8
-          }
-        }
-        retentionPolicy = "7d"
-      }
+
       bootstrap = {
         initdb = {
-
-
           postInitSQL = [
 
             // This ensures that the default users have no privileges
@@ -280,9 +262,39 @@ resource "kubernetes_manifest" "postgres_cluster" {
       }
 
       storage = {
-        size = "${var.pg_storage_gb}Gi"
+        pvcTemplate = {
+          accessModes = ["ReadWriteOnce"]
+          resources = {
+            requests = {
+              storage = "${var.pg_storage_gb}Gi"
+            }
+          }
+          storageClassName = var.backups_enabled ? "ebs-standard-retained" : "ebs-standard"
+        }
       }
-    }
+      }, var.backups_enabled ? {
+      // Backups
+      serviceAccountTemplate = {
+        metadata = {
+          annotations = {
+            "eks.amazonaws.com/role-arn" = module.irsa[0].role_arn
+          }
+        }
+      }
+      backup = {
+        barmanObjectStore = {
+          destinationPath = "s3://${module.s3_bucket[0].bucket_name}/"
+          s3Credentials = {
+            inheritFromIAMRole = true
+          }
+          wal = {
+            compression = "bzip2"
+            maxParallel = 8
+          }
+        }
+        retentionPolicy = "7d"
+      }
+    } : null)
   }
 
   wait {
@@ -452,9 +464,9 @@ resource "vault_database_secret_backend_role" "admin" {
     "DROP ROLE IF EXISTS \"{{name}}\""
   ]
 
-  // Limit admin creds to only an hour
-  default_ttl = 60 * 60
-  max_ttl     = 60 * 60
+  // TODO: Limit admin creds to only an hour
+  default_ttl = 60 * 60 * 24
+  max_ttl     = 60 * 60 * 24
 }
 
 resource "vault_database_secret_backend_connection" "postgres" {

@@ -40,8 +40,9 @@ resource "vault_kubernetes_auth_backend_role" "main" {
   bound_service_account_names      = [var.service_account]
   bound_service_account_namespaces = [var.namespace]
   role_name                        = local.role_name
-  token_ttl                        = 60 * 60
+  token_ttl                        = 60 * 60 * 8
   token_policies                   = [vault_policy.main.name]
+  token_bound_cidrs                = ["10.0.0.0/16"] // Only allow this token to be used from inside the cluster
 }
 
 resource "kubernetes_manifest" "creds" {

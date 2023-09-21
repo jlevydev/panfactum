@@ -24,7 +24,7 @@ inputs = {
   image_version = local.image_version
 
   // PG Settings
-  pg_storage_gb = 5
+  pg_storage_gb = 25
   pg_instances  = 1
 
   // Scaling + HA

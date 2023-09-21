@@ -77,6 +77,7 @@ module "postgres" {
   pg_instances         = var.pg_instances
   pg_storage_gb        = var.pg_storage_gb
   ha_enabled           = var.ha_enabled
+  backups_enabled      = !local.is_local
 }
 
 module "db_access" {
@@ -138,53 +139,57 @@ module "deployment" {
     env_var               = "PG_CREDS_PATH"
   }]
 
-  init_containers = local.is_local ? {
-    init-compile = {
+  init_containers = {
+    init-compile = local.is_local ? {
       image          = var.image_repo
       version        = var.image_version
       command        = ["scripts/compile-dev.sh", "./out", "./tsconfig.json"]
       minimum_memory = 500
-    }
-    } : {
-    migrate = {
+    } : null
+    migrate = !local.is_local ? {
       image          = var.image_repo
       version        = var.image_version
       command        = ["node", "out/migrate.js"]
       minimum_memory = 100
-    }
+      env = {
+        FUNCTION = "db-migrate"
+      }
+    } : null
   }
-  containers = local.is_local ? {
-    migrate = {
-      image          = var.image_repo
-      version        = var.image_version
-      command        = ["node_modules/.bin/nodemon", "--delay", "0.25", "out/migrate.js"]
-      minimum_memory = 100
-    }
+  containers = {
     server = {
-      image          = var.image_repo
-      version        = var.image_version
-      command        = ["node_modules/.bin/nodemon", "--delay", "0.25", "out/index.js"]
-      minimum_memory = 100
+      image   = var.image_repo
+      version = var.image_version
+      command = local.is_local ? [
+        "node_modules/.bin/nodemon",
+        "--signal", "SIGTERM",
+        "--delay", "0.25",
+        "out/index.js"
+      ] : ["node", "out/index.js"]
+      minimum_memory = local.is_local ? 500 : 100
+      env = {
+        FUNCTION = "http-server"
+      }
     }
-    compiler = {
-      image          = var.image_repo
-      version        = var.image_version
-      command        = ["node_modules/.bin/nodemon", "-x", "/bin/bash", "-w", "./src", "-w", "./scripts", "-e", "ts json sh js", "scripts/compile-dev.sh", "./out", "./tsconfig.json"]
+    compiler = local.is_local ? {
+      image   = var.image_repo
+      version = var.image_version
+      command = [
+        "node_modules/.bin/nodemon",
+        "-x", "/bin/bash",
+        "-w", "./src",
+        "-w", "./scripts",
+        "-e", "ts json sh js",
+        "scripts/compile-dev.sh", "./out", "./tsconfig.json"
+      ]
       minimum_memory = 500
-    }
-    } : {
-    server = {
-      image          = var.image_repo
-      version        = var.image_version
-      command        = ["node", "out/index.js"]
-      minimum_memory = 100
-    }
+    } : null
   }
 
-  tmp_directories = local.is_local ? [
-    "/code/packages/primary-api/out",
-    "/tmp/build"
-  ] : []
+  tmp_directories = local.is_local ? {
+    "/code/packages/primary-api/out" = {}
+    "/tmp/build"                     = {}
+  } : {}
   healthcheck_port  = local.port
   healthcheck_route = local.healthcheck_route
 
@@ -199,6 +204,7 @@ module "deployment" {
       service_port = local.port
     }
   }
+  allow_disruptions = !local.is_local
 
   depends_on = [module.db_access]
 }
