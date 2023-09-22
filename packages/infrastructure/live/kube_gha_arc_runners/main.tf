@@ -212,6 +212,11 @@ resource "helm_release" "runner" {
           tolerations                   = module.constants.spot_node_toleration_helm
           serviceAccountName            = kubernetes_service_account.runners.metadata[0].name
           terminationGracePeriodSeconds = 60
+
+          // Once the runner exits / finishes, it should never try to restart
+          // as the lifecycle is handled by the scale set controller
+          restartPolicy = "Never"
+
           containers = [{
             name  = "runner"
             image = var.runner_image
@@ -220,6 +225,11 @@ resource "helm_release" "runner" {
               "-c",
               ". /home/runner/.profile && /home/runner/run.sh"
             ]
+
+            // This lifecycle hook ensures that if this runner is interrupted
+            // in the middle of a terraform operations, its locks are released
+            // prior to it terminating; this is critical to avoiding deadlocks
+            // in the CI system
             lifecycle = {
               preStop = {
                 exec = {
@@ -231,6 +241,7 @@ resource "helm_release" "runner" {
                 }
               }
             }
+
             env = [
               {
                 name  = "CI",
