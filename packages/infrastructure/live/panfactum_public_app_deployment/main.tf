@@ -119,7 +119,9 @@ module "deployment" {
     }
   } : {}
 
-  healthcheck_type  = null
+  // Disable healthchecks when running in localdev b/c the healthchecks break
+  // when the server is compiling the code which then triggers unwanted restarts
+  healthcheck_type  = local.is_local ? null : "HTTP"
   healthcheck_port  = local.port
   healthcheck_route = local.healthcheck_route
 

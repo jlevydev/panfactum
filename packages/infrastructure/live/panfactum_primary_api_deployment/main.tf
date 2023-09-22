@@ -149,7 +149,7 @@ module "deployment" {
     migrate = !local.is_local ? {
       image          = var.image_repo
       version        = var.image_version
-      command        = ["node", "out/migrate.js"]
+      command        = ["node", "out/index.js"]
       minimum_memory = 100
       env = {
         FUNCTION = "db-migrate"
