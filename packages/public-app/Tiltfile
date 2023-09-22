@@ -12,7 +12,7 @@ podman_build(
     "-f", "./Containerfile",
      "--target", "development"
    ],
-  deps=  [
+  deps=[
      "src",
      "scripts",
      "public",

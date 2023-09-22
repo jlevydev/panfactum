@@ -27,19 +27,123 @@ locals {
     deployment_id = random_id.deployment_id.hex
   })
 
-  // Environment variable configuration
-  scrubbed_env = merge(
-    var.environment_variables,
-    module.env_vars.env_vars
-  )
 
   dynamic_env_secrets_by_provider = { for config in var.dynamic_secrets : config.secret_provider_class => config }
-  tolerations                     = merge(var.tolerations, module.constants.spot_node_toleration)
 
+  // Todo: Not sure if we should always allow spot nodes for deployments, but for now we are going to
+  tolerations = merge(var.tolerations, module.constants.spot_node_toleration)
+
+  // We allow passing in a "null" container in order to make dynamic container lists easier for the consumer
+  // of this module
   containers      = { for container, config in var.containers : container => config if config != null }
   init_containers = { for container, config in var.init_containers : container => config if config != null }
 
-  total_tmp_storage_mb = sum([for dir, config in var.tmp_directories : config.size_gb * 1024])
+  // Note: Sum cannot take an empty array so we concat 0
+  total_tmp_storage_mb = sum(concat([for dir, config in var.tmp_directories : config.size_gb * 1024], [0]))
+
+  /************************************************
+  * Environment variables
+  ************************************************/
+
+  // Reflective env variables
+  common_reflective_env = [
+    {
+      name = "POD_IP"
+      valueFrom = {
+        fieldRef = {
+          apiVersion = "v1"
+          fieldPath  = "status.podIP"
+        }
+      }
+    },
+    {
+      name = "POD_NAME"
+      valueFrom = {
+        fieldRef = {
+          apiVersion = "v1"
+          fieldPath  = "metadata.name"
+        }
+      }
+    },
+    {
+      name = "POD_NAMESPACE"
+      valueFrom = {
+        fieldRef = {
+          apiVersion = "v1"
+          fieldPath  = "metadata.namespace"
+        }
+      }
+    },
+    {
+      name = "NAMESPACE"
+      valueFrom = {
+        fieldRef = {
+          apiVersion = "v1"
+          fieldPath  = "metadata.namespace"
+        }
+      }
+    }
+  ]
+
+  // Static env variables (non-secret)
+  common_static_env = [for k, v in merge(var.environment_variables, module.env_vars.env_vars) : {
+    name  = k
+    value = v
+  }]
+
+  // Static env variables (secret)
+  common_static_secret_env = [for k in var.secrets : {
+    name = k
+    valueFrom = {
+      secretKeyRef = {
+        name     = kubernetes_secret.secrets.metadata[0].name
+        key      = k
+        optional = false
+      }
+    }
+  }]
+
+  // Secrets mounts
+  common_secret_mounts_env = [for k, config in local.dynamic_env_secrets_by_provider : {
+    name  = config.env_var
+    value = config.mount_path
+  }]
+
+  // All common env
+  // NOTE: The order that these env blocks is defined in
+  // is incredibly important. Do NOT move them around unless you know what you are doing.
+  common_env = concat(
+    local.common_reflective_env,
+    local.common_static_env,
+    local.common_static_secret_env,
+    local.common_secret_mounts_env
+  )
+
+  /************************************************
+  * Mounts
+  ************************************************/
+
+  common_tmp_volume_mounts = [for path, config in var.tmp_directories : {
+    name      = replace(path, "/[^a-z0-9]/", "")
+    mountPath = path
+  }]
+
+  common_secret_volume_mounts = [for name, mount in var.secret_mounts : {
+    name      = name
+    mountPath = mount
+  }]
+
+  common_dynamic_secret_volume_mounts = [for path, config in local.dynamic_env_secrets_by_provider : {
+    name      = path
+    mountPath = config.mount_path
+  }]
+
+  common_volume_mounts = concat(
+    local.common_tmp_volume_mounts,
+    local.common_secret_volume_mounts,
+    local.common_dynamic_secret_volume_mounts
+  )
+
 }
 
 module "constants" {
@@ -64,234 +168,189 @@ resource "kubernetes_secret" "secrets" {
   data = var.secrets
 }
 
-resource "kubernetes_deployment" "deployment" {
-  metadata {
-    namespace = var.namespace
-    name      = var.service_name
-    labels    = local.service_labels
-    annotations = {
-      "reloader.stakater.com/auto" = "true"
-    }
-  }
-  spec {
-    strategy {
-      type = var.deployment_update_type
-    }
-    replicas = var.min_replicas
-    selector {
-      match_labels = local.match_labels
-    }
-    template {
-      metadata {
-        labels      = local.service_labels
-        annotations = var.pod_annotations
+resource "kubernetes_manifest" "deployment" {
+  manifest = {
+    apiVersion = "apps/v1"
+    kind       = "Deployment"
+    metadata = {
+      namespace = var.namespace
+      name      = var.service_name
+      labels    = local.service_labels
+      annotations = {
+        "reloader.stakater.com/auto" = "true"
       }
-      spec {
-        priority_class_name  = var.priority_class_name
-        service_account_name = var.service_account
-
-        dynamic "toleration" {
-          for_each = local.tolerations
-          content {
-            key      = toleration.key
-            operator = toleration.value.operator
-            value    = toleration.value.value
-            effect   = toleration.value.effect
+    }
+    spec = {
+      replicas = var.min_replicas
+      strategy = {
+        type = var.deployment_update_type
+      }
+      selector = {
+        matchLabels = local.match_labels
+      }
+      template = {
+        metadata = { for k, v in {
+          labels      = local.service_labels
+          annotations = length(keys(var.pod_annotations)) == 0 ? null : var.pod_annotations
+        } : k => v if v != null }
+        spec = { for k, v in {
+          priorityClassName  = var.priority_class_name
+          serviceAccountName = var.service_account
+          securityContext = {
+            fsGroup = var.mount_owner
           }
-        }
 
-        affinity {
-          node_affinity {
-            dynamic "preferred_during_scheduling_ignored_during_execution" {
-              for_each = var.node_preferences
-              content {
-                weight = preferred_during_scheduling_ignored_during_execution.value.weight
-                preference {
-                  match_expressions {
-                    key      = preferred_during_scheduling_ignored_during_execution.key
-                    operator = preferred_during_scheduling_ignored_during_execution.value.operator
-                    values   = preferred_during_scheduling_ignored_during_execution.value.values
-                  }
+          // Scheduling Settings
+          tolerations = length(keys(local.tolerations)) == 0 ? null : [for toleration, config in local.tolerations : {
+            key      = toleration
+            operator = config.operator
+            value    = config.value
+            effect   = config.effect
+          }]
+          affinity = {
+            nodeAffinity = {
+              preferredDuringSchedulingIgnoredDuringExecution = [for pref, config in var.node_preferences : {
+                weight = config.weight
+                preference = {
+                  matchExpressions = [{
+                    key      = pref
+                    operator = config.operator
+                    values   = config.values
+                  }]
                 }
-              }
+              }]
+            }
+            podAntiAffinity = {
+              requiredDuringSchedulingIgnoredDuringExecution = var.ha_enabled ? [{
+                topologyKey = "kubernetes.io/hostname"
+                labelSelector = {
+                  matchLabels = local.match_labels
+                }
+              }] : []
             }
           }
-          pod_anti_affinity {
-            dynamic "required_during_scheduling_ignored_during_execution" {
-              for_each = var.ha_enabled ? [1] : []
-              content {
-                topology_key = "kubernetes.io/hostname"
-                label_selector {
-                  match_labels = local.match_labels
-                }
+          topologySpreadConstraints = [
+            {
+              maxSkew           = 1
+              topologyKey       = "topology.kubernetes.io/zone"
+              whenUnsatisfiable = "ScheduleAnyway"
+              labelSelector = {
+                matchLabels = local.match_labels
+              }
+            },
+            {
+              maxSkew           = 1
+              topologyKey       = "kubernetes.io/hostname"
+              whenUnsatisfiable = var.ha_enabled ? "DoNotSchedule" : "ScheduleAnyway"
+              labelSelector = {
+                matchLabels = local.match_labels
               }
             }
-          }
-        }
+          ]
 
-        security_context {
-          fs_group = var.mount_owner
-        }
+          volumes = length(concat(
+            keys(var.tmp_directories),
+            keys(var.secret_mounts),
+            keys(local.dynamic_env_secrets_by_provider)
+            )) == 0 ? null : concat(
+            [for path, config in var.tmp_directories : {
+              name = replace(path, "/[^a-z0-9]/", "")
+              emptyDir = {
+                sizeLimit = "${config.size_gb}Gi"
+              }
+            }],
+            [for path, config in var.secret_mounts : {
+              name = path
+              secret = {
+                secretName = path
+                optional   = false
+              }
+            }],
+            [for path, config in local.dynamic_env_secrets_by_provider : {
+              name = path
+              csi = {
+                driver   = "secrets-store.csi.k8s.io"
+                readOnly = true
+                volumeAttributes = {
+                  secretProviderClass = path
+                }
+              }
+            }]
+          )
 
-        dynamic "container" {
-          for_each = local.containers
-          content {
 
-            name    = container.key
-            image   = "${container.value.image}:${container.value.version}"
-            command = container.value.command
+          // Containers
+          // Note: The extra inner k,v loop is to remove k,v pairs with null v's
+          // which aren't always accepted by the k8s api
+          containers = [for container, config in local.containers : { for k, v in {
+            name    = container
+            image   = "${config.image}:${config.version}"
+            command = length(config.command) == 0 ? null : config.command
 
             // NOTE: The order that these env blocks is defined in
             // is incredibly important. Do NOT move them around unless you know what you are doing.
+            env = concat(
+              local.common_env,
+              [for k, v in config.env : {
+                name  = k,
+                value = v
+              }]
+            )
 
-            env {
-              name = "POD_IP"
-              value_from {
-                field_ref {
-                  api_version = "v1"
-                  field_path  = "status.podIP"
-                }
-              }
-            }
-            env {
-              name = "POD_NAME"
-              value_from {
-                field_ref {
-                  api_version = "v1"
-                  field_path  = "metadata.name"
-                }
-              }
-            }
-            env {
-              name = "POD_NAMESPACE"
-              value_from {
-                field_ref {
-                  field_path = "metadata.namespace"
-                }
-              }
-            }
-            env {
-              name = "NAMESPACE"
-              value_from {
-                field_ref {
-                  field_path = "metadata.namespace"
-                }
-              }
-            }
+            startupProbe = var.healthcheck_type != null ? { for k, v in {
+              httpGet = var.healthcheck_type == "HTTP" ? {
+                path   = var.healthcheck_route
+                port   = var.healthcheck_port
+                scheme = "HTTP"
+              } : null
+              tcpSocket = var.healthcheck_type == "TCP" ? {
+                port = var.healthcheck_port
+              } : null
+              failureThreshold = 120
+              periodSeconds    = 1
+              timeoutSeconds   = 3
+            } : k => v if v != null } : null
 
-            // Static env variables (non-secret)
-            dynamic "env" {
-              for_each = local.scrubbed_env
-              content {
-                name  = env.key
-                value = env.value
-              }
-            }
+            readinessProbe = var.healthcheck_type != null ? { for k, v in {
+              httpGet = var.healthcheck_type == "HTTP" ? {
+                path   = var.healthcheck_route
+                port   = var.healthcheck_port
+                scheme = "HTTP"
+              } : null
+              tcpSocket = var.healthcheck_type == "TCP" ? {
+                port = var.healthcheck_port
+              } : null
+              successThreshold = 1
+              failureThreshold = 3
+              periodSeconds    = config.healthcheck_interval_seconds
+              timeoutSeconds   = 3
+            } : k => v if v != null } : null
 
-            // Static env variables (non-secret, container-specific)
-            dynamic "env" {
-              for_each = container.value.env
-              content {
-                name  = env.key
-                value = env.value
-              }
-            }
+            livenessProbe = var.healthcheck_type != null ? { for k, v in {
+              httpGet = var.healthcheck_type == "HTTP" ? {
+                path   = var.healthcheck_route
+                port   = var.healthcheck_port
+                scheme = "HTTP"
+              } : null
+              tcpSocket = var.healthcheck_type == "TCP" ? {
+                port = var.healthcheck_port
+              } : null
+              successThreshold = 1
+              failureThreshold = 15
+              periodSeconds    = config.healthcheck_interval_seconds
+              timeoutSeconds   = 3
+            } : k => v if v != null } : null
 
-            // Static env variables (secret)
-            dynamic "env" {
-              for_each = var.secrets
-              content {
-                name = env.key
-                value_from {
-                  secret_key_ref {
-                    name     = kubernetes_secret.secrets.metadata[0].name
-                    key      = env.key
-                    optional = false
-                  }
-                }
-              }
-            }
-
-            // Secrets mounts
-            dynamic "env" {
-              for_each = local.dynamic_env_secrets_by_provider
-              content {
-                name  = env.value.env_var
-                value = env.value.mount_path
-              }
-            }
-
-            startup_probe {
-              dynamic "http_get" {
-                for_each = var.healthcheck_type == "HTTP" ? [1] : []
-                content {
-                  path   = var.healthcheck_route
-                  port   = var.healthcheck_port
-                  scheme = "HTTP"
-                }
-              }
-              dynamic "tcp_socket" {
-                for_each = var.healthcheck_type == "TCP" ? [1] : []
-                content {
-                  port = var.healthcheck_port
-                }
-              }
-              failure_threshold = 120
-              period_seconds    = 1
-              timeout_seconds   = 3
-            }
-            // TOOD: Reintall these when using a deployment manifest
-            // and provide the ability to disable
-            #            liveness_probe {
-            #              dynamic "http_get" {
-            #                for_each = var.healthcheck_type == "HTTP" ? [1] : []
-            #                content {
-            #                  path   = var.healthcheck_route
-            #                  port   = var.healthcheck_port
-            #                  scheme = "HTTP"
-            #                }
-            #              }
-            #              dynamic "tcp_socket" {
-            #                for_each = var.healthcheck_type == "TCP" ? [1] : []
-            #                content {
-            #                  port = var.healthcheck_port
-            #                }
-            #              }
-            #              success_threshold = 1
-            #              failure_threshold = 15
-            #              period_seconds    = container.value.healthcheck_interval_seconds
-            #              timeout_seconds   = 3
-            #            }
-            #            readiness_probe {
-            #              dynamic "http_get" {
-            #                for_each = var.healthcheck_type == "HTTP" ? [1] : []
-            #                content {
-            #                  path   = var.healthcheck_route
-            #                  port   = var.healthcheck_port
-            #                  scheme = "HTTP"
-            #                }
-            #              }
-            #              dynamic "tcp_socket" {
-            #                for_each = var.healthcheck_type == "TCP" ? [1] : []
-            #                content {
-            #                  port = var.healthcheck_port
-            #                }
-            #              }
-            #              success_threshold = 1
-            #              failure_threshold = 3
-            #              period_seconds    = container.value.healthcheck_interval_seconds
-            #              timeout_seconds   = 3
-            #            }
-
-            resources {
+            // Note: we always give 100Mi of scratch space for logs, etc.
+            resources = {
               requests = {
-                cpu               = "${container.value.minimum_cpu}m"
-                memory            = "${container.value.minimum_memory}Mi"
-                ephemeral-storage = "${local.total_tmp_storage_mb + (container.value.readonly ? 0 : 100)}Mi"
+                cpu               = "${config.minimum_cpu}m"
+                memory            = config.minimum_memory * 1024 * 1024
+                ephemeral-storage = "${local.total_tmp_storage_mb + 100}Mi"
               }
               limits = {
-                memory            = "${container.value.minimum_memory}Mi"
-                ephemeral-storage = "${local.total_tmp_storage_mb + (container.value.readonly ? 0 : 100)}Mi"
+                memory            = config.minimum_memory * 1024 * 1024
+                ephemeral-storage = "${local.total_tmp_storage_mb + 100}Mi"
               }
             }
 
@@ -299,139 +358,45 @@ resource "kubernetes_deployment" "deployment" {
             // For local dev, we allow running
             // as a privileged user as this
             // is sometimes required for development utilities
-            security_context {
-              run_as_group               = container.value.run_as_root ? 0 : var.is_local ? 0 : 1000
-              run_as_user                = container.value.run_as_root ? 0 : var.is_local ? 0 : 1000
-              run_as_non_root            = !container.value.run_as_root && !var.is_local
-              allow_privilege_escalation = container.value.run_as_root || var.is_local
-              read_only_root_filesystem  = !var.is_local && container.value.readonly
-              capabilities {
-                add  = container.value.linux_capabilities
+            securityContext = {
+              runAsGroup               = config.run_as_root ? 0 : var.is_local ? 0 : 1000
+              runAsUser                = config.run_as_root ? 0 : var.is_local ? 0 : 1000
+              runAsNonRoot             = !config.run_as_root && !var.is_local
+              allowPrivilegeEscalation = config.run_as_root || var.is_local
+              readOnlyRootFilesystem   = !var.is_local && config.readonly
+              capabilities = {
+                add  = config.linux_capabilities
                 drop = var.is_local ? [] : ["ALL"]
               }
             }
 
-            dynamic "volume_mount" {
-              for_each = var.tmp_directories
-              content {
-                name       = replace(volume_mount.key, "/[^a-z0-9]/", "")
-                mount_path = volume_mount.key
-              }
-            }
-            dynamic "volume_mount" {
-              for_each = var.secret_mounts
-              content {
-                name       = volume_mount.key
-                mount_path = volume_mount.value
-                read_only  = true
-              }
-            }
-            dynamic "volume_mount" {
-              for_each = local.dynamic_env_secrets_by_provider
-              content {
-                name       = volume_mount.key
-                mount_path = volume_mount.value.mount_path
-                read_only  = true
-              }
-            }
-          }
-        }
-        dynamic "init_container" {
-          for_each = local.init_containers
-          content {
-            name    = init_container.key
-            image   = "${init_container.value.image}:${init_container.value.version}"
-            command = init_container.value.command
+            volumeMounts = length(local.common_volume_mounts) == 0 ? null : local.common_volume_mounts
+          } : k => v if v != null }]
+
+          initContainers = length(keys(local.init_containers)) == 0 ? null : [for container, config in local.init_containers : {
+            name    = container
+            image   = "${config.image}:${config.version}"
+            command = length(config.command) == 0 ? null : config.command
 
             // NOTE: The order that these env blocks is defined in
             // is incredibly important. Do NOT move them around unless you know what you are doing.
+            env = concat(
+              local.common_env,
+              [for k, v in config.env : {
+                name  = k,
+                value = v
+              }]
+            )
 
-            env {
-              name = "POD_IP"
-              value_from {
-                field_ref {
-                  api_version = "v1"
-                  field_path  = "status.podIP"
-                }
-              }
-            }
-            env {
-              name = "POD_NAME"
-              value_from {
-                field_ref {
-                  api_version = "v1"
-                  field_path  = "metadata.name"
-                }
-              }
-            }
-            env {
-              name = "POD_NAMESPACE"
-              value_from {
-                field_ref {
-                  field_path = "metadata.namespace"
-                }
-              }
-            }
-            env {
-              name = "NAMESPACE"
-              value_from {
-                field_ref {
-                  field_path = "metadata.namespace"
-                }
-              }
-            }
-
-            // Static env variables (non-secret)
-            dynamic "env" {
-              for_each = local.scrubbed_env
-              content {
-                name  = env.key
-                value = env.value
-              }
-            }
-
-            // Static env variables (non-secret, container-specific)
-            dynamic "env" {
-              for_each = init_container.value.env
-              content {
-                name  = env.key
-                value = env.value
-              }
-            }
-
-            // Static env variables (secret)
-            dynamic "env" {
-              for_each = var.secrets
-              content {
-                name = env.key
-                value_from {
-                  secret_key_ref {
-                    name     = kubernetes_secret.secrets.metadata[0].name
-                    key      = env.key
-                    optional = false
-                  }
-                }
-              }
-            }
-
-            // Secrets mounts
-            dynamic "env" {
-              for_each = local.dynamic_env_secrets_by_provider
-              content {
-                name  = env.value.env_var
-                value = env.value.mount_path
-              }
-            }
-
-            resources {
+            resources = {
               requests = {
-                cpu               = "${init_container.value.minimum_cpu}m"
-                memory            = "${init_container.value.minimum_memory}Mi"
-                ephemeral-storage = "${local.total_tmp_storage_mb + (init_container.value.readonly ? 0 : 100)}Mi"
+                cpu               = "${config.minimum_cpu}m"
+                memory            = config.minimum_memory * 1024 * 1024
+                ephemeral-storage = "${local.total_tmp_storage_mb + 100}Mi"
               }
               limits = {
-                memory            = "${init_container.value.minimum_memory}Mi"
-                ephemeral-storage = "${local.total_tmp_storage_mb + (init_container.value.readonly ? 0 : 100)}Mi"
+                memory            = config.minimum_memory * 1024 * 1024
+                ephemeral-storage = "${local.total_tmp_storage_mb + 100}Mi"
               }
             }
 
@@ -439,101 +404,55 @@ resource "kubernetes_deployment" "deployment" {
             // For local dev, we allow running
             // as a privileged user as this
             // is sometimes required for development utilities
-            security_context {
-              run_as_group               = init_container.value.run_as_root ? 0 : var.is_local ? 0 : 1000
-              run_as_user                = init_container.value.run_as_root ? 0 : var.is_local ? 0 : 1000
-              run_as_non_root            = !init_container.value.run_as_root && !var.is_local
-              allow_privilege_escalation = init_container.value.run_as_root || var.is_local
-              read_only_root_filesystem  = !var.is_local && init_container.value.readonly
-              capabilities {
-                add  = init_container.value.linux_capabilities
+            securityContext = {
+              runAsGroup               = config.run_as_root ? 0 : var.is_local ? 0 : 1000
+              runAsUser                = config.run_as_root ? 0 : var.is_local ? 0 : 1000
+              runAsNonRoot             = !config.run_as_root && !var.is_local
+              allowPrivilegeEscalation = config.run_as_root || var.is_local
+              readOnlyRootFilesystem   = !var.is_local && config.readonly
+              capabilities = {
+                add  = config.linux_capabilities
                 drop = var.is_local ? [] : ["ALL"]
               }
             }
 
-            dynamic "volume_mount" {
-              for_each = var.tmp_directories
-              content {
-                name       = replace(volume_mount.key, "/[^a-z0-9]/", "")
-                mount_path = volume_mount.key
-              }
-            }
-            dynamic "volume_mount" {
-              for_each = var.secret_mounts
-              content {
-                name       = volume_mount.key
-                mount_path = volume_mount.value
-                read_only  = true
-              }
-            }
-            dynamic "volume_mount" {
-              for_each = local.dynamic_env_secrets_by_provider
-              content {
-                name       = volume_mount.key
-                mount_path = volume_mount.value.mount_path
-                read_only  = true
-              }
-            }
-          }
-        }
-
-        dynamic "volume" {
-          for_each = var.tmp_directories
-          content {
-            empty_dir {
-              size_limit = "${volume.value.size_gb}Gi"
-            }
-            name = replace(volume.key, "/[^a-z0-9]/", "")
-          }
-        }
-        dynamic "volume" {
-          for_each = var.secret_mounts
-          content {
-            name = volume.key
-            secret {
-              secret_name = volume.key
-              optional    = false
-            }
-          }
-        }
-        dynamic "volume" {
-          for_each = local.dynamic_env_secrets_by_provider
-          content {
-            name = volume.key
-            csi {
-              driver    = "secrets-store.csi.k8s.io"
-              read_only = true
-              volume_attributes = {
-                secretProviderClass = volume.key
-              }
-            }
-          }
-        }
-        topology_spread_constraint {
-          max_skew           = 1
-          topology_key       = "topology.kubernetes.io/zone"
-          when_unsatisfiable = "ScheduleAnyway"
-          label_selector {
-            match_labels = local.match_labels
-          }
-        }
-        topology_spread_constraint {
-          max_skew           = 1
-          topology_key       = "kubernetes.io/hostname"
-          when_unsatisfiable = var.ha_enabled ? "DoNotSchedule" : "ScheduleAnyway"
-          label_selector {
-            match_labels = local.match_labels
-          }
-        }
-
+            volumeMounts = length(local.common_volume_mounts) == 0 ? null : local.common_volume_mounts
+          }]
+        } : k => v if v != null }
       }
     }
   }
-  wait_for_rollout = false
-  timeouts {
-    create = "5m"
-    update = "5m"
-  }
+  computed_fields = flatten(concat(
+
+    // The defaults used by the provider
+    [
+      "metadata.labels",
+      "metadata.annotations"
+    ],
+
+    // The prevents an error when the kubernetes API server changes the units used
+    // in these fields during the apply
+    [for i, k in keys(local.containers) : [
+      "spec.template.spec.containers[${i}].resources.requests",
+      "spec.template.spec.containers[${i}].resources.limits",
+    ]],
+    [for i, k in keys(local.init_containers) : [
+      "spec.template.spec.initContainers[${i}].resources.requests",
+      "spec.template.spec.initContainers[${i}].resources.limits",
+    ]],
+
+    // Runs into an issue when using empty lists
+    [for i, k in keys(local.containers) : [
+      "spec.template.spec.containers[${i}].securityContext.capabilities",
+    ]],
+    [for i, k in keys(local.init_containers) : [
+      "spec.template.spec.initContainers[${i}].securityContext.capabilities",
+    ]],
+    [
+      "spec.template.spec.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution",
+      "spec.template.spec.affinity.podAntiAffinity.requiredDuringSchedulingIgnoredDuringExecution"
+    ]
+  ))
 }
 
 resource "kubernetes_manifest" "vpa_server" {
@@ -566,7 +485,7 @@ resource "kubernetes_manifest" "vpa_server" {
       }
     }
   }
-  depends_on = [kubernetes_deployment.deployment]
+  depends_on = [kubernetes_manifest.deployment]
 }
 
 

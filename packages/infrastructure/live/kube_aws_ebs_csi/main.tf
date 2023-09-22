@@ -150,7 +150,7 @@ resource "kubernetes_storage_class" "standard" {
 
 resource "kubernetes_storage_class" "standard_retained" {
   metadata {
-    name = "ebs-standard-retain"
+    name = "ebs-standard-retained"
   }
   storage_provisioner    = "ebs.csi.aws.com"
   volume_binding_mode    = "WaitForFirstConsumer"

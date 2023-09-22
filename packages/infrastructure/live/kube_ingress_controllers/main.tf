@@ -988,7 +988,7 @@ module "bastion" {
     "${kubernetes_secret.bastion_host.metadata[0].name}" = "/etc/ssh/host"
   }
 
-  tmp_directories = ["/run/sshd"]
+  tmp_directories = { "/run/sshd" = {} }
   mount_owner     = 0
 
   ports = {

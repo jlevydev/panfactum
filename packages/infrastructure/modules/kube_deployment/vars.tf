@@ -11,7 +11,7 @@ variable "service_name" {
 variable "priority_class_name" {
   description = "The priority class to use for pods in the deployment"
   type        = string
-  default     = ""
+  default     = null
 }
 
 variable "deployment_update_type" {
@@ -171,6 +171,7 @@ variable "pod_annotations" {
 variable "service_account" {
   description = "The name of the service account to use for this deployment"
   type        = string
+  default     = null
 }
 
 variable "dynamic_secrets" {

@@ -110,8 +110,6 @@ module "deployment" {
       env = {
         NODE_OPTIONS = "--max-old-space-size=${local.minimum_memory * 0.75}"
       }
-      healthcheck_interval_seconds = local.is_local ? 10 : 1
-
     }
   }
 
@@ -120,6 +118,8 @@ module "deployment" {
       size_gb = 5
     }
   } : {}
+
+  healthcheck_type  = null
   healthcheck_port  = local.port
   healthcheck_route = local.healthcheck_route
 
