@@ -104,7 +104,10 @@ export const customAuthProvider: ICustomAuthProvider = {
     await clearIdentity()
   },
   checkAuth: async () => {
-    await fetchAuthInfo()
+    const identity = queryClient.getQueryData(['auth', 'getIdentity'])
+    if (identity === undefined) {
+      await renewIdentity()
+    }
   },
   checkError: async (error) => {
     if (error instanceof APIUnauthenticatedError) {
