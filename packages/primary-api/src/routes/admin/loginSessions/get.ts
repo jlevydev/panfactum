@@ -65,7 +65,7 @@ export const GetLoginSessions:FastifyPluginAsync = async (fastify) => {
     '/login-sessions',
     {
       schema: {
-        description: 'Returns a list of organizations memberships based on the given filters',
+        description: 'Returns a list of login sessions based on the given filters',
         querystring: QueryString,
         response: {
           200: Reply,

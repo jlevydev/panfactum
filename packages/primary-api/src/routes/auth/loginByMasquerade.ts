@@ -49,21 +49,26 @@ export const LoginByMasquerade:FastifyPluginAsync = async (fastify) => {
       // Only panfactum admins can masquerade other users
       // We check both the user and masquerading user's role in case
       // the user is already in masquerade mode
-      const userRolePromise = db
+      const userPromise = db
         .selectFrom('user')
         .select(['id', 'panfactumRole'])
         .where('id', '=', userId)
         .executeTakeFirstOrThrow()
 
-      const masqueradingUserRolePromise = db
+      const masqueradingUserPromise = db
         .selectFrom('user')
         .select(['id', 'panfactumRole'])
         .where('id', '=', masqueradingUserId)
         .executeTakeFirst()
 
-      const [userRole, masqueradingUserRole] = await Promise.all([userRolePromise, masqueradingUserRolePromise])
+      const [originalUser, originalMasqueradingUser] = await Promise.all([userPromise, masqueradingUserPromise])
 
-      if (userRole.panfactumRole !== 'admin' && (!masqueradingUserRole || masqueradingUserRole.panfactumRole !== 'admin')) {
+      // keep the masquerading info if was already set for scenarios where a user that is already
+      // in masquerade mode using this endpoint to switch masqueraded users
+      const newMasqueradingPanfactumRole = originalMasqueradingUser?.panfactumRole ?? originalUser.panfactumRole
+      const newMasqueradingUserId = originalMasqueradingUser?.id ?? originalUser.id
+
+      if (newMasqueradingPanfactumRole !== 'admin') {
         reply.statusCode = 403
         void reply.send()
         return
@@ -86,9 +91,7 @@ export const LoginByMasquerade:FastifyPluginAsync = async (fastify) => {
       const newSession = {
         id: loginSessionId,
         userId: targetUserId,
-        // keep the real user id if it was already set to account for a user
-        // in masquerade mode using this endpoint to switch masqueraded users
-        masqueradingUserId: masqueradingUserId || userId
+        masqueradingUserId: newMasqueradingUserId
       }
 
       // Allow this to run in the background (no await)
@@ -103,17 +106,12 @@ export const LoginByMasquerade:FastifyPluginAsync = async (fastify) => {
       // Step 4: Set the authentication cookie
       setAuthCookie(reply, { ...newSession, loginSessionId: newSession.id })
 
-      const masqueradingPanfactumRole = masqueradingUserRole?.panfactumRole
-      if (masqueradingPanfactumRole === null) {
-        throw new Error('The masqueradingPanfactumRole can never be null')
-      }
-
       return {
         loginSessionId: newSession.id,
         userId: newSession.userId,
-        panfactumRole: userRole.panfactumRole,
-        masqueradingUserId: masqueradingUserRole?.id,
-        masqueradingPanfactumRole,
+        panfactumRole: targetUserInfo.panfactumRole,
+        masqueradingUserId: newMasqueradingUserId,
+        masqueradingPanfactumRole: newMasqueradingPanfactumRole,
         organizations: targetUserInfo.organizations,
         firstName: targetUserInfo.firstName,
         lastName: targetUserInfo.lastName,
