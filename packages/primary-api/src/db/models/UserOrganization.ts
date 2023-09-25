@@ -1,7 +1,10 @@
+import type { Generated } from 'kysely'
+
 export interface UserOrganizationTable {
+    id: Generated<string>;
     userId: string;
     organizationId: string;
-    role: 'admin' | 'manager' | 'viewer';
-    active: boolean;
-    createdAt: Date
+    roleId: string;
+    createdAt: Date;
+    deletedAt: Date | null;
 }

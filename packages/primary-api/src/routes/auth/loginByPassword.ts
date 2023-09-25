@@ -3,10 +3,10 @@ import { getDB } from '../../db/db'
 import { createPasswordHash } from '../../util/password'
 import { randomUUID } from 'crypto'
 import type { FastifyPluginAsync } from 'fastify'
-import type { LoginReplyType } from './login'
-import { LoginReply } from './login'
 import { getUserInfoById } from '../../db/queries/getUserInfoById'
 import { setAuthCookie } from './authCookie'
+import type { LoginReplyType } from '../models/auth'
+import { LoginReply } from '../models/auth'
 
 /**********************************************************************
  * Typings

@@ -1,22 +1,29 @@
 import { faker } from '@faker-js/faker'
-import type { PackageVersionTable } from './PackageVersion'
-import type { UserTable } from './User'
 import type { PackageDownloadTable } from './PackageDownload'
 import { getDB } from '../db'
+import type { UserTableSeed } from './User.seed'
+import type { PackageVersionTableSeed } from './PackageVersion.seed'
+import type { Selectable } from 'kysely'
 
-export function createRandomPackageDownload (pkg: PackageVersionTable, users: UserTable[]): PackageDownloadTable {
+export type PackageDownloadTableSeed = Selectable<PackageDownloadTable>
+
+export function createRandomPackageDownload (pkg: PackageVersionTableSeed, users: UserTableSeed[]): PackageDownloadTableSeed {
+  const createdAt = pkg.deletedAt === null
+    ? faker.date.soon({ days: 500, refDate: pkg.createdAt })
+    : faker.date.between({ from: pkg.createdAt, to: pkg.deletedAt })
   return {
+    id: faker.string.uuid(),
     packageId: pkg.packageId,
     versionTag: pkg.versionTag,
     userId: faker.helpers.arrayElement(users).id,
-    createdAt: faker.date.soon({ days: 500, refDate: pkg.createdAt }),
+    createdAt,
     ip: faker.internet.ipv4()
   }
 }
 
 export async function seedPackageDownloadTable (
-  packageVersions: PackageVersionTable[],
-  users: UserTable[],
+  packageVersions: PackageVersionTableSeed[],
+  users: UserTableSeed[],
   maxPerPackageVersion = 10000
 ) {
   for (const pkg of packageVersions) {

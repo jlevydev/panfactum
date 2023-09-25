@@ -4,6 +4,8 @@ import type { NextPage } from 'next'
 import { StyledEngineProvider } from '@mui/material/styles'
 import dynamic from 'next/dynamic'
 import { ReactNode, useEffect, useState } from 'react'
+import { CssBaseline, ThemeProvider } from '@mui/material'
+import { theme } from '@/app/app/theme'
 
 // This disables SSR on all of the children of the component
 // tree which is fine b/c we do not want to do any server side
@@ -33,7 +35,10 @@ const Dynamic = ({ children }: { children: ReactNode }) => {
 const Home: NextPage = () => (
   <StyledEngineProvider>
     <Dynamic>
-      <DynamicMainRouter />
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <DynamicMainRouter />
+      </ThemeProvider>
     </Dynamic>
   </StyledEngineProvider>
 )

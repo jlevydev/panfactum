@@ -1,0 +1,41 @@
+import { faker } from '@faker-js/faker'
+import { getDB } from '../db'
+import type { OrganizationRoleTable } from './OrganizationRole'
+import type { OrganizationTableSeed } from './Organization.seed'
+import type { Selectable } from 'kysely'
+
+export type OrganizationRoleTableSeed = Selectable<OrganizationRoleTable>
+
+export function createRandomOrganizationRole (organization: OrganizationTableSeed, nameCache: Set<string>): OrganizationRoleTableSeed {
+  let name = faker.person.jobType()
+  while (nameCache.has(name)) {
+    name = faker.person.jobType()
+  }
+  nameCache.add(name)
+  return {
+    id: faker.string.uuid(),
+    organizationId: organization.id,
+    name
+  }
+}
+
+export async function seedOrganizationRoleTable (organizations: OrganizationTableSeed[], maxPerOrg = 5) {
+  const nonUnitaryOrgs = organizations.filter(org => !org.isUnitary)
+  const roles = nonUnitaryOrgs.map((org) => {
+    const count = faker.number.int({ min: 0, max: maxPerOrg })
+    const nameCache: Set<string> = new Set()
+    return count > 0 ? [...Array(count).keys()].map(() => createRandomOrganizationRole(org, nameCache)) : []
+  }).flat()
+  await (await getDB()).insertInto('organizationRole')
+    .values(roles)
+    .execute()
+
+  return roles
+}
+
+export async function truncateOrganizationRoleTable () {
+  // Don't delete the standard roles
+  await (await getDB()).deleteFrom('organizationRole')
+    .where('organizationRole.organizationId', 'is not', null)
+    .execute()
+}

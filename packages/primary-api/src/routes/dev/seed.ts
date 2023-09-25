@@ -19,6 +19,11 @@ import { seedPackageTable, truncatePackageTable } from '../../db/models/Package.
 import { seedPackageVersionTable, truncatePackageVersionTable } from '../../db/models/PackageVersion.seed'
 import { seedPackageDownloadTable, truncatePackageDownloadTable } from '../../db/models/PackageDownload.seed'
 import type { FastifySchemaWithSwagger } from '../constants'
+import { seedOrganizationRoleTable, truncateOrganizationRoleTable } from '../../db/models/OrganizationRole.seed'
+import {
+  seedOrganizationRolePermissionTable,
+  truncateOrganizationRolePermissionTable
+} from '../../db/models/OrganizationRolePermission.seed'
 
 /**********************************************************************
  * Typings
@@ -42,6 +47,12 @@ const SeedBody = Type.Object({
     maximum: 100,
     default: 25,
     description: 'The maximum number of users to assign to any organization'
+  })),
+  maxRolesPerOrg: Type.Optional(Type.Number({
+    minimum: 1,
+    maximum: 10,
+    default: 5,
+    description: 'The maximum number of custom roles to add to any organization'
   })),
   maxPackagesPerOrg: Type.Optional(Type.Number({
     minimum: 1,
@@ -72,6 +83,7 @@ interface IPopulateDataConfig {
   iterations: number;
   orgsPerIteration: number;
   maxUsersPerOrg: number;
+  maxRolesPerOrg: number;
   maxPackagesPerOrg: number;
   maxVersionsPerPackage: number;
   maxDownloadsPerPackageVersion: number;
@@ -82,6 +94,7 @@ async function populateData (config :IPopulateDataConfig): Promise<void> {
     iterations,
     orgsPerIteration,
     maxUsersPerOrg,
+    maxRolesPerOrg,
     maxPackagesPerOrg,
     maxVersionsPerPackage,
     maxDownloadsPerPackageVersion
@@ -109,8 +122,16 @@ async function populateData (config :IPopulateDataConfig): Promise<void> {
     const organizations = await seedOrganizationTable(orgsPerIteration)
     console.log('Done!')
 
+    console.log('Seeding org role table...')
+    const roles = await seedOrganizationRoleTable(organizations, maxRolesPerOrg)
+    console.log('Done!')
+
+    console.log('Seeding org role permission table...')
+    await seedOrganizationRolePermissionTable(roles)
+    console.log('Done!')
+
     console.log('Assigning users to orgs...')
-    const userOrgs = await seedUserOrganizationTable(users, organizations, maxUsersPerOrg)
+    const userOrgs = await seedUserOrganizationTable(users, organizations, roles, maxUsersPerOrg)
     console.log('Done!')
 
     console.log('Creating packages...')
@@ -134,6 +155,8 @@ async function truncateData (): Promise<void> {
   await truncatePackageVersionTable()
   await truncatePackageTable()
   await truncateUserOrganizationTable()
+  await truncateOrganizationRolePermissionTable()
+  await truncateOrganizationRoleTable()
   await truncateOrganizationTable()
   await truncateLoginSessionTable()
   await truncateUserTable()

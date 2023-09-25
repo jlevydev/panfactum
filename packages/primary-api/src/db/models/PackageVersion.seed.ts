@@ -1,11 +1,18 @@
 import { faker } from '@faker-js/faker'
-import type { PackageTable } from './Package'
 import type { PackageVersionTable } from './PackageVersion'
-import type { UserOrganizationTable } from './UserOrganization'
 import { getDB } from '../db'
+import type { Selectable } from 'kysely'
+import type { PackageTableSeed } from './Package.seed'
+import type { UserOrganizationTableSeed } from './UserOrganization.seed'
 
-export function createRandomPackageVersion (pkg: PackageTable, userId: string, versionCache: Set<string>): PackageVersionTable {
-  const createdAt = faker.date.soon({ days: 1000, refDate: pkg.createdAt })
+export type PackageVersionTableSeed = Selectable<PackageVersionTable>
+
+export function createRandomPackageVersion (pkg: PackageTableSeed, userId: string, versionCache: Set<string>): PackageVersionTableSeed {
+  const createdAt = pkg.archivedAt === null
+    ? faker.date.soon({ days: 1000, refDate: pkg.createdAt })
+    : faker.date.between({ from: pkg.createdAt, to: pkg.archivedAt })
+  const archivedAt = faker.datatype.boolean(0.9) ? null : faker.date.soon({ days: 100, refDate: createdAt })
+  const deletedAt = archivedAt === null ? null : faker.datatype.boolean(0.5) ? null : faker.date.soon({ days: 100, refDate: archivedAt })
   let versionTag: string | null = null
   while (!versionTag) {
     const possibleVersionTag = faker.system.semver()
@@ -14,24 +21,33 @@ export function createRandomPackageVersion (pkg: PackageTable, userId: string, v
     }
   }
   return {
+    id: faker.string.uuid(),
     packageId: pkg.id,
     versionTag,
     sizeBytes: faker.number.int({ min: Math.pow(10, 6), max: Math.pow(10, 12) }),
     createdAt,
     createdBy: userId,
-    archivedAt: faker.datatype.boolean(0.9) ? null : faker.date.soon({ days: 100, refDate: createdAt })
+    archivedAt,
+    deletedAt
   }
 }
 
 export async function seedPackageVersionTable (
-  packages: PackageTable[],
-  userOrgs: UserOrganizationTable[],
+  packages: PackageTableSeed[],
+  userOrgs: UserOrganizationTableSeed[],
   maxPerPackage = 10
 ) {
-  const activeUsers = userOrgs.filter(user => user.active)
   const versions = packages.map(pkg => {
     const orgId = pkg.organizationId
-    const orgUsers = activeUsers.filter(user => user.organizationId === orgId)
+    const orgUsers = userOrgs.filter(user => (
+      user.organizationId === orgId && user.createdAt <= pkg.createdAt && (user.deletedAt === null || user.deletedAt >= pkg.createdAt)
+    ))
+
+    // If there are no viable users in this org who could have created the package version,
+    // then this package gets no versions
+    if (orgUsers.length === 0) {
+      return []
+    }
     const cache: Set<string> = new Set()
     return [...Array(faker.number.int({ max: maxPerPackage, min: 0 })).keys()].map(() => {
       const user = faker.helpers.arrayElement(orgUsers)

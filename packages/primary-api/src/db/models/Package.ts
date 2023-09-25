@@ -1,5 +1,7 @@
+import type { Generated } from 'kysely'
+
 export interface PackageTable {
-    id: string;
+    id: Generated<string>;
     organizationId: string;
     name: string;
     description: string;
@@ -9,4 +11,6 @@ export interface PackageTable {
     packageType: 'node' | 'oci';
     createdAt: Date;
     updatedAt: Date;
+    archivedAt: Date | null;
+    deletedAt: Date | null;
 }

@@ -1,12 +1,11 @@
 import { getDB } from '../../db/db'
 import { randomUUID } from 'crypto'
 import type { FastifyPluginAsync } from 'fastify'
-import type { LoginReplyType } from './login'
-import { LoginReply } from './login'
 import { getAuthInfo } from '../../util/getAuthInfo'
 import type { FastifySchemaWithSwagger } from '../constants'
 import { getUserInfoById } from '../../db/queries/getUserInfoById'
 import { setAuthCookie } from './authCookie'
+import { LoginReply, LoginReplyType } from '../models/auth'
 
 /**********************************************************************
  * Route Logic

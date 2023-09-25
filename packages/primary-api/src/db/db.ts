@@ -74,8 +74,13 @@ const updateDB = async () => {
       }),
       log (event) {
         if (NODE_ENV === 'development' && event.level === 'query') {
-          console.log(event.query.sql)
-          console.log(event.query.parameters)
+          if (event.query.sql.length > 1000) {
+            console.log('Query too long. Condensing log:')
+            console.log(event.query.sql.slice(0, 100) + '...')
+          } else {
+            console.log(event.query.sql)
+            console.log(event.query.parameters)
+          }
         }
       },
       plugins: [new CamelCasePlugin()]

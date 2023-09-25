@@ -2,12 +2,12 @@ import { Static, Type } from '@sinclair/typebox'
 import { getDB } from '../../db/db'
 import { randomUUID } from 'crypto'
 import type { FastifyPluginAsync } from 'fastify'
-import type { LoginReplyType } from './login'
-import { LoginReply } from './login'
 import { getAuthInfo } from '../../util/getAuthInfo'
 import type { FastifySchemaWithSwagger } from '../constants'
 import { getUserInfoById } from '../../db/queries/getUserInfoById'
 import { setAuthCookie } from './authCookie'
+import type { LoginReplyType } from '../models/auth'
+import { LoginReply } from '../models/auth'
 
 /**********************************************************************
  * Typings
@@ -103,12 +103,17 @@ export const LoginByMasquerade:FastifyPluginAsync = async (fastify) => {
       // Step 4: Set the authentication cookie
       setAuthCookie(reply, { ...newSession, loginSessionId: newSession.id })
 
+      const masqueradingPanfactumRole = masqueradingUserRole?.panfactumRole
+      if (masqueradingPanfactumRole === null) {
+        throw new Error('The masqueradingPanfactumRole can never be null')
+      }
+
       return {
         loginSessionId: newSession.id,
         userId: newSession.userId,
         panfactumRole: userRole.panfactumRole,
         masqueradingUserId: masqueradingUserRole?.id,
-        masqueradingPanfactumRole: masqueradingUserRole?.panfactumRole,
+        masqueradingPanfactumRole,
         organizations: targetUserInfo.organizations,
         firstName: targetUserInfo.firstName,
         lastName: targetUserInfo.lastName,

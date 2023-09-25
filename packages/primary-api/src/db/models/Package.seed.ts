@@ -1,10 +1,16 @@
 import { faker } from '@faker-js/faker'
 import type { PackageTable } from './Package'
-import type { OrganizationTable } from './Organization'
 import { getDB } from '../db'
+import type { OrganizationTableSeed } from './Organization.seed'
+import type { Selectable } from 'kysely'
 
-export function createRandomPackage (org: OrganizationTable): PackageTable {
+export type PackageTableSeed = Selectable<PackageTable>
+
+export function createRandomPackage (org: OrganizationTableSeed): PackageTableSeed {
   const createdAt = faker.date.soon({ days: 100, refDate: org.createdAt })
+  const updatedAt = faker.date.soon({ days: 100, refDate: createdAt })
+  const archivedAt = faker.datatype.boolean(0.80) ? null : faker.date.soon({ days: 100, refDate: updatedAt })
+  const deletedAt = archivedAt === null ? null : faker.datatype.boolean(0.50) ? null : faker.date.soon({ days: 100, refDate: archivedAt })
   return {
     id: faker.string.uuid(),
     organizationId: org.id,
@@ -15,11 +21,13 @@ export function createRandomPackage (org: OrganizationTable): PackageTable {
     documentationUrl: faker.datatype.boolean() ? null : `https://${faker.internet.domainName()}`,
     packageType: faker.helpers.arrayElement(['node', 'oci']),
     createdAt,
-    updatedAt: faker.date.soon({ days: 100, refDate: createdAt })
+    updatedAt,
+    archivedAt,
+    deletedAt
   }
 }
 
-export async function seedPackageTable (organizations: OrganizationTable[], maxPerOrg = 10) {
+export async function seedPackageTable (organizations: OrganizationTableSeed[], maxPerOrg = 10) {
   const teamOrgs = organizations.filter(org => !org.isUnitary)
   const packages = teamOrgs.map(org => {
     return [...Array(faker.number.int({ min: 1, max: maxPerOrg })).keys()]

@@ -2,23 +2,29 @@ import type { UserTable } from './User'
 import { faker } from '@faker-js/faker'
 import { createPasswordHash, createPasswordSalt } from '../../util/password'
 import { getDB } from '../db'
+import type { Selectable } from 'kysely'
 
-export function createDevAdminUser (): UserTable {
+export type UserTableSeed = Selectable<UserTable>
+
+export function createDevAdminUser (): UserTableSeed {
   const salt = createPasswordSalt()
   const hash = createPasswordHash('password', salt)
+  const createdAt = faker.date.between({ from: '2020-01-01T00:00:00.000Z', to: '2023-01-01T00:00:00.000Z' })
   return {
     id: faker.string.uuid(),
     email: 'dev@panfactum.com',
     firstName: 'Panfactum',
     lastName: 'Developer',
-    createdAt: faker.date.between({ from: '2020-01-01T00:00:00.000Z', to: '2023-01-01T00:00:00.000Z' }),
+    createdAt,
+    updatedAt: createdAt,
     passwordHash: hash,
     passwordSalt: salt,
-    panfactumRole: 'admin'
+    panfactumRole: 'admin',
+    deletedAt: null
   }
 }
 
-export function createRandomUser (emailCache: Set<string>): UserTable {
+export function createRandomUser (emailCache: Set<string>): UserTableSeed {
   let email = faker.internet.email().toLowerCase()
   while (emailCache.has(email)) {
     email = faker.internet.email().toLowerCase()
@@ -27,15 +33,22 @@ export function createRandomUser (emailCache: Set<string>): UserTable {
 
   const salt = createPasswordSalt()
   const hash = createPasswordHash('password', salt)
+  const createdAt = faker.date.between({ from: '2020-01-01T00:00:00.000Z', to: '2023-01-01T00:00:00.000Z' })
+  const deletedAt = faker.datatype.boolean(0.95) ? null : faker.date.future({ years: 1, refDate: createdAt })
+  const updatedAt = deletedAt === null
+    ? faker.date.soon({ days: 100, refDate: createdAt })
+    : faker.date.between({ from: createdAt, to: deletedAt })
   return {
     id: faker.string.uuid(),
     email,
     firstName: faker.person.firstName(),
     lastName: faker.person.firstName(),
-    createdAt: faker.date.between({ from: '2020-01-01T00:00:00.000Z', to: '2023-01-01T00:00:00.000Z' }),
+    createdAt,
     passwordHash: hash,
     passwordSalt: salt,
-    panfactumRole: null
+    panfactumRole: null,
+    deletedAt,
+    updatedAt
   }
 }
 

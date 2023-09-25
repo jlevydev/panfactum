@@ -42,7 +42,7 @@ export const UserOrganizationsRoute:FastifyPluginAsync = async (fastify) => {
           'organization.isUnitary as isUnitary'
         ])
         .where('userOrganization.userId', '=', userId)
-        .where('userOrganization.active', '=', true)
+        .where('userOrganization.deletedAt', 'is not', null)
         .execute()
     }
   )

@@ -1,11 +1,13 @@
 import { faker } from '@faker-js/faker'
 import type { UserLoginSession } from './UserLoginSession'
-import type { UserTable } from './User'
 import { getDB } from '../db'
+import type { UserTableSeed } from './User.seed'
 
-export function createRandomUserLoginSession (users: UserTable[]): UserLoginSession {
+export function createRandomUserLoginSession (users: UserTableSeed[]): UserLoginSession {
   const user = faker.helpers.arrayElement(users)
-  const createdAt = faker.date.future({ years: 2, refDate: user.createdAt })
+  const createdAt = user.deletedAt !== null
+    ? faker.date.between({ from: user.createdAt, to: user.deletedAt })
+    : faker.date.future({ years: 2, refDate: user.createdAt })
   return {
     id: faker.string.uuid(),
     userId: user.id,
@@ -15,7 +17,7 @@ export function createRandomUserLoginSession (users: UserTable[]): UserLoginSess
   }
 }
 
-export async function seedUserLoginSessionTable (users: UserTable[], count = 200) {
+export async function seedUserLoginSessionTable (users: UserTableSeed[], count = 200) {
   let runningSessionCount = 0
   while (runningSessionCount < count) {
     const nextBatchSessions = Math.min(10000, count - runningSessionCount)

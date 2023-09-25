@@ -7,11 +7,11 @@ import { StringEnum } from '../util/customTypes'
  * ********************************************/
 
 export const Pagination = {
-  page: Type.Optional(Type.Integer({ minimum: 0, default: 0, description: 'This is a big test' })),
-  perPage: Type.Optional(Type.Integer({ minimum: 1, maximum: 100, default: 25 }))
+  page: Type.Optional(Type.Integer({ minimum: 0, default: 0, description: 'Page for pagination' })),
+  perPage: Type.Optional(Type.Integer({ minimum: 1, maximum: 100, default: 25, description: 'Number of results per page' }))
 }
 
-export function createSortParam (sortFields: ReturnType<typeof StringEnum> = StringEnum([])) {
+export function createSortParam (sortFields: ReturnType<typeof StringEnum> = StringEnum([], 'The field to sort by')) {
   return {
     sortField: Type.Optional(sortFields),
     sortOrder: Type.Optional(StringEnum(['ASC', 'DESC'], 'DESC'))
@@ -25,7 +25,7 @@ export function createFilterParam (filters: {[name: string]: TSchema} = {}) {
   }
 }
 
-export function createQueryString (filters: {[name: string]: TSchema} = {}, sortFields: ReturnType<typeof StringEnum> = StringEnum([])) {
+export function createQueryString (filters: {[name: string]: TSchema} = {}, sortFields: ReturnType<typeof StringEnum> = StringEnum([], 'The field to sort by')) {
   return Type.Object({
     ...createFilterParam(filters),
     ...createSortParam(sortFields),

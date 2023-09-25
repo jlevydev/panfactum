@@ -1,23 +1,16 @@
 import Button from '@mui/material/Button'
-import type { UserType } from '@panfactum/primary-api'
-import * as dayjs from 'dayjs'
-import relativeTime from 'dayjs/plugin/relativeTime'
+import type { GetUsersReplyType } from '@panfactum/primary-api'
 import {
-  List,
   DatagridConfigurable,
   TextField,
   EmailField,
   FunctionField,
   RaRecord,
   useLogin,
-  SelectColumnsButton, TopToolbar, NumberField
+  SelectColumnsButton, TopToolbar, NumberField, InfiniteList
 } from 'react-admin'
-
-dayjs.extend(relativeTime)
-
-interface IUserListProps {
-  resource: 'allUsers' | 'users'
-}
+import type { ArrayElement } from '@/lib/util/ArrayElement'
+import TimeFromNowField from '@/components/time/TimeFromNowField'
 
 function UserListActions () {
   return (
@@ -27,25 +20,25 @@ function UserListActions () {
   )
 }
 
-export default function UserList (props: IUserListProps) {
-  const { resource } = props
+export default function AllUserList () {
   const login = useLogin()
   const onMasqueradeClick = (targetUserId: string) => {
     void login({ loginMethod: 'masquerade', targetUserId }, '/')
       .catch(console.error)
   }
   return (
-    <List
-      resource={resource}
+    <InfiniteList
+      resource="allUsers"
       actions={<UserListActions/>}
+      perPage={25}
     >
       <DatagridConfigurable
-        rowClick="edit"
-        omit={['ID']}
+        rowClick={(id) => `${id}/basic`}
+        omit={['id']}
       >
         <TextField
           source="id"
-          label="ID"
+          label="id"
         />
         <TextField
           source="firstName"
@@ -66,11 +59,7 @@ export default function UserList (props: IUserListProps) {
         <FunctionField
           source="createdAt"
           label="Created At"
-          render={(record: UserType) => (
-            <div>
-              {dayjs.unix(record.createdAt).fromNow()}
-            </div>
-          )}
+          render={(record: ArrayElement<GetUsersReplyType['data']>) => <TimeFromNowField unixSeconds={record.createdAt}/>}
         />
         <FunctionField
           label="Masquerade"
@@ -78,6 +67,7 @@ export default function UserList (props: IUserListProps) {
             <Button
               className="bg-primary"
               variant="contained"
+              size="small"
               onClick={(e) => {
                 e.stopPropagation()
                 onMasqueradeClick(record.id)
@@ -88,6 +78,6 @@ export default function UserList (props: IUserListProps) {
           )}
         />
       </DatagridConfigurable>
-    </List>
+    </InfiniteList>
   )
 }

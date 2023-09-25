@@ -30,6 +30,12 @@ export const createCustomDataProvider = (_: string | undefined):DataProvider => 
   const resourceConfigs: {[resource: string]: IResourceConfig} = {
     allUsers: {
       apiPath: '/v1/admin/users'
+    },
+    allOrgMemberships: {
+      apiPath: '/v1/admin/organization-memberships'
+    },
+    allLoginSessions: {
+      apiPath: '/v1/admin/login-sessions'
     }
   }
 
@@ -109,7 +115,7 @@ export const createCustomDataProvider = (_: string | undefined):DataProvider => 
         ...data
       }])
 
-      return { data: results }
+      return { data: results[0] }
     },
 
     updateMany: async (resource, params): Promise<UpdateManyResult> => {

@@ -8,7 +8,10 @@ load('packages/tilt/common.tiltfile', 'REGISTRY', 'NAMESPACE', 'TF_ROOT_DIR')
 ################################################
 # INIT
 ################################################
-allow_k8s_contexts("development-primary")
+allow_k8s_contexts('development-primary')
+if k8s_context() != 'development-primary':
+  fail("You can only use the 'development-primary' context when using Tilt. Switch by running 'kubectx development-primary'")
+
 default_registry (REGISTRY)
 update_settings ( max_parallel_updates = 3 , k8s_upsert_timeout_secs = 900 , suppress_unused_image_warnings = None )
 

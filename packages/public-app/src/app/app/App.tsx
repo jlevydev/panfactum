@@ -1,13 +1,13 @@
-import { Admin, Resource, CustomRoutes } from 'react-admin'
+import { Admin, CustomRoutes } from 'react-admin'
 import { Navigate, Route, useParams } from 'react-router-dom'
 import { useMemo } from 'react'
 
 import { customAuthProvider } from '@/lib/providers/auth/authProvider'
 import CustomLayout from '@/app/app/layout/CustomLayout'
 import { createCustomDataProvider } from '@/lib/providers/data/dataProvider'
-import UserList from '@/app/app/users/UserList'
 import { queryClient } from '@/lib/clients/query/client'
-import UserEdit from '@/app/app/users/UserEdit'
+import AllUserRouter from '@/app/app/allUsers/AllUserRouter'
+import { theme } from './theme'
 
 function LoginRedirect () {
   return (
@@ -29,6 +29,9 @@ export default function App () {
     return null
   }
 
+  // TODO: If the org id is one that the user does not have access to, redirect to their personal
+  // organization
+
   return (
 
     <Admin
@@ -40,19 +43,18 @@ export default function App () {
       requireAuth
       basename={`/o/${orgId}`}
       disableTelemetry
+      theme={theme}
     >
-      <Resource
-        name="allUsers"
-        list={UserList}
-        edit={UserEdit}
-        recordRepresentation="name"
-      />
       <CustomRoutes>
         <Route
-          path="/"
+          path="allUsers/*"
+          element={<AllUserRouter/>}
+        />
+        <Route
+          index
           element={(
             <Navigate
-              to={`/o/${orgId}/allUsers`}
+              to="allUsers"
               replace={true}
             />
           )}
