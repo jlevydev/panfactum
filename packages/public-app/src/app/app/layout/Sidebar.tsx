@@ -1,4 +1,4 @@
-import { Menu } from 'react-admin'
+import { Menu, useSidebarState } from 'react-admin'
 import type { ReactElement } from 'react'
 import { useIdentityQuery } from '@/lib/providers/auth/authProvider'
 import OrganizationSelector from '@/app/app/layout/OrganizationSelector'
@@ -13,13 +13,19 @@ import GitHubIcon from '@mui/icons-material/GitHub'
 import SettingsIcon from '@mui/icons-material/Settings'
 import GroupsIcon from '@mui/icons-material/Groups'
 import RecentActorsRoundedIcon from '@mui/icons-material/RecentActorsRounded'
+import CorporateFareIcon from '@mui/icons-material/CorporateFare'
+import InventoryIcon from '@mui/icons-material/Inventory'
+import Tooltip from '@mui/material/Tooltip'
 
 function SidebarLabel ({ label }: {label: string}) {
+  const [open] = useSidebarState()
   return (
     <div className="flex mb-1 mt-3 gap-3">
-      <div className="uppercase text-secondary font-bold ">
-        {label}
-      </div>
+      {open && (
+        <div className="uppercase text-secondary font-bold ">
+          {label}
+        </div>
+      )}
       <div className="border-0 h-0.5 bg-base-300 mx-0 my-3 grow"/>
     </div>
   )
@@ -33,27 +39,35 @@ interface SidebarLinkProps {
 
 function SidebarLink ({ path, text, Icon }: SidebarLinkProps) {
   const matches = useMatch(`${path}/*`)
+  const [open] = useSidebarState()
   return (
-    <Link
-      to={path}
-      className="no-underline text-black"
+    <Tooltip
+      title={text}
+      disableFocusListener={open}
+      disableHoverListener={open}
     >
-      <MenuItem
-        className="flex px-2"
-        selected={matches !== null}
+      <Link
+        to={path}
+        className="no-underline text-black"
       >
-        {Icon && Icon}
-        <div className="pl-4">
-          {text}
-        </div>
-      </MenuItem>
-    </Link>
+        <MenuItem
+          className="flex px-2"
+          selected={matches !== null}
+        >
+          {Icon && Icon}
+          <div className="pl-4">
+            {text}
+          </div>
+        </MenuItem>
+      </Link>
+    </Tooltip>
   )
 }
 
 export default function Sidebar () {
   const { orgId } = useParams()
   const { data: identity } = useIdentityQuery()
+  const [open] = useSidebarState()
 
   if (orgId === undefined || identity === undefined) {
     return null
@@ -103,8 +117,8 @@ export default function Sidebar () {
     permissionsSet.has('read:organization'))
 
   return (
-    <Menu className="px-2">
-      <OrganizationSelector/>
+    <Menu className="px-2 h-full bg-base-100 m-0 pt-4">
+      <OrganizationSelector collapsed={!open}/>
       {(shouldShowSubscriptions || shouldShowSubscriptionBilling) && <SidebarLabel label="Purchasing"/>}
       { shouldShowSubscriptions && (
         <SidebarLink
@@ -174,6 +188,20 @@ export default function Sidebar () {
           path={`/o/${orgId}/allUsers`}
           text="Users"
           Icon={<RecentActorsRoundedIcon/>}
+        />
+      )}
+      {shouldShowAdminLinks && (
+        <SidebarLink
+          path={`/o/${orgId}/allOrgs`}
+          text="Orgs"
+          Icon={<CorporateFareIcon/>}
+        />
+      )}
+      {shouldShowAdminLinks && (
+        <SidebarLink
+          path={`/o/${orgId}/allPackages`}
+          text="Packages"
+          Icon={<InventoryIcon/>}
         />
       )}
     </Menu>

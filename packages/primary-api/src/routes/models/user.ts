@@ -11,4 +11,4 @@ export const UserDeletedAt = Type.Union([
   Type.Integer({ minimum: 0 }),
   Type.Null()
 ], { description: 'When the user was deleted. Unix timestamp in seconds. `null` if not deleted.' })
-export const UserIsActive = Type.Boolean({ description: 'Whether the user is still active. Derived from deletedAt.' })
+export const UserIsDeleted = Type.Boolean({ description: 'Whether the user has been deleted. Derived from deletedAt.' })

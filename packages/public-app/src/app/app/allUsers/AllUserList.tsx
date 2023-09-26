@@ -1,5 +1,4 @@
 import Button from '@mui/material/Button'
-import type { GetUsersReplyType } from '@panfactum/primary-api'
 import {
   DatagridConfigurable,
   TextField,
@@ -9,8 +8,8 @@ import {
   useLogin,
   SelectColumnsButton, TopToolbar, NumberField, InfiniteList
 } from 'react-admin'
-import type { ArrayElement } from '@/lib/util/ArrayElement'
 import TimeFromNowField from '@/components/time/TimeFromNowField'
+import type { AllUserResultType } from '@panfactum/primary-api'
 
 function UserListActions () {
   return (
@@ -59,7 +58,7 @@ export default function AllUserList () {
         <FunctionField
           source="createdAt"
           label="Created At"
-          render={(record: ArrayElement<GetUsersReplyType['data']>) => <TimeFromNowField unixSeconds={record.createdAt}/>}
+          render={(record: AllUserResultType) => <TimeFromNowField unixSeconds={record.createdAt}/>}
         />
         <FunctionField
           label="Masquerade"

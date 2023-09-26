@@ -7,12 +7,14 @@ import { useNavigate, useParams } from 'react-router-dom'
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown'
 import AddIcon from '@mui/icons-material/Add'
 import { useIdentityQuery } from '@/lib/providers/auth/authProvider'
+import Tooltip from '@mui/material/Tooltip'
 
-export default function OrganizationSelector () {
+export default function OrganizationSelector (props: {collapsed?: boolean}) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
   const { orgId } = useParams()
   const navigate = useNavigate()
   const { data: identity } = useIdentityQuery()
+  const { collapsed = false } = props
 
   // The organizations should be shorted alphabetically BUT
   // the personal organization should always be placed at the top
@@ -47,19 +49,29 @@ export default function OrganizationSelector () {
   }
 
   return (
-    <div className="pb-4">
-      <Button
-        id="organization-button"
-        aria-controls={open ? 'organization-selector' : undefined}
-        aria-haspopup="true"
-        aria-expanded={open ? 'true' : undefined}
-        onClick={handleClick}
-        className="w-full flex justify-between bg-primary"
-        variant="contained"
+    <div>
+      <Tooltip
+        title="Organization Selector"
+        disableHoverListener={!collapsed}
+        disableFocusListener={!collapsed}
       >
-        {activeOrgName}
-        <ArrowDropDownIcon/>
-      </Button>
+        <Button
+          id="organization-button"
+          aria-controls={open ? 'organization-selector' : undefined}
+          aria-haspopup="true"
+          aria-expanded={open ? 'true' : undefined}
+          onClick={handleClick}
+          className={`${collapsed ? 'p-2' : 'w-full'} min-w-0 flex justify-between bg-primary`}
+          variant="contained"
+        >
+          {!collapsed && (
+            <div>
+              {activeOrgName}
+            </div>
+          )}
+          <ArrowDropDownIcon/>
+        </Button>
+      </Tooltip>
       <Menu
         id="organization-selector"
         MenuListProps={{

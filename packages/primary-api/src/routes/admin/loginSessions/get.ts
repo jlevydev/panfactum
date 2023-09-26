@@ -25,7 +25,7 @@ import {
 /**********************************************************************
  * Typings
  **********************************************************************/
-const LoginSession = Type.Object({
+const Result = Type.Object({
   id: AuthLoginSessionId,
   userId: UserId,
   masqueradingUserId: Type.Union([
@@ -53,7 +53,7 @@ const QueryString = createQueryString(
 )
 type QueryStringType = GetQueryString<typeof sortFields, typeof filters>
 
-const Reply = createGetReplyType(LoginSession)
+const Reply = createGetReplyType(Result)
 type ReplyType = Static<typeof Reply>
 
 /**********************************************************************
@@ -89,7 +89,7 @@ export const GetLoginSessions:FastifyPluginAsync = async (fastify) => {
 
       const db = await getDB()
 
-      const sessions = await db.selectFrom('userLoginSession')
+      const results = await db.selectFrom('userLoginSession')
         .select([
           'userLoginSession.id as id',
           'userLoginSession.userId as userId',
@@ -107,14 +107,14 @@ export const GetLoginSessions:FastifyPluginAsync = async (fastify) => {
         .execute()
 
       return {
-        data: sessions.map(sessions => ({
-          ...sessions,
-          createdAt: dateToUnixSeconds(sessions.createdAt),
-          lastApiCallAt: sessions.lastApiCallAt !== null ? dateToUnixSeconds(sessions.lastApiCallAt) : null
+        data: results.map(result => ({
+          ...result,
+          createdAt: dateToUnixSeconds(result.createdAt),
+          lastApiCallAt: result.lastApiCallAt !== null ? dateToUnixSeconds(result.lastApiCallAt) : null
         })),
         pageInfo: {
           hasPreviousPage: page !== 0,
-          hasNextPage: sessions.length >= perPage
+          hasNextPage: results.length >= perPage
         }
       }
     }

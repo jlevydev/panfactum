@@ -31,6 +31,21 @@ export const createCustomDataProvider = (_: string | undefined):DataProvider => 
     allUsers: {
       apiPath: '/v1/admin/users'
     },
+    allOrgs: {
+      apiPath: '/v1/admin/organizations'
+    },
+    allPackages: {
+      apiPath: '/v1/admin/packages'
+    },
+    allPackageVersions: {
+      apiPath: '/v1/admin/package-versions'
+    },
+    allPackageDownloads: {
+      apiPath: '/v1/admin/package-downloads'
+    },
+    allOrgRoles: {
+      apiPath: '/v1/admin/organization-roles'
+    },
     allOrgMemberships: {
       apiPath: '/v1/admin/organization-memberships'
     },

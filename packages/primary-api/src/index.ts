@@ -17,4 +17,7 @@ if (FUNCTION === 'http-server') {
 
 export type LoginReturnType = Static<typeof LoginReply>
 export type { UserOrganizationsReplyType } from './routes/user/organizations'
-export type { GetUsersReplyType } from './routes/admin/users/get'
+export type { ReplyType } from './routes/admin/users/get'
+export type { ResultType as AllOrganizationResultType } from './routes/admin/organizations/get'
+export type { ResultType as AllPackageResultType } from './routes/admin/packages/get'
+export type { ResultType as AllUserResultType } from './routes/admin/users/get'

@@ -74,7 +74,7 @@ const updateDB = async () => {
       }),
       log (event) {
         if (NODE_ENV === 'development' && event.level === 'query') {
-          if (event.query.sql.length > 1000) {
+          if (event.query.sql.length > 5000) {
             console.log('Query too long. Condensing log:')
             console.log(event.query.sql.slice(0, 100) + '...')
           } else {

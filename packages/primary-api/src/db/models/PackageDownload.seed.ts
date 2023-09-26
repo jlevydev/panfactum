@@ -13,8 +13,7 @@ export function createRandomPackageDownload (pkg: PackageVersionTableSeed, users
     : faker.date.between({ from: pkg.createdAt, to: pkg.deletedAt })
   return {
     id: faker.string.uuid(),
-    packageId: pkg.packageId,
-    versionTag: pkg.versionTag,
+    versionId: pkg.id,
     userId: faker.helpers.arrayElement(users).id,
     createdAt,
     ip: faker.internet.ipv4()

@@ -1,6 +1,5 @@
 import { getDB } from '../db'
 import { jsonArrayFrom } from 'kysely/helpers/postgres'
-import { sql } from 'kysely'
 import type { OrganizationRolePermissionTable } from '../models/OrganizationRolePermission'
 
 export async function getUserInfoById (id: string) {
@@ -20,13 +19,13 @@ export async function getUserInfoById (id: string) {
           .innerJoin('organizationRole', 'userOrganization.roleId', 'organizationRole.id')
           .innerJoin('user', 'user.id', 'userOrganization.userId')
           .innerJoin('organizationRolePermission', 'organizationRole.id', 'organizationRolePermission.organizationRoleId')
-          .select([
+          .select(eb => [
             'organization.id as id',
             'organization.name as name',
             'organization.isUnitary as isUnitary',
             'userOrganization.roleId as roleId',
             'organizationRole.name as roleName',
-            sql.raw<OrganizationRolePermissionTable['permission'][]>('coalesce(json_agg(organization_role_permission.permission), \'[]\')').as('permissions')
+            eb.fn.agg<OrganizationRolePermissionTable['permission'][]>('array_agg', ['organizationRolePermission.permission']).as('permissions')
           ])
           .where('user.id', '=', id)
           .groupBy([

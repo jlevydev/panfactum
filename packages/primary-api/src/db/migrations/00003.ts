@@ -34,12 +34,11 @@ export async function up (db: Kysely<Database>): Promise<void> {
   await db.schema
     .createTable('packageDownload')
     .addColumn('id', 'uuid', (col) => col.primaryKey().notNull().defaultTo(sql`uuid_generate_v4()`))
-    .addColumn('packageId', 'uuid', (col) => col.references('package.id').notNull())
-    .addColumn('versionTag', 'text', (col) => col.notNull())
+    .addColumn('versionId', 'uuid', (col) => col.references('packageVersion.id').notNull())
     .addColumn('userId', 'uuid', (col) => col.references('user.id').notNull())
     .addColumn('createdAt', 'timestamptz', (col) => col.notNull().defaultTo(sql`CURRENT_TIMESTAMP`))
     .addColumn('ip', 'text', (col) => col.notNull())
-    .addUniqueConstraint('packageDownloadElements', ['packageId', 'versionTag', 'userId', 'createdAt'])
+    .addUniqueConstraint('packageDownloadElements', ['versionId', 'userId', 'createdAt'])
     .execute()
 
   await db.schema

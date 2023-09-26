@@ -8,6 +8,8 @@ import { createCustomDataProvider } from '@/lib/providers/data/dataProvider'
 import { queryClient } from '@/lib/clients/query/client'
 import AllUserRouter from '@/app/app/allUsers/AllUserRouter'
 import { theme } from './theme'
+import AllOrgRouter from '@/app/app/allOrgs/AllOrgRouter'
+import AllPackageRouter from '@/app/app/allPackages/AllPackageRouter'
 
 function LoginRedirect () {
   return (
@@ -49,6 +51,14 @@ export default function App () {
         <Route
           path="allUsers/*"
           element={<AllUserRouter/>}
+        />
+        <Route
+          path="allOrgs/*"
+          element={<AllOrgRouter/>}
+        />
+        <Route
+          path="allPackages/*"
+          element={<AllPackageRouter/>}
         />
         <Route
           index

@@ -12,7 +12,9 @@ import { getDB } from '../../../db/db'
 import { StringEnum } from '../../../util/customTypes'
 import { dateToUnixSeconds } from '../../../util/dateToUnixSeconds'
 import {
-  UserId
+  UserEmail,
+  UserFirstName,
+  UserId, UserLastName
 } from '../../models/user'
 import {
   OrganizationId, OrganizationIsUnitary, OrganizationMembershipCreatedAt, OrganizationMembershipDeletedAt,
@@ -23,9 +25,12 @@ import { Type } from '@sinclair/typebox'
 /**********************************************************************
  * Typings
  **********************************************************************/
-const OrganizationMembership = Type.Object({
+const Result = Type.Object({
   id: Type.String(),
   userId: UserId,
+  userFirstName: UserFirstName,
+  userLastName: UserLastName,
+  userEmail: UserEmail,
   organizationId: OrganizationId,
   organizationName: OrganizationName,
   roleId: OrganizationRoleId,
@@ -36,6 +41,10 @@ const OrganizationMembership = Type.Object({
 })
 
 const sortFields = StringEnum([
+  'userLastName',
+  'userFirstName',
+  'userEmail',
+  'roleName',
   'userId',
   'organizationId',
   'organizationName',
@@ -54,7 +63,7 @@ const QueryString = createQueryString(
 )
 type QueryStringType = GetQueryString<typeof sortFields, typeof filters>
 
-const Reply = createGetReplyType(OrganizationMembership)
+const Reply = createGetReplyType(Result)
 type ReplyType = Static<typeof Reply>
 
 /**********************************************************************
@@ -92,9 +101,10 @@ export const GetOrganizationMemberships:FastifyPluginAsync = async (fastify) => 
 
       const db = await getDB()
 
-      const memberships = await db.selectFrom('userOrganization')
+      const results = await db.selectFrom('userOrganization')
         .innerJoin('organization', 'organization.id', 'userOrganization.organizationId')
         .innerJoin('organizationRole', 'organizationRole.id', 'userOrganization.roleId')
+        .innerJoin('user', 'user.id', 'userOrganization.userId')
         .select([
           'userOrganization.id as id',
           'userOrganization.userId as userId',
@@ -104,7 +114,10 @@ export const GetOrganizationMemberships:FastifyPluginAsync = async (fastify) => 
           'organization.name as organizationName',
           'organization.isUnitary as isUnitary',
           'organizationRole.id as roleId',
-          'organizationRole.name as roleName'
+          'organizationRole.name as roleName',
+          'user.firstName as userFirstName',
+          'user.lastName as userLastName',
+          'user.email as userEmail'
         ])
         .$if(ids !== undefined, qb => qb.where('userOrganization.id', 'in', ids ?? []))
         .$if(userId !== undefined, qb => qb.where('userOrganization.userId', '=', userId ?? ''))
@@ -118,15 +131,15 @@ export const GetOrganizationMemberships:FastifyPluginAsync = async (fastify) => 
         .execute()
 
       return {
-        data: memberships.map(membership => ({
-          ...membership,
-          createdAt: dateToUnixSeconds(membership.createdAt),
-          deletedAt: membership.deletedAt !== null ? dateToUnixSeconds(membership.deletedAt) : null,
-          isActive: membership.deletedAt === null
+        data: results.map(result => ({
+          ...result,
+          createdAt: dateToUnixSeconds(result.createdAt),
+          deletedAt: result.deletedAt !== null ? dateToUnixSeconds(result.deletedAt) : null,
+          isActive: result.deletedAt === null
         })),
         pageInfo: {
           hasPreviousPage: page !== 0,
-          hasNextPage: memberships.length >= perPage
+          hasNextPage: results.length >= perPage
         }
       }
     }

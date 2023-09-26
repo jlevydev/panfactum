@@ -49,6 +49,7 @@ export default function AllUserLoginSessions (props: IAllUserLoginSessions) {
         actions={<UserListActions/>}
         empty={<div>No associated sessions</div>}
         perPage={25}
+        component={'div'}
       >
         <Datagrid
           bulkActionButtons={false}

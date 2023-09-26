@@ -15,7 +15,7 @@ import {
   UserCreatedAt, UserDeletedAt,
   UserEmail,
   UserFirstName,
-  UserId, UserIsActive,
+  UserId, UserIsDeleted,
   UserLastName,
   UserNumberOfOrgs,
   UserUpdatedAt
@@ -25,7 +25,7 @@ import {
  * Typings
  **********************************************************************/
 
-export const User = Type.Object({
+const Result = Type.Object({
   id: UserId,
   firstName: UserFirstName,
   lastName: UserLastName,
@@ -34,10 +34,9 @@ export const User = Type.Object({
   createdAt: UserCreatedAt,
   updatedAt: UserUpdatedAt,
   deletedAt: UserDeletedAt,
-  isActive: UserIsActive
+  isDeleted: UserIsDeleted
 })
-
-export type UserType = Static<typeof User>
+export type ResultType = Static<typeof Result>
 
 const sortFields = StringEnum([
   'id',
@@ -45,31 +44,34 @@ const sortFields = StringEnum([
   'lastName',
   'email',
   'createdAt',
-  'numberOfOrgs'
+  'numberOfOrgs',
+  'isDeleted'
 ], 'The field to sort by', 'id')
-const filters = {}
-export const GetUsersQueryString = createQueryString(
+const filters = {
+  isDeleted: Type.Boolean({ description: 'If provided, filter the results by whether the user has been deleted' })
+}
+const QueryString = createQueryString(
   filters,
   sortFields
 )
-export type GetUsersQueryStringType = GetQueryString<typeof sortFields, typeof filters>
+type QueryStringType = GetQueryString<typeof sortFields, typeof filters>
 
-export const GetUsersReply = createGetReplyType(User)
-export type GetUsersReplyType = Static<typeof GetUsersReply>
+const Reply = createGetReplyType(Result)
+export type ReplyType = Static<typeof Reply>
 
 /**********************************************************************
  * Route Logic
  **********************************************************************/
 
 export const GetUsersRoute:FastifyPluginAsync = async (fastify) => {
-  void fastify.get<{Querystring: GetUsersQueryStringType, Reply: GetUsersReplyType}>(
+  void fastify.get<{Querystring: QueryStringType, Reply: ReplyType}>(
     '/users',
     {
       schema: {
         description: 'Queries all user records and returns a list of users based on the given filters',
-        querystring: GetUsersQueryString,
+        querystring: QueryString,
         response: {
-          200: GetUsersReply,
+          200: Reply,
           ...DEFAULT_SCHEMA_CODES
         },
         security: [{ cookie: [] }]
@@ -83,13 +85,14 @@ export const GetUsersRoute:FastifyPluginAsync = async (fastify) => {
         sortOrder,
         page,
         perPage,
-        ids
+        ids,
+        isDeleted
       } = req.query
 
       const db = await getDB()
-      const users = await db.selectFrom('user')
+      const results = await db.selectFrom('user')
         .innerJoin('userOrganization', 'user.id', 'userOrganization.userId')
-        .select([
+        .select(eb => [
           'user.id as id',
           'user.firstName as firstName',
           'user.lastName as lastName',
@@ -97,27 +100,29 @@ export const GetUsersRoute:FastifyPluginAsync = async (fastify) => {
           'user.createdAt as createdAt',
           'user.updatedAt as updatedAt',
           'user.deletedAt as deletedAt',
+          eb('user.deletedAt', 'is not', null).as('isDeleted'),
           db.fn.count<number>('userOrganization.organizationId').as('numberOfOrgs')
         ])
         .where('userOrganization.deletedAt', 'is', null)
         .groupBy('user.id')
         .$if(Boolean(ids), qb => qb.where('user.id', 'in', ids ?? []))
+        .$if(isDeleted !== undefined, qb => qb.where('user.deletedAt', isDeleted ? 'is not' : 'is', null))
         .orderBy(`${sortField}`, convertSortOrder(sortOrder))
         .$if(sortField !== 'id', qb => qb.orderBy('id')) // ensures stable sort
         .limit(perPage)
         .offset(page * perPage)
         .execute()
       return {
-        data: users.map(user => ({
-          ...user,
-          createdAt: dateToUnixSeconds(user.createdAt),
-          updatedAt: dateToUnixSeconds(user.updatedAt),
-          deletedAt: user.deletedAt !== null ? dateToUnixSeconds(user.deletedAt) : null,
-          isActive: user.deletedAt === null
+        data: results.map(result => ({
+          ...result,
+          createdAt: dateToUnixSeconds(result.createdAt),
+          updatedAt: dateToUnixSeconds(result.updatedAt),
+          deletedAt: dateToUnixSeconds(result.deletedAt),
+          isDeleted: Boolean(result.isDeleted)
         })),
         pageInfo: {
           hasPreviousPage: page !== 0,
-          hasNextPage: users.length >= perPage
+          hasNextPage: results.length >= perPage
         }
       }
     }

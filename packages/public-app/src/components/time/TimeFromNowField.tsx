@@ -8,11 +8,11 @@ dayjs.extend(duration)
 dayjs.extend(relativeTime)
 dayjs.extend(utc)
 
-export default function TimeFromNowField (props: {unixSeconds?: number | null}) {
-  const { unixSeconds } = props
+export default function TimeFromNowField (props: {unixSeconds?: number | null, className?: string}) {
+  const { unixSeconds, className = '' } = props
   const time = unixSeconds ? dayjs.unix(unixSeconds) : null
   return (
-    <div>
+    <div className={className}>
       {time
         ? (
           <Tooltip title={time.local().format('ddd MM/DD/YYYY hh:mm:ss a Z')}>

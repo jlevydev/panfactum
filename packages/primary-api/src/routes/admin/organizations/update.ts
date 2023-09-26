@@ -4,43 +4,45 @@ import { DEFAULT_SCHEMA_CODES } from '../../constants'
 import { assertPanfactumRoleFromSession } from '../../../util/assertPanfactumRoleFromSession'
 import { getDB } from '../../../db/db'
 import { sql } from 'kysely'
-import { UserDeletedAt, UserEmail, UserFirstName, UserId, UserIsDeleted, UserLastName, UserUpdatedAt } from '../../models/user'
 import { dateToUnixSeconds } from '../../../util/dateToUnixSeconds'
+import {
+  OrganizationDeletedAt, OrganizationId,
+  OrganizationIsDeleted,
+  OrganizationName,
+  OrganizationUpdatedAt
+} from '../../models/organization'
 
 /**********************************************************************
  * Typings
  **********************************************************************/
 
 const Delta = Type.Object({
-  id: UserId,
-  firstName: Type.Optional(UserFirstName),
-  lastName: Type.Optional(UserLastName),
-  email: Type.Optional(UserEmail),
-  isActive: Type.Optional(Type.Boolean({ description: 'Whether the user should be marked active.' }))
+  id: OrganizationId,
+  name: Type.Optional(OrganizationName)
 }, { additionalProperties: true })
-export const UpdateBody = Type.Array(Delta)
-export type UpdateBodyType = Static<typeof UpdateBody>
+const UpdateBody = Type.Array(Delta)
+type UpdateBodyType = Static<typeof UpdateBody>
 
-export const UpdateReply = Type.Array(Type.Composite([
+const UpdateReply = Type.Array(Type.Composite([
   Type.Required(Delta),
   Type.Object({
-    updatedAt: UserUpdatedAt,
-    deletedAt: UserDeletedAt,
-    isActive: UserIsDeleted
+    updatedAt: OrganizationUpdatedAt,
+    deletedAt: OrganizationDeletedAt,
+    isActive: OrganizationIsDeleted
   })
 ]))
-export type UpdateReplyType = Static<typeof UpdateReply>
+type UpdateReplyType = Static<typeof UpdateReply>
 
 /**********************************************************************
  * Route Logic
  **********************************************************************/
 
-export const UpdateUsersRoute:FastifyPluginAsync = async (fastify) => {
+export const UpdateOrganizationsRoute:FastifyPluginAsync = async (fastify) => {
   void fastify.put<{Body: UpdateBodyType, Reply: UpdateReplyType}>(
-    '/users',
+    '/organizations',
     {
       schema: {
-        description: 'Applies a set of user patches and returns the updated user objects',
+        description: 'Applies a set of organization patches and returns the updated org objects',
         body: UpdateBody,
         response: {
           200: UpdateReply,
@@ -55,19 +57,15 @@ export const UpdateUsersRoute:FastifyPluginAsync = async (fastify) => {
       const db = await getDB()
       const results = await Promise.all(req.body.map(userDelta => {
         return db
-          .updateTable('user')
+          .updateTable('organization')
           .set({
-            firstName: userDelta.firstName,
-            lastName: userDelta.lastName,
-            email: userDelta.email,
+            name: userDelta.name,
             updatedAt: sql`NOW()`
           })
           .where('id', '=', userDelta.id)
           .returning(eb => [
             'id',
-            'firstName',
-            'lastName',
-            'email',
+            'name',
             'updatedAt',
             'deletedAt',
             eb('deletedAt', 'is', null).as('isActive')
