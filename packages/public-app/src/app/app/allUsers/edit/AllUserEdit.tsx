@@ -6,10 +6,10 @@ import AllUserOrgs from '@/app/app/allUsers/edit/AllUserOrgs'
 import AllUserSubs from '@/app/app/allUsers/edit/AllUserSubs'
 import AllUserAudit from '@/app/app/allUsers/edit/AllUserAudit'
 import EditItemHeader from '@/components/headers/EditItemHeader'
-import { useAllUserGetOne } from '@/lib/hooks/queries/useAllUserGetOne'
+import { useGetOneAllUser } from '@/lib/hooks/queries/useGetOneAllUser'
 
 function AllUserEditRendered ({ userId }: {userId: string}) {
-  const { data } = useAllUserGetOne(userId)
+  const { data } = useGetOneAllUser(userId)
 
   if (data === undefined) {
     return null // TODO: Loading spinner

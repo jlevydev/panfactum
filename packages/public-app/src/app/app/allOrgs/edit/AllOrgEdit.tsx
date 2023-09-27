@@ -3,11 +3,11 @@ import TabNavigation from '@/components/TabNavigation'
 import AllOrgBasic from '@/app/app/allOrgs/edit/AllOrgBasic'
 import AllOrgMembers from '@/app/app/allOrgs/edit/AllOrgMembers'
 import AllOrgPackages from '@/app/app/allOrgs/edit/AllOrgPackages'
-import { useAllOrganizationGetOne } from '@/lib/hooks/queries/useAllOrganizationGetOne'
+import { useGetOneAllOrganizations } from '@/lib/hooks/queries/useGetOneAllOrganizations'
 import EditItemHeader from '@/components/headers/EditItemHeader'
 
 function AllOrgEditRendered ({ orgId }: {orgId: string}) {
-  const { data } = useAllOrganizationGetOne(orgId)
+  const { data } = useGetOneAllOrganizations(orgId)
 
   if (data === undefined) {
     return null // TODO: Loading spinner

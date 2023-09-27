@@ -8,6 +8,6 @@ import { apiPut } from '@/lib/clients/api/apiFetch'
  * with data provider-specific logic
  * ********************************************/
 
-export async function apiUpdate (path: string, records: Array<RaRecord>): Promise<RaRecord[]> {
-  return apiPut(path, records)
+export async function apiUpdate (path: string, record: RaRecord): Promise<RaRecord> {
+  return apiPut(path, record)
 }

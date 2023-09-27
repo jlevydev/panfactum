@@ -57,7 +57,7 @@ export default function AllOrgRoles (props: IAllOrgRoles) {
           />
           <NumberField
             source="activeAssigneeCount"
-            label="Users"
+            label="Active Users"
           />
         </Datagrid>
       </InfiniteList>

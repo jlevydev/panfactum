@@ -1,9 +1,15 @@
 import {
   BooleanInput, Datagrid, EmailField, FilterButton, FilterForm,
   FunctionField, InfiniteList,
-  TextField
+  TextField, useRecordContext
 } from 'react-admin'
 import TimeFromNowField from '@/components/time/TimeFromNowField'
+import React, { useState } from 'react'
+import { useAdminBasePath } from '@/lib/hooks/navigation/useAdminBasePath'
+import ChangeUserRoleModal from '@/components/modals/ChangeUserRoleModal'
+import { Link } from 'react-router-dom'
+import Button, { ButtonProps } from '@mui/material/Button'
+import type { AllOrganizationMembershipsResultType } from '@panfactum/primary-api'
 
 const Filters = [
   <BooleanInput
@@ -28,6 +34,54 @@ function MemberListActions () {
   )
 }
 
+/*******************************************
+ * Expand Panel
+ * *****************************************/
+function PanelButton (props: ButtonProps) {
+  return (
+    <Button
+      variant="contained"
+      size="small"
+      {...props}
+      className={`py-1 px-2 text-xs normal-case bg-primary ${props.className ?? ''}`}
+    />
+  )
+}
+function Panel () {
+  const membershipRecord = useRecordContext<AllOrganizationMembershipsResultType>()
+  const basePath = useAdminBasePath()
+  const [isRoleModalOpen, setIsRoleModalOpen] = useState(false)
+  const onChangeRoleClick = () => setIsRoleModalOpen(true)
+  const onRoleModalClose = () => setIsRoleModalOpen(false)
+
+  return (
+    <div className="flex flex-wrap gap-4 py-2">
+      <Link to={`${basePath}/allUsers/${membershipRecord.userId}`}>
+        <PanelButton>
+          View User
+        </PanelButton>
+      </Link>
+      <PanelButton onClick={onChangeRoleClick}>
+        Change Role
+      </PanelButton>
+      <PanelButton className="bg-red">
+        Kick
+      </PanelButton>
+      <ChangeUserRoleModal
+        open={isRoleModalOpen}
+        onClose={onRoleModalClose}
+        orgId={membershipRecord.organizationId}
+        currentRoleId={membershipRecord.roleId}
+        membershipId={membershipRecord.id}
+      />
+    </div>
+  )
+}
+
+/*******************************************
+ * List
+ * *****************************************/
+
 interface IAllOrgMemberListProps {
   orgId: string;
 }
@@ -44,8 +98,9 @@ export default function AllOrgMemberList (props: IAllOrgMemberListProps) {
         perPage={25}
       >
         <Datagrid
-          bulkActionButtons={false}
-          rowClick={(id) => `${id}/basic`}
+          rowClick="expand"
+          expand={<Panel/>}
+          expandSingle={true}
         >
           <TextField
             source="userFirstName"
@@ -65,12 +120,12 @@ export default function AllOrgMemberList (props: IAllOrgMemberListProps) {
           />
           <FunctionField
             source="createdAt"
-            label="Joined At"
+            label="Joined"
             render={(record: {createdAt: number}) => <TimeFromNowField unixSeconds={record.createdAt}/>}
           />
           <FunctionField
             source="deletedAt"
-            label="Left At"
+            label="Left"
             render={(record: {id: string, deletedAt: number | null}) => <TimeFromNowField unixSeconds={record.deletedAt}/>}
           />
         </Datagrid>

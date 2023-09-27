@@ -1,5 +1,6 @@
 import TabNavigation from '@/components/TabNavigation'
 import AllUserLoginSessions from '@/app/app/allUsers/edit/AllUserLoginSessions'
+import AllUserPackageDownloads from '@/app/app/allUsers/edit/AllUserPackageDownloads'
 
 interface IAllUserAuditProps {
   userId: string;
@@ -19,7 +20,7 @@ export default function AllUserAudit (props: IAllUserAuditProps) {
           {
             label: 'Package Downloads',
             path: 'downloads',
-            element: <div>Downloads</div>
+            element: <AllUserPackageDownloads userId={props.userId}/>
           }
         ]}
       />

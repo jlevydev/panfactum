@@ -1,4 +1,4 @@
-import Button from '@mui/material/Button'
+import Button, { ButtonProps } from '@mui/material/Button'
 import {
   DatagridConfigurable,
   TextField,
@@ -6,18 +6,66 @@ import {
   FunctionField,
   RaRecord,
   useLogin,
-  SelectColumnsButton, TopToolbar, NumberField, InfiniteList
+  SelectColumnsButton, TopToolbar, InfiniteList, useListContext
 } from 'react-admin'
 import TimeFromNowField from '@/components/time/TimeFromNowField'
 import type { AllUserResultType } from '@panfactum/primary-api'
+import React, { useState } from 'react'
+import ReactivateUsersModal from '@/components/modals/ReactivateUsersModal'
 
-function UserListActions () {
+/************************************************
+ * List Actions
+ * **********************************************/
+
+function Actions () {
   return (
     <TopToolbar>
       <SelectColumnsButton/>
     </TopToolbar>
   )
 }
+
+function BulkActionButton (props: ButtonProps) {
+  return (
+    <Button
+      variant="contained"
+      size="small"
+      {...props}
+      className={`py-1 px-2 text-xs normal-case bg-primary ${props.className ?? ''}`}
+    />
+  )
+}
+
+function BulkActions () {
+  const { selectedIds, data, onSelect } = useListContext<AllUserResultType>()
+  const [reactivateUsersModalIsOpen, setReactivateUsersModalIsOpen] = useState<boolean>(false)
+
+  const selectedUsers = data
+    .filter(record => selectedIds.includes(record.id))
+  return (
+    <>
+      <BulkActionButton
+        className="bg-red"
+        onClick={() => setReactivateUsersModalIsOpen(true)}
+      >
+        Reactivate
+      </BulkActionButton>
+      <BulkActionButton className="bg-red">
+        Deactivate
+      </BulkActionButton>
+      <ReactivateUsersModal
+        open={reactivateUsersModalIsOpen}
+        onClose={() => setReactivateUsersModalIsOpen(false)}
+        onSuccess={() => onSelect([])}
+        users={selectedUsers}
+      />
+    </>
+  )
+}
+
+/************************************************
+ * List
+ * **********************************************/
 
 export default function AllUserList () {
   const login = useLogin()
@@ -28,11 +76,12 @@ export default function AllUserList () {
   return (
     <InfiniteList
       resource="allUsers"
-      actions={<UserListActions/>}
+      actions={<Actions/>}
       perPage={25}
     >
       <DatagridConfigurable
         rowClick={(id) => `${id}/basic`}
+        bulkActionButtons={<BulkActions/>}
         omit={['id']}
       >
         <TextField
@@ -51,14 +100,25 @@ export default function AllUserList () {
           source="email"
           label="Email"
         />
-        <NumberField
+        <FunctionField
           source="numberOfOrgs"
           label="Organizations"
+          // We don't want to count the unitary org in the display
+          render={(record: AllUserResultType) => (
+            <div>
+              {record.numberOfOrgs - 1}
+            </div>
+          )}
         />
         <FunctionField
           source="createdAt"
-          label="Created At"
+          label="Created"
           render={(record: AllUserResultType) => <TimeFromNowField unixSeconds={record.createdAt}/>}
+        />
+        <FunctionField
+          source="deletedAt"
+          label="Deactivated"
+          render={(record: AllUserResultType) => <TimeFromNowField unixSeconds={record.deletedAt}/>}
         />
         <FunctionField
           label="Masquerade"

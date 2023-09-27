@@ -1,10 +1,5 @@
 import type { FastifyRequest } from 'fastify'
-
-export class UnauthenticatedError extends Error {
-  constructor () {
-    super('Not authenticated')
-  }
-}
+import { UnauthenticatedError } from '../handlers/customErrors'
 
 interface getAuthInfo {
   userId: string,

@@ -19,6 +19,18 @@ interface IResourceConfig {
 }
 
 /**********************************************
+ * Update Many Error
+ * ********************************************/
+
+export class UpdateManyError extends Error {
+  errorMap: {[id: string]: string}
+  constructor (errorMap: {[id: string]: string}) {
+    super('Update many error')
+    this.errorMap = errorMap
+  }
+}
+
+/**********************************************
  * Data Provider Factory
  *
  * We use a factory function b/c we use a different
@@ -124,24 +136,46 @@ export const createCustomDataProvider = (_: string | undefined):DataProvider => 
     update: async (resource, { id, data }): Promise<UpdateResult> => {
       const config = getResourceConfig(resource)
 
-      const results = await apiUpdate(config.apiPath, [{
+      const result = await apiUpdate(config.apiPath, {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         id,
         ...data
-      }])
+      })
 
-      return { data: results[0] }
+      return { data: result }
     },
 
     updateMany: async (resource, params): Promise<UpdateManyResult> => {
       const config = getResourceConfig(resource)
+      const results = await Promise.allSettled(params.ids.map((id) => {
+        return apiUpdate(config.apiPath, {
+          id,
+          ...params.data
+        })
+      }))
 
-      const results = await apiUpdate(config.apiPath, params.ids.map(id => ({
-        id,
-        ...params.data
-      })))
+      // Since we are submitting many requests to the backend in the updateMany logic,
+      // we create an "errorMap" for any resulting errors which connects individual errors
+      // to the instigating record's id. We use a special error type (UpdateManyError) to hold
+      // this map
+      const errorMap: {[id: string]: string} = {}
+      const resultValues:UpdateManyResult['data'] = []
+      let hasError: boolean = false
+      results.forEach((result, i) => {
+        if (result.status === 'rejected') {
+          // This is a bit hacky, so we have to disable some linting rules
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment
+          errorMap[params.ids[i]!] = result.reason.message
+          hasError = true
+        } else {
+          resultValues.push(result.value)
+        }
+      })
+      if (hasError) {
+        throw new UpdateManyError(errorMap)
+      }
 
-      return { data: results }
+      return { data: resultValues }
     },
 
     delete: async (resource, { id }): Promise<DeleteResult> => {

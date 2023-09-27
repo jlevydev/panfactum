@@ -1,8 +1,8 @@
 import type { FastifyPluginAsync, FastifyRequest } from 'fastify'
 import { Static, Type } from '@sinclair/typebox'
-import { DEFAULT_SCHEMA_CODES } from '../constants'
 import { getAuthInfo } from '../../util/getAuthInfo'
 import { getDB } from '../../db/db'
+import { DEFAULT_SCHEMA_CODES } from '../../handlers/error'
 
 /**********************************************************************
  * Typings

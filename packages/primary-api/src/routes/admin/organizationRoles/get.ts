@@ -1,6 +1,5 @@
 import type { FastifyPluginAsync, FastifySchema } from 'fastify'
 import type { Static } from '@sinclair/typebox'
-import { DEFAULT_SCHEMA_CODES } from '../../constants'
 import { assertPanfactumRoleFromSession } from '../../../util/assertPanfactumRoleFromSession'
 import {
   convertSortOrder,
@@ -16,6 +15,9 @@ import {
 } from '../../models/organization'
 import { Type } from '@sinclair/typebox'
 import type { OrganizationRolePermissionTable } from '../../../db/models/OrganizationRolePermission'
+import { DEFAULT_SCHEMA_CODES } from '../../../handlers/error'
+import { createGetResult } from '../../../util/createGetResult'
+
 /**********************************************************************
  * Typings
  **********************************************************************/
@@ -27,6 +29,7 @@ const Result = Type.Object({
   isCustom: Type.Boolean({ description: 'Iff true, the role is available only to this organization. Derived from `organizationId`.' }),
   activeAssigneeCount: OrganizationRoleAssigneeCount
 })
+export type ResultType = Static<typeof Result>
 
 const sortFields = StringEnum([
   'id',
@@ -126,16 +129,7 @@ export const GetOrganizationRolesRoute:FastifyPluginAsync = async (fastify) => {
         .$if(sortField !== 'id', qb => qb.orderBy('id'))
         .execute()
 
-      return {
-        data: results.map(result => ({
-          ...result,
-          isCustom: Boolean(result.isCustom)
-        })),
-        pageInfo: {
-          hasPreviousPage: page !== 0,
-          hasNextPage: results.length >= perPage
-        }
-      }
+      return createGetResult(results, page, perPage)
     }
   )
 }

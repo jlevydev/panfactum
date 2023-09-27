@@ -1,6 +1,5 @@
 import type { FastifyPluginAsync, FastifySchema } from 'fastify'
 import type { Static } from '@sinclair/typebox'
-import { DEFAULT_SCHEMA_CODES } from '../../constants'
 import { assertPanfactumRoleFromSession } from '../../../util/assertPanfactumRoleFromSession'
 import {
   convertSortOrder,
@@ -10,7 +9,6 @@ import {
 } from '../../types'
 import { getDB } from '../../../db/db'
 import { StringEnum } from '../../../util/customTypes'
-import { dateToUnixSeconds } from '../../../util/dateToUnixSeconds'
 import { Type } from '@sinclair/typebox'
 import {
   PackageActiveVersionCount,
@@ -23,6 +21,8 @@ import {
   PackageRepositoryUrl, PackageType, PackageUpdatedAt
 } from '../../models/package'
 import { OrganizationName } from '../../models/organization'
+import { DEFAULT_SCHEMA_CODES } from '../../../handlers/error'
+import { createGetResult } from '../../../util/createGetResult'
 
 /**********************************************************************
  * Typings
@@ -135,8 +135,8 @@ export const GetPackagesRoute:FastifyPluginAsync = async (fastify) => {
           eb.fn.count<number>('packageVersion.id').distinct().as('activeVersionCount'),
           // There is an issue with the kysely typings that doesn't allow max on a Date field even
           // though it is valid sql, so we use an `any` escape hatch
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          eb.fn.max<any>('packageVersion.createdAt').as('lastPublishedAt'),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument
+          eb.fn.max<number>('packageVersion.createdAt' as any).as('lastPublishedAt'),
           eb(eb.fn.count<number>('packageVersion.id').distinct(), '>', 0).as('isPublished')
         ])
         .where('packageVersion.archivedAt', 'is', null) // we only count package versions that are not archived
@@ -152,23 +152,7 @@ export const GetPackagesRoute:FastifyPluginAsync = async (fastify) => {
         .offset(page * perPage)
         .execute()
 
-      return {
-        data: results.map(result => ({
-          ...result,
-          createdAt: dateToUnixSeconds(result.createdAt),
-          deletedAt: result.deletedAt !== null ? dateToUnixSeconds(result.deletedAt) : null,
-          archivedAt: result.archivedAt !== null ? dateToUnixSeconds(result.archivedAt) : null,
-          updatedAt: dateToUnixSeconds(result.updatedAt),
-          isDeleted: Boolean(result.isDeleted),
-          isArchived: Boolean(result.isArchived),
-          isPublished: Boolean(result.isPublished),
-          lastPublishedAt: result.lastPublishedAt !== null ? dateToUnixSeconds(result.lastPublishedAt as Date) : null
-        })),
-        pageInfo: {
-          hasPreviousPage: page !== 0,
-          hasNextPage: results.length >= perPage
-        }
-      }
+      return createGetResult(results, page, perPage)
     }
   )
 }

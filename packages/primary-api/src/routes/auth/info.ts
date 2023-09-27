@@ -1,9 +1,9 @@
 import type { FastifyPluginAsync } from 'fastify'
-import { DEFAULT_SCHEMA_CODES } from '../constants'
 import { getAuthInfo } from '../../util/getAuthInfo'
 import { getUserInfoById } from '../../db/queries/getUserInfoById'
 import type { LoginReplyType } from '../models/auth'
 import { LoginReply } from '../models/auth'
+import { DEFAULT_SCHEMA_CODES } from '../../handlers/error'
 
 /**********************************************************************
  * Route Logic

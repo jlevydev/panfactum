@@ -9,12 +9,14 @@ import { GetOrganizationRolesRoute } from './organizationRoles/get'
 import { GetPackagesRoute } from './packages/get'
 import { GetPackageVersionsRoute } from './packageVersions/get'
 import { GetPackageDownloadsRoute } from './packageDownloads/get'
+import { UpdateOrganizationMembershipRoute } from './organizationMemberships/update'
 
 export const AdminRoutes: FastifyPluginAsync = async (fastify) => {
   const prefix = '/admin'
   await fastify.register(GetUsersRoute, { prefix })
   await fastify.register(UpdateUsersRoute, { prefix })
   await fastify.register(GetOrganizationMemberships, { prefix })
+  await fastify.register(UpdateOrganizationMembershipRoute, { prefix })
   await fastify.register(GetLoginSessions, { prefix })
   await fastify.register(GetOrganizationsRoute, { prefix })
   await fastify.register(UpdateOrganizationsRoute, { prefix })

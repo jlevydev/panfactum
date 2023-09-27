@@ -1,6 +1,5 @@
 import type { FastifyPluginAsync, FastifySchema } from 'fastify'
 import type { Static } from '@sinclair/typebox'
-import { DEFAULT_SCHEMA_CODES } from '../../constants'
 import { assertPanfactumRoleFromSession } from '../../../util/assertPanfactumRoleFromSession'
 import {
   convertSortOrder,
@@ -10,7 +9,6 @@ import {
 } from '../../types'
 import { getDB } from '../../../db/db'
 import { StringEnum } from '../../../util/customTypes'
-import { dateToUnixSeconds } from '../../../util/dateToUnixSeconds'
 import {
   UserId
 } from '../../models/user'
@@ -21,6 +19,8 @@ import {
   AuthLoginSessionLastApiCallAt,
   AuthMasqueradingUserId
 } from '../../models/auth'
+import { DEFAULT_SCHEMA_CODES } from '../../../handlers/error'
+import { createGetResult } from '../../../util/createGetResult'
 
 /**********************************************************************
  * Typings
@@ -106,17 +106,7 @@ export const GetLoginSessions:FastifyPluginAsync = async (fastify) => {
         .offset(page * perPage)
         .execute()
 
-      return {
-        data: results.map(result => ({
-          ...result,
-          createdAt: dateToUnixSeconds(result.createdAt),
-          lastApiCallAt: result.lastApiCallAt !== null ? dateToUnixSeconds(result.lastApiCallAt) : null
-        })),
-        pageInfo: {
-          hasPreviousPage: page !== 0,
-          hasNextPage: results.length >= perPage
-        }
-      }
+      return createGetResult(results, page, perPage)
     }
   )
 }

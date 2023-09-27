@@ -3,7 +3,7 @@ import type { ReactElement } from 'react'
 import { useIdentityQuery } from '@/lib/providers/auth/authProvider'
 import OrganizationSelector from '@/app/app/layout/OrganizationSelector'
 import MenuItem from '@mui/material/MenuItem'
-import { Link, useMatch, useParams } from 'react-router-dom'
+import { Link, Navigate, useMatch, useParams } from 'react-router-dom'
 import TerminalIcon from '@mui/icons-material/Terminal'
 import PointOfSaleIcon from '@mui/icons-material/PointOfSale'
 import CreditCardIcon from '@mui/icons-material/CreditCard'
@@ -70,13 +70,20 @@ export default function Sidebar () {
   const [open] = useSidebarState()
 
   if (orgId === undefined || identity === undefined) {
-    return null
+    throw new Error('Tried to render sidebar without orgId or identity set.')
   }
 
   const currentOrg = identity.organizations.find(org => org.id === orgId)
 
   if (currentOrg === undefined) {
-    return null
+    // This isn't really the right place to handle this
+    console.warn('Current org is set to an organization the user is not a member of')
+    return (
+      <Navigate
+        to='/'
+        replace={true}
+      />
+    )
   }
 
   const { permissions, isUnitary } = currentOrg

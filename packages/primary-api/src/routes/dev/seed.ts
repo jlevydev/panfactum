@@ -30,43 +30,43 @@ import {
  **********************************************************************/
 
 const SeedBody = Type.Object({
-  iterations: Type.Optional(Type.Number({
+  iterations: Type.Optional(Type.Integer({
     minimum: 1,
     maximum: 25,
     default: 5,
     description: 'The number of iterations of the database seeding loop to execute'
   })),
-  orgsPerIteration: Type.Optional(Type.Number({
+  orgsPerIteration: Type.Optional(Type.Integer({
     minimum: 1,
     maximum: 10,
     default: 5,
     description: 'The number of organizations to create on each iteration'
   })),
-  maxUsersPerOrg: Type.Optional(Type.Number({
+  maxUsersPerOrg: Type.Optional(Type.Integer({
     minimum: 2,
     maximum: 100,
     default: 25,
     description: 'The maximum number of users to assign to any organization'
   })),
-  maxRolesPerOrg: Type.Optional(Type.Number({
+  maxRolesPerOrg: Type.Optional(Type.Integer({
     minimum: 1,
     maximum: 10,
     default: 5,
     description: 'The maximum number of custom roles to add to any organization'
   })),
-  maxPackagesPerOrg: Type.Optional(Type.Number({
+  maxPackagesPerOrg: Type.Optional(Type.Integer({
     minimum: 1,
     maximum: 20,
     default: 5,
     description: 'The maximum number of packages in any organization'
   })),
-  maxVersionsPerPackage: Type.Optional(Type.Number({
+  maxVersionsPerPackage: Type.Optional(Type.Integer({
     minimum: 5,
     maximum: 100,
     default: 20,
     description: 'The maximum number of versions for any package'
   })),
-  maxDownloadsPerPackageVersion: Type.Optional(Type.Number({
+  maxDownloadsPerPackageVersion: Type.Optional(Type.Integer({
     minimum: 100,
     maximum: 10000000,
     default: 10000,
@@ -104,10 +104,6 @@ async function populateData (config :IPopulateDataConfig): Promise<void> {
   faker.seed(123)
   console.log('Seeding user table...')
   const users = await seedUserTable(5000)
-  console.log('Done!')
-
-  console.log('Seeding user login session table...')
-  await seedUserLoginSessionTable(users, 500000)
   console.log('Done!')
 
   console.log('Seeding unitary orgs...')
@@ -148,6 +144,10 @@ async function populateData (config :IPopulateDataConfig): Promise<void> {
 
     console.log(`Finished iteration ${i + 1}!`)
   }
+
+  console.log('Seeding user login session table...')
+  await seedUserLoginSessionTable(users, 500000)
+  console.log('Done!')
 }
 
 async function truncateData (): Promise<void> {

@@ -1,6 +1,5 @@
 import type { FastifyPluginAsync, FastifySchema } from 'fastify'
 import { Static, Type } from '@sinclair/typebox'
-import { DEFAULT_SCHEMA_CODES } from '../../constants'
 import { assertPanfactumRoleFromSession } from '../../../util/assertPanfactumRoleFromSession'
 import {
   convertSortOrder,
@@ -10,7 +9,6 @@ import {
 } from '../../types'
 import { getDB } from '../../../db/db'
 import { StringEnum } from '../../../util/customTypes'
-import { dateToUnixSeconds } from '../../../util/dateToUnixSeconds'
 import {
   UserCreatedAt, UserDeletedAt,
   UserEmail,
@@ -20,6 +18,8 @@ import {
   UserNumberOfOrgs,
   UserUpdatedAt
 } from '../../models/user'
+import { DEFAULT_SCHEMA_CODES } from '../../../handlers/error'
+import { createGetResult } from '../../../util/createGetResult'
 
 /**********************************************************************
  * Typings
@@ -44,6 +44,7 @@ const sortFields = StringEnum([
   'lastName',
   'email',
   'createdAt',
+  'deletedAt',
   'numberOfOrgs',
   'isDeleted'
 ], 'The field to sort by', 'id')
@@ -79,7 +80,7 @@ export const GetUsersRoute:FastifyPluginAsync = async (fastify) => {
     },
     async (req) => {
       await assertPanfactumRoleFromSession(req, 'admin')
-
+      console.log('here')
       const {
         sortField,
         sortOrder,
@@ -112,19 +113,8 @@ export const GetUsersRoute:FastifyPluginAsync = async (fastify) => {
         .limit(perPage)
         .offset(page * perPage)
         .execute()
-      return {
-        data: results.map(result => ({
-          ...result,
-          createdAt: dateToUnixSeconds(result.createdAt),
-          updatedAt: dateToUnixSeconds(result.updatedAt),
-          deletedAt: dateToUnixSeconds(result.deletedAt),
-          isDeleted: Boolean(result.isDeleted)
-        })),
-        pageInfo: {
-          hasPreviousPage: page !== 0,
-          hasNextPage: results.length >= perPage
-        }
-      }
+      console.log(results)
+      return createGetResult(results, page, perPage)
     }
   )
 }

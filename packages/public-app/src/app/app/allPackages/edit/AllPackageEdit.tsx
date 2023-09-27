@@ -4,10 +4,10 @@ import AllPackageBasic from '@/app/app/allPackages/edit/AllPackageBasic'
 import AllPackageVersions from '@/app/app/allPackages/edit/AllPackageVersions'
 import AllPackageDownloads from '@/app/app/allPackages/edit/AllPackageDownloads'
 import EditItemHeader from '@/components/headers/EditItemHeader'
-import { useAllPackageGetOne } from '@/lib/hooks/queries/useAllPackageGetOne'
+import { useGetOneAllPackage } from '@/lib/hooks/queries/useGetOneAllPackage'
 
 function AllPackageEditRendered ({ packageId }: {packageId: string}) {
-  const { data } = useAllPackageGetOne(packageId)
+  const { data } = useGetOneAllPackage(packageId)
 
   if (data === undefined) {
     return null // TODO: Loading spinner

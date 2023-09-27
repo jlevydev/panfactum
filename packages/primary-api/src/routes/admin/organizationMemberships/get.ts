@@ -1,6 +1,5 @@
 import type { FastifyPluginAsync, FastifySchema } from 'fastify'
 import type { Static } from '@sinclair/typebox'
-import { DEFAULT_SCHEMA_CODES } from '../../constants'
 import { assertPanfactumRoleFromSession } from '../../../util/assertPanfactumRoleFromSession'
 import {
   convertSortOrder,
@@ -10,23 +9,30 @@ import {
 } from '../../types'
 import { getDB } from '../../../db/db'
 import { StringEnum } from '../../../util/customTypes'
-import { dateToUnixSeconds } from '../../../util/dateToUnixSeconds'
 import {
   UserEmail,
   UserFirstName,
   UserId, UserLastName
 } from '../../models/user'
 import {
-  OrganizationId, OrganizationIsUnitary, OrganizationMembershipCreatedAt, OrganizationMembershipDeletedAt,
-  OrganizationName, OrganizationRoleId, OrganizationRoleName
+  OrganizationId,
+  OrganizationIsUnitary,
+  OrganizationMembershipCreatedAt,
+  OrganizationMembershipDeletedAt, OrganizationMembershipId,
+  OrganizationMembershipIsDeleted,
+  OrganizationName,
+  OrganizationRoleId,
+  OrganizationRoleName
 } from '../../models/organization'
 import { Type } from '@sinclair/typebox'
+import { DEFAULT_SCHEMA_CODES } from '../../../handlers/error'
+import { createGetResult } from '../../../util/createGetResult'
 
 /**********************************************************************
  * Typings
  **********************************************************************/
 const Result = Type.Object({
-  id: Type.String(),
+  id: OrganizationMembershipId,
   userId: UserId,
   userFirstName: UserFirstName,
   userLastName: UserLastName,
@@ -37,8 +43,10 @@ const Result = Type.Object({
   roleName: OrganizationRoleName,
   isUnitary: OrganizationIsUnitary,
   createdAt: OrganizationMembershipCreatedAt,
-  deletedAt: OrganizationMembershipDeletedAt
+  deletedAt: OrganizationMembershipDeletedAt,
+  isDeleted: OrganizationMembershipIsDeleted
 })
+export type ResultType = Static<typeof Result>
 
 const sortFields = StringEnum([
   'userLastName',
@@ -55,7 +63,7 @@ const filters = {
   userId: Type.String({ format: 'uuid', description: 'Return only memberships for this user' }),
   organizationId: Type.String({ format: 'uuid', description: 'Return only memberships for this organization' }),
   isUnitary: Type.Boolean({ description: 'Return only unitary or non-unitary memberships' }),
-  isActive: Type.Boolean({ description: 'Return only active or inactive memberships' })
+  isDeleted: Type.Boolean({ description: 'If provided, filter the results by whether the organization membership has been deleted' })
 }
 const QueryString = createQueryString(
   filters,
@@ -96,7 +104,7 @@ export const GetOrganizationMemberships:FastifyPluginAsync = async (fastify) => 
         userId,
         isUnitary,
         organizationId,
-        isActive
+        isDeleted
       } = req.query
 
       const db = await getDB()
@@ -105,7 +113,7 @@ export const GetOrganizationMemberships:FastifyPluginAsync = async (fastify) => 
         .innerJoin('organization', 'organization.id', 'userOrganization.organizationId')
         .innerJoin('organizationRole', 'organizationRole.id', 'userOrganization.roleId')
         .innerJoin('user', 'user.id', 'userOrganization.userId')
-        .select([
+        .select(eb => [
           'userOrganization.id as id',
           'userOrganization.userId as userId',
           'userOrganization.organizationId as organizationId',
@@ -117,31 +125,21 @@ export const GetOrganizationMemberships:FastifyPluginAsync = async (fastify) => 
           'organizationRole.name as roleName',
           'user.firstName as userFirstName',
           'user.lastName as userLastName',
-          'user.email as userEmail'
+          'user.email as userEmail',
+          eb('userOrganization.deletedAt', 'is not', null).as('isDeleted')
         ])
         .$if(ids !== undefined, qb => qb.where('userOrganization.id', 'in', ids ?? []))
         .$if(userId !== undefined, qb => qb.where('userOrganization.userId', '=', userId ?? ''))
         .$if(organizationId !== undefined, qb => qb.where('userOrganization.organizationId', '=', organizationId ?? ''))
         .$if(isUnitary !== undefined, qb => qb.where('organization.isUnitary', '=', Boolean(isUnitary)))
-        .$if(isActive !== undefined, qb => qb.where('userOrganization.deletedAt', isActive ? 'is' : 'is not', null))
+        .$if(isDeleted !== undefined, qb => qb.where('userOrganization.deletedAt', isDeleted ? 'is not' : 'is', null))
         .orderBy(`${sortField}`, convertSortOrder(sortOrder))
         .$if(sortField !== 'id', qb => qb.orderBy('id')) // ensures stable sort
         .limit(perPage)
         .offset(page * perPage)
         .execute()
 
-      return {
-        data: results.map(result => ({
-          ...result,
-          createdAt: dateToUnixSeconds(result.createdAt),
-          deletedAt: result.deletedAt !== null ? dateToUnixSeconds(result.deletedAt) : null,
-          isActive: result.deletedAt === null
-        })),
-        pageInfo: {
-          hasPreviousPage: page !== 0,
-          hasNextPage: results.length >= perPage
-        }
-      }
+      return createGetResult(results, page, perPage)
     }
   )
 }

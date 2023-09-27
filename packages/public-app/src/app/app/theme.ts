@@ -1,5 +1,5 @@
-import { createTheme } from '@mui/material'
 import { kanit } from '@/app/app/font'
+import { Components, createTheme, Theme } from '@mui/material'
 
 export const theme = createTheme({
   typography: {
@@ -7,6 +7,15 @@ export const theme = createTheme({
     fontWeightRegular: kanit.style.fontWeight
   },
   components: {
+    RaDatagrid: {
+      styleOverrides: {
+        root: {
+          '& .RaDatagrid-expandedPanel': {
+            backgroundColor: '#f8f8f8'
+          }
+        }
+      }
+    },
     MuiCssBaseline: {
       styleOverrides: `
         @font-face {
@@ -17,5 +26,5 @@ export const theme = createTheme({
         }
       `
     }
-  }
+  } as Components<Omit<Theme, 'components'>>
 })

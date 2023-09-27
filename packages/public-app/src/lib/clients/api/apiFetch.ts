@@ -25,12 +25,22 @@ export class APIServerError extends Error {
  * Standard API Response Handler
  * ********************************************/
 
-function handleResponse<ReturnType = undefined> (res: Response):Promise<ReturnType> {
+async function handleResponse<ReturnType = undefined> (res: Response):Promise<ReturnType> {
   if (res.ok) {
     if (res.headers.get('content-length') !== '0') {
-      return res.json() as Promise<ReturnType>
+      return await res.json() as Promise<ReturnType>
     } else {
-      return Promise.resolve(undefined) as Promise<ReturnType>
+      return undefined as ReturnType
+    }
+  } else if (res.status === 400) {
+    const message = ((await res.json()) as {message: string} | undefined)?.message
+    if (message === undefined) {
+      // TODO: This should really never happen
+      // and so this indicates a problem with the API
+      // server that we need to do some additional logging around
+      throw new Error('Invalid request')
+    } else {
+      throw new Error(message)
     }
   } else if (res.status === 401) {
     throw new APIUnauthenticatedError()

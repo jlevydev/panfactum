@@ -8,7 +8,8 @@ import relativeTime from 'dayjs/plugin/relativeTime'
 import duration from 'dayjs/plugin/duration'
 import utc from 'dayjs/plugin/utc'
 import TimeFromNowField from '@/components/time/TimeFromNowField'
-import DurationField from '@/components/time/DurationField'
+import type { AllPackageDownloadResultType } from '@panfactum/primary-api'
+import { useAdminBasePath } from '@/lib/hooks/navigation/useAdminBasePath'
 dayjs.extend(duration)
 dayjs.extend(relativeTime)
 dayjs.extend(utc)
@@ -36,14 +37,15 @@ function UserListActions () {
   )
 }
 
-interface IAllUserLoginSessions {
+interface IProps {
   userId: string;
 }
-export default function AllUserLoginSessions (props: IAllUserLoginSessions) {
+export default function AllUserPackageDownloads (props: IProps) {
+  const basePath = useAdminBasePath()
   return (
     <div className="p-4">
       <InfiniteList
-        resource="allLoginSessions"
+        resource="allPackageDownloads"
         filter={{ userId: props.userId }}
         sort={{ field: 'createdAt', order: 'DESC' }}
         actions={<UserListActions/>}
@@ -53,41 +55,27 @@ export default function AllUserLoginSessions (props: IAllUserLoginSessions) {
       >
         <Datagrid
           bulkActionButtons={false}
-          rowClick={false}
+          rowClick={(_, __, record) => {
+            return `${basePath}/allPackages/${(record as AllPackageDownloadResultType).packageId}`
+          }}
           optimized
         >
-          <TextField
-            source="id"
-            label="ID"
-          />
-          <FunctionField
-            source="masqueradingUserId"
-            label="Masquerading User"
-            render={(record: {masqueradingUserId: string | null}) => (
-              <div>
-                {record.masqueradingUserId ? record.masqueradingUserId : '-'}
-              </div>
-            )}
-          />
           <FunctionField
             source="createdAt"
-            label="Started At"
+            label="Time"
             render={(record: {createdAt: number}) => <TimeFromNowField unixSeconds={record.createdAt}/>}
           />
-          <FunctionField
-            source="lastApiCallAt"
-            label="Last Activity At"
-            render={(record: {lastApiCallAt: number | null}) => <TimeFromNowField unixSeconds={record.lastApiCallAt}/>}
+          <TextField
+            source="packageName"
+            label="Package"
           />
-
-          <FunctionField
-            label="Length"
-            render={(record: {lastApiCallAt: number | null, createdAt: number}) => (
-              <DurationField
-                fromUnixSeconds={record.createdAt}
-                toUnixSeconds={record.lastApiCallAt}
-              />
-            )}
+          <TextField
+            source="versionTag"
+            label="Version"
+          />
+          <TextField
+            source="ip"
+            label="IP"
           />
         </Datagrid>
       </InfiniteList>

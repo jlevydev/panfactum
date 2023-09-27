@@ -16,10 +16,17 @@ export const OrganizationMembershipCreatedAt = Type.Integer({
   minimum: 0,
   description: 'When the user was added to the organization. Unix timestamp in seconds.'
 })
+export const OrganizationMembershipId = Type.String({
+  format: 'uuid',
+  description: 'Unique identifier for this organization membership'
+})
 export const OrganizationMembershipDeletedAt = Type.Union([
   Type.Integer({ minimum: 0 }),
   Type.Null()
 ], { description: 'When the user was removed from the organization. Unix timestamp in seconds. `null` if not deleted.' })
+export const OrganizationMembershipIsDeleted = Type.Boolean({
+  description: 'True iff the organization membership was rescinded. Derived from `deletedAt.'
+})
 export const OrganizationName = Type.String({ minLength: 1, description: 'The display name of the organization' })
 export const OrganizationIsUnitary = Type.Boolean({ description: "True iff this is a user's personal organization. If so, the organization name will be set to the user's id." })
 export const OrganizationCreatedAt = Type.Integer({

@@ -10,11 +10,13 @@ export type UserOrganizationTableSeed = Selectable<UserOrganizationTable>
 
 export function createRandomUserOrganization (users: UserTableSeed[], organization:OrganizationTableSeed, standardRoleIds: string[], orgRoles: OrganizationRoleTableSeed[]): UserOrganizationTableSeed {
   const user = faker.helpers.arrayElement(users)
-  const createdAt = faker.date.future({ years: 1, refDate: user.createdAt })
   let deletedAt: Date | null
+  let createdAt: Date
   if (user.deletedAt === null) {
-    deletedAt = faker.datatype.boolean(0.90) ? null : faker.date.future({ years: 1, refDate: createdAt })
+    createdAt = faker.date.between({ from: user.createdAt, to: Date() })
+    deletedAt = faker.datatype.boolean(0.90) ? null : faker.date.between({ from: createdAt, to: Date() })
   } else {
+    createdAt = faker.date.between({ from: user.createdAt, to: user.deletedAt })
     deletedAt = faker.datatype.boolean(0.90) ? null : faker.date.between({ from: createdAt, to: user.deletedAt })
   }
 
@@ -41,6 +43,8 @@ export function createUnitaryUserOrganization (user: UserTableSeed, organization
 }
 
 export async function seedUserOrganizationTable (users: UserTableSeed[], organizations:OrganizationTableSeed[], roles: OrganizationRoleTableSeed[], maxPerOrg = 20) {
+  const adminRoleId = await getAdminRoleId()
+
   const standardRoleIds = (await (await getDB())
     .selectFrom('organizationRole')
     .select(['id'])
@@ -52,8 +56,14 @@ export async function seedUserOrganizationTable (users: UserTableSeed[], organiz
   const teamOrgs = organizations.filter(org => !org.isUnitary)
   const links = teamOrgs.map(org => {
     const orgRoles = roles.filter(role => role.organizationId === org.id)
-    return [...Array(faker.number.int({ min: 1, max: maxPerOrg })).keys()]
-      .map(() => createRandomUserOrganization(users, org, standardRoleIds, orgRoles))
+
+    // Ensures there is at least one admin user per org
+    const adminUser = [createRandomUserOrganization(users, org, [adminRoleId], [])]
+
+    return adminUser
+      .concat([...Array(faker.number.int({ min: 1, max: maxPerOrg })).keys()]
+        .map(() => createRandomUserOrganization(users, org, standardRoleIds, orgRoles))
+      )
       // Removes the duplicate users in the org which would violate the PK constraint
       .filter((link) => {
         const usersInOrg = pkCache[link.organizationId] ?? []
@@ -73,6 +83,17 @@ export async function seedUserOrganizationTable (users: UserTableSeed[], organiz
 }
 
 export async function seedUserOrganizationTableUnitary (users: UserTableSeed[], organizations:OrganizationTableSeed[]) {
+  const adminRoleId = await getAdminRoleId()
+
+  const unitaryOrganizationLinks = users.map((user) => createUnitaryUserOrganization(user, organizations, adminRoleId))
+  await (await getDB()).insertInto('userOrganization')
+    .values(unitaryOrganizationLinks)
+    .execute()
+
+  return unitaryOrganizationLinks
+}
+
+async function getAdminRoleId () {
   const { id: adminRoleId } = await (await getDB())
     .selectFrom('organizationRole')
     .select(['id'])
@@ -81,13 +102,7 @@ export async function seedUserOrganizationTableUnitary (users: UserTableSeed[], 
       eb('organizationRole.name', '=', 'Administrator')
     ]))
     .executeTakeFirstOrThrow()
-
-  const unitaryOrganizationLinks = users.map((user) => createUnitaryUserOrganization(user, organizations, adminRoleId))
-  await (await getDB()).insertInto('userOrganization')
-    .values(unitaryOrganizationLinks)
-    .execute()
-
-  return unitaryOrganizationLinks
+  return adminRoleId
 }
 
 export async function truncateUserOrganizationTable () {
