@@ -1,4 +1,5 @@
 import type { LoginReturnType } from '@panfactum/primary-api'
+
 import { apiFetch } from './apiFetch'
 
 export const fetchAuthInfo = async () => {

@@ -1,9 +1,10 @@
 import { faker } from '@faker-js/faker'
-import { getDB } from '../db'
 import type { Selectable } from 'kysely'
-import type { OrganizationRolePermissionTable } from './OrganizationRolePermission'
-import type { OrganizationRoleTableSeed } from './OrganizationRole.seed'
 import { sql } from 'kysely'
+
+import type { OrganizationRoleTableSeed } from './OrganizationRole.seed'
+import type { OrganizationRolePermissionTable } from './OrganizationRolePermission'
+import { getDB } from '../db'
 
 export type OrganizationRolePermissionTableSeed = Selectable<OrganizationRolePermissionTable>
 

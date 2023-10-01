@@ -1,8 +1,10 @@
 import Link from 'next/link'
-import { FormEventHandler, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { postLogin } from '@/lib/clients/api/postLogin'
+import type { FormEventHandler } from 'react'
+import { useState } from 'react'
 import { useQueryClient } from 'react-query'
+import { useNavigate } from 'react-router-dom'
+
+import { postLogin } from '@/lib/clients/api/postLogin'
 
 export default function LoginPage () {
   const [email, setEmail] = useState<string>('')

@@ -1,4 +1,5 @@
 import { Type } from '@sinclair/typebox'
+
 import { StringEnum } from '../../util/customTypes'
 
 export const OrganizationId = Type.String({ format: 'uuid', description: 'Unique identifier for the organization' })
@@ -74,3 +75,15 @@ export const OrganizationPermission = StringEnum([
 export const OrganizationRolePermissions = Type.Array(OrganizationPermission, {
   description: 'A list of the permissions assigned to the given role.'
 })
+export const OrganizationRoleDescription = Type.Union([
+  Type.Null(),
+  Type.String()
+], { description: 'A human-readable description for the purpose of the role' })
+export const OrganizationRoleCreatedAt = Type.Integer({
+  minimum: 0,
+  description: 'When the organization role was created. Unix timestamp in seconds.'
+})
+export const OrganizationRoleUpdatedAt = Type.Union([
+  Type.Integer({ minimum: 0 }),
+  Type.Null()
+], { description: 'When an organization role was updated. Unix timestamp in seconds.' })

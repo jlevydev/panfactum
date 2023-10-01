@@ -1,6 +1,7 @@
 import '../globals.css'
 import { Kanit } from 'next/font/google'
 import type { ReactNode } from 'react'
+
 import Navbar from './navbar'
 
 const kanit = Kanit({ weight: '300', preload: false })

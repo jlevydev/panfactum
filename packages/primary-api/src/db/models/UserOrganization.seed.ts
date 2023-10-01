@@ -1,10 +1,11 @@
 import { faker } from '@faker-js/faker'
+import type { Selectable } from 'kysely'
+
+import type { OrganizationTableSeed } from './Organization.seed'
+import type { OrganizationRoleTableSeed } from './OrganizationRole.seed'
+import type { UserTableSeed } from './User.seed'
 import type { UserOrganizationTable } from './UserOrganization'
 import { getDB } from '../db'
-import type { Selectable } from 'kysely'
-import type { OrganizationTableSeed } from './Organization.seed'
-import type { UserTableSeed } from './User.seed'
-import type { OrganizationRoleTableSeed } from './OrganizationRole.seed'
 
 export type UserOrganizationTableSeed = Selectable<UserOrganizationTable>
 

@@ -1,7 +1,8 @@
 import { faker } from '@faker-js/faker'
+
+import type { UserTableSeed } from './User.seed'
 import type { UserLoginSession } from './UserLoginSession'
 import { getDB } from '../db'
-import type { UserTableSeed } from './User.seed'
 
 export function createRandomUserLoginSession (users: UserTableSeed[]): UserLoginSession {
   const user = faker.helpers.arrayElement(users)

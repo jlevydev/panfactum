@@ -1,12 +1,12 @@
-import type { UserTable } from './User'
 import type { OrganizationTable } from './Organization'
-import type { UserOrganizationTable } from './UserOrganization'
-import type { UserLoginSession } from './UserLoginSession'
+import type { OrganizationRoleTable } from './OrganizationRole'
+import type { OrganizationRolePermissionTable } from './OrganizationRolePermission'
 import type { PackageTable } from './Package'
 import type { PackageDownloadTable } from './PackageDownload'
 import type { PackageVersionTable } from './PackageVersion'
-import type { OrganizationRoleTable } from './OrganizationRole'
-import type { OrganizationRolePermissionTable } from './OrganizationRolePermission'
+import type { UserTable } from './User'
+import type { UserLoginSession } from './UserLoginSession'
+import type { UserOrganizationTable } from './UserOrganization'
 
 export interface Database {
   organization: OrganizationTable

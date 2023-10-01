@@ -1,10 +1,11 @@
-import * as path from 'path'
-import { promises as fs } from 'fs'
 import {
   Migrator,
   FileMigrationProvider
 } from 'kysely'
+
 import { getDB } from './db/db'
+import { promises as fs } from 'fs'
+import * as path from 'path'
 
 export async function migrateToLatest (revertLast = false) {
   const migrator = new Migrator({

@@ -3,6 +3,7 @@ import {
   FilterButton, FilterForm, FunctionField, InfiniteList,
   TextField
 } from 'react-admin'
+
 import TimeFromNowField from '@/components/time/TimeFromNowField'
 
 const Filters = [
@@ -35,7 +36,7 @@ export default function AllPackageDownloads (props: IProps) {
   return (
     <div className="p-4">
       <InfiniteList
-        resource="allPackageDownloads"
+        resource="packageDownloads"
         filter={{ packageId: props.packageId }}
         sort={{ field: 'createdAt', order: 'DESC' }}
         actions={<Actions/>}

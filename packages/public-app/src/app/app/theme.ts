@@ -1,5 +1,7 @@
+import type { Components, Theme } from '@mui/material'
+import { createTheme } from '@mui/material'
+
 import { kanit } from '@/app/app/font'
-import { Components, createTheme, Theme } from '@mui/material'
 
 export const theme = createTheme({
   typography: {

@@ -1,4 +1,5 @@
 import type { GetListParams, RaRecord } from 'react-admin'
+
 import { apiFetch } from '@/lib/clients/api/apiFetch'
 
 /**********************************************

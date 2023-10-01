@@ -1,6 +1,8 @@
-import type { UpdateManyError } from '@/lib/providers/data/dataProvider'
+import type { RaRecord } from 'react-admin'
+import { useUpdate, useUpdateMany } from 'react-admin'
 import { useQueryClient } from 'react-query'
-import { RaRecord, useUpdate, useUpdateMany } from 'react-admin'
+
+import type { APIServerError } from '@/lib/clients/api/apiFetch'
 
 // A convenience function to create `useUpdateMany` hooks
 // that are:
@@ -9,12 +11,12 @@ import { RaRecord, useUpdate, useUpdateMany } from 'react-admin'
 //  - address a bug in pessimistic updates within the underlying framework
 export function createUseUpdateMany<Result extends RaRecord<string>, Delta extends Partial<Result>> (resource: string, dependentResources: string[] = []) {
   return function useUpdateManyPreloaded () {
-    const [update, updateResults] = useUpdateMany<Result, UpdateManyError>()
+    const [update, updateResults] = useUpdateMany<Result, APIServerError>()
     const client = useQueryClient()
     const invalidateDependentResources = () => {
       // Note: We have to invalidate the given resource
       // in addition to the dependent resources due to this
-      // bug: https://github.com/marmelab/react-admin/issues/9321
+      // issue: https://github.com/marmelab/react-admin/issues/9321
       [resource].concat(dependentResources)
         .forEach((key) => {
           void client.invalidateQueries([key])

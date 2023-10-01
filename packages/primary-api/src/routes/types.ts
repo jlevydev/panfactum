@@ -1,4 +1,6 @@
-import { Static, TSchema, Type } from '@sinclair/typebox'
+import type { Static, TSchema } from '@sinclair/typebox'
+import { Type } from '@sinclair/typebox'
+
 import { StringEnum } from '../util/customTypes'
 
 /**********************************************

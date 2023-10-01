@@ -1,4 +1,5 @@
 import type { LoginReturnType } from '@panfactum/primary-api'
+
 import { apiPost } from './apiFetch'
 
 export const postUndoMasquerade = async () => {

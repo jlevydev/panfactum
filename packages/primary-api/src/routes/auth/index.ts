@@ -1,9 +1,10 @@
 import type { FastifyPluginAsync } from 'fastify'
+
 import { AuthInfoRoute } from './info'
-import { AuthLogoutRoute } from './logout'
-import { AuthLoginByPasswordRoute } from './loginByPassword'
 import { LoginByMasquerade } from './loginByMasquerade'
+import { AuthLoginByPasswordRoute } from './loginByPassword'
 import { LoginByUndoMasquerade } from './loginByUndoMasquerade'
+import { AuthLogoutRoute } from './logout'
 
 export const AuthRoutes: FastifyPluginAsync = async (fastify) => {
   const prefix = '/auth'

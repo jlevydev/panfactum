@@ -1,7 +1,7 @@
+import ExitIcon from '@mui/icons-material/PowerSettingsNew'
+import MenuItem from '@mui/material/MenuItem'
 import { forwardRef } from 'react'
 import { useLogout } from 'react-admin'
-import MenuItem from '@mui/material/MenuItem'
-import ExitIcon from '@mui/icons-material/PowerSettingsNew'
 
 // It's important to pass the ref to allow Material UI to manage the keyboard navigation
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

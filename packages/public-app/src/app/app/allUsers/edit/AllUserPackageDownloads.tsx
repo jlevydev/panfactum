@@ -1,14 +1,15 @@
+import type { PackageDownloadResultType } from '@panfactum/primary-api'
+import dayjs from 'dayjs'
+import duration from 'dayjs/plugin/duration'
+import relativeTime from 'dayjs/plugin/relativeTime'
+import utc from 'dayjs/plugin/utc'
 import {
   BooleanInput, Datagrid, FilterButton, FilterForm,
   FunctionField, InfiniteList,
   TextField
 } from 'react-admin'
-import dayjs from 'dayjs'
-import relativeTime from 'dayjs/plugin/relativeTime'
-import duration from 'dayjs/plugin/duration'
-import utc from 'dayjs/plugin/utc'
+
 import TimeFromNowField from '@/components/time/TimeFromNowField'
-import type { AllPackageDownloadResultType } from '@panfactum/primary-api'
 import { useAdminBasePath } from '@/lib/hooks/navigation/useAdminBasePath'
 dayjs.extend(duration)
 dayjs.extend(relativeTime)
@@ -45,7 +46,7 @@ export default function AllUserPackageDownloads (props: IProps) {
   return (
     <div className="p-4">
       <InfiniteList
-        resource="allPackageDownloads"
+        resource="packageDownloads"
         filter={{ userId: props.userId }}
         sort={{ field: 'createdAt', order: 'DESC' }}
         actions={<UserListActions/>}
@@ -56,7 +57,7 @@ export default function AllUserPackageDownloads (props: IProps) {
         <Datagrid
           bulkActionButtons={false}
           rowClick={(_, __, record) => {
-            return `${basePath}/allPackages/${(record as AllPackageDownloadResultType).packageId}`
+            return `${basePath}/allPackages/${(record as PackageDownloadResultType).packageId}`
           }}
           optimized
         >

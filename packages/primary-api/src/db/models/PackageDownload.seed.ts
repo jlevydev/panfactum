@@ -1,9 +1,10 @@
 import { faker } from '@faker-js/faker'
-import type { PackageDownloadTable } from './PackageDownload'
-import { getDB } from '../db'
-import type { UserTableSeed } from './User.seed'
-import type { PackageVersionTableSeed } from './PackageVersion.seed'
 import type { Selectable } from 'kysely'
+
+import type { PackageDownloadTable } from './PackageDownload'
+import type { PackageVersionTableSeed } from './PackageVersion.seed'
+import type { UserTableSeed } from './User.seed'
+import { getDB } from '../db'
 
 export type PackageDownloadTableSeed = Selectable<PackageDownloadTable>
 

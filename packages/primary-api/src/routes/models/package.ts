@@ -1,4 +1,5 @@
 import { Type } from '@sinclair/typebox'
+
 import { StringEnum } from '../../util/customTypes'
 
 export const PackageId = Type.String({

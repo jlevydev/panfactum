@@ -1,7 +1,8 @@
-import React, { ChangeEvent, useState } from 'react'
 import WarningIcon from '@mui/icons-material/Warning'
-import TextField from '@mui/material/TextField'
 import Button from '@mui/material/Button'
+import TextField from '@mui/material/TextField'
+import type { ChangeEvent } from 'react'
+import React, { useState } from 'react'
 
 interface IConfirmFormProps {
   warningText: string;

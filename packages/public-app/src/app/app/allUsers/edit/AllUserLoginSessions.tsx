@@ -1,41 +1,25 @@
 import {
-  BooleanInput, Datagrid, FilterButton, FilterForm,
+  Datagrid,
   FunctionField, InfiniteList,
-  TextField
+  TextField, TopToolbar
 } from 'react-admin'
-import dayjs from 'dayjs'
-import relativeTime from 'dayjs/plugin/relativeTime'
-import duration from 'dayjs/plugin/duration'
-import utc from 'dayjs/plugin/utc'
-import TimeFromNowField from '@/components/time/TimeFromNowField'
+
 import DurationField from '@/components/time/DurationField'
-dayjs.extend(duration)
-dayjs.extend(relativeTime)
-dayjs.extend(utc)
+import TimeFromNowField from '@/components/time/TimeFromNowField'
 
-const Filters = [
-  <BooleanInput
-    label="Is Active"
-    source="isActive"
-    key="isActive"
-    defaultValue={true}
-  />
-]
+/************************************************
+ * List Actions
+ * **********************************************/
 
-function UserListActions () {
+function Actions () {
   return (
-    <div className="flex justify-between w-full">
-      <FilterForm filters={Filters} />
-      <div className="flex">
-        <FilterButton
-          filters={Filters}
-          className="flex-grow"
-        />
-      </div>
-    </div>
+    <TopToolbar/>
   )
 }
 
+/************************************************
+ * List
+ * **********************************************/
 interface IAllUserLoginSessions {
   userId: string;
 }
@@ -43,10 +27,10 @@ export default function AllUserLoginSessions (props: IAllUserLoginSessions) {
   return (
     <div className="p-4">
       <InfiniteList
-        resource="allLoginSessions"
+        resource="loginSessions"
         filter={{ userId: props.userId }}
         sort={{ field: 'createdAt', order: 'DESC' }}
-        actions={<UserListActions/>}
+        actions={<Actions/>}
         empty={<div>No associated sessions</div>}
         perPage={25}
         component={'div'}

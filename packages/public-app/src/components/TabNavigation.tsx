@@ -1,9 +1,9 @@
-import { Link, Navigate, Outlet, Route, Routes, useParams } from 'react-router-dom'
 import Box from '@mui/material/Box'
 import Paper from '@mui/material/Paper'
-import Tabs from '@mui/material/Tabs'
 import Tab from '@mui/material/Tab'
+import Tabs from '@mui/material/Tabs'
 import type { ReactElement } from 'react'
+import { Link, Navigate, Outlet, Route, Routes, useParams } from 'react-router-dom'
 
 // Renders the tab content
 interface ITabPanelProps {

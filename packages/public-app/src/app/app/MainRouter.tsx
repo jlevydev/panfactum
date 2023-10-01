@@ -1,14 +1,14 @@
 'use client'
 
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { useEffect, useState } from 'react'
+import { QueryClientProvider } from 'react-query'
+import { ReactQueryDevtools } from 'react-query/devtools'
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 
+import App from '@/app/app/App'
 import LoginPage from '@/app/app/auth/LoginPage'
 import { fetchAuthInfo } from '@/lib/clients/api/fetchAuthInfo'
-import App from '@/app/app/App'
 import { queryClient } from '@/lib/clients/query/client'
-import { ReactQueryDevtools } from 'react-query/devtools'
-import { QueryClientProvider } from 'react-query'
 
 function NavigateToDefaultOrg () {
   const [organizations, setOrganizations] = useState<Awaited<ReturnType<typeof fetchAuthInfo>>['organizations']>([])

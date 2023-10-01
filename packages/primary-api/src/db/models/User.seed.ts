@@ -1,8 +1,9 @@
-import type { UserTable } from './User'
 import { faker } from '@faker-js/faker'
+import type { Selectable } from 'kysely'
+
+import type { UserTable } from './User'
 import { createPasswordHash, createPasswordSalt } from '../../util/password'
 import { getDB } from '../db'
-import type { Selectable } from 'kysely'
 
 export type UserTableSeed = Selectable<UserTable>
 

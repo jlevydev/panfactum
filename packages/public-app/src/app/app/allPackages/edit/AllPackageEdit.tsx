@@ -1,13 +1,14 @@
 import { useParams } from 'react-router-dom'
-import TabNavigation from '@/components/TabNavigation'
+
 import AllPackageBasic from '@/app/app/allPackages/edit/AllPackageBasic'
-import AllPackageVersions from '@/app/app/allPackages/edit/AllPackageVersions'
 import AllPackageDownloads from '@/app/app/allPackages/edit/AllPackageDownloads'
+import AllPackageVersions from '@/app/app/allPackages/edit/AllPackageVersions'
+import TabNavigation from '@/components/TabNavigation'
 import EditItemHeader from '@/components/headers/EditItemHeader'
-import { useGetOneAllPackage } from '@/lib/hooks/queries/useGetOneAllPackage'
+import { useGetOnePackage } from '@/lib/hooks/queries/useGetOnePackage'
 
 function AllPackageEditRendered ({ packageId }: {packageId: string}) {
-  const { data } = useGetOneAllPackage(packageId)
+  const { data } = useGetOnePackage(packageId)
 
   if (data === undefined) {
     return null // TODO: Loading spinner

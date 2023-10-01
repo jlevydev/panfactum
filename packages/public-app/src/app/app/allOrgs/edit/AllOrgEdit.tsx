@@ -1,13 +1,14 @@
 import { useParams } from 'react-router-dom'
-import TabNavigation from '@/components/TabNavigation'
+
 import AllOrgBasic from '@/app/app/allOrgs/edit/AllOrgBasic'
 import AllOrgMembers from '@/app/app/allOrgs/edit/AllOrgMembers'
 import AllOrgPackages from '@/app/app/allOrgs/edit/AllOrgPackages'
-import { useGetOneAllOrganizations } from '@/lib/hooks/queries/useGetOneAllOrganizations'
+import TabNavigation from '@/components/TabNavigation'
 import EditItemHeader from '@/components/headers/EditItemHeader'
+import { useGetOneOrganization } from '@/lib/hooks/queries/useGetOneOrganization'
 
 function AllOrgEditRendered ({ orgId }: {orgId: string}) {
-  const { data } = useGetOneAllOrganizations(orgId)
+  const { data } = useGetOneOrganization(orgId)
 
   if (data === undefined) {
     return null // TODO: Loading spinner

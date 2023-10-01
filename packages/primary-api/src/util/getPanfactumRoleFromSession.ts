@@ -1,4 +1,5 @@
 import type { FastifyRequest } from 'fastify'
+
 import { getAuthInfo } from './getAuthInfo'
 import { getDB } from '../db/db'
 

@@ -1,16 +1,23 @@
-import Fastify from 'fastify'
+import type { FastifyCookieOptions } from '@fastify/cookie'
 import cors from '@fastify/cors'
 import type { TypeBoxTypeProvider } from '@fastify/type-provider-typebox'
-import type { FastifyCookieOptions } from '@fastify/cookie'
-import { registerExitHandlers } from './exit'
+import Fastify from 'fastify'
+
 import { COOKIE_SIGNING_SECRET, ENV, PUBLIC_URL } from './environment'
-import { UserRoutes } from './routes/user'
-import { HealthRoutes } from './routes/health'
-import { AuthRoutes } from './routes/auth'
-import { DevRoutes } from './routes/dev'
-import { AdminRoutes } from './routes/admin'
+import { registerExitHandlers } from './exit'
 import { errorHandler } from './handlers/error'
+import { AuthRoutes } from './routes/auth'
 import { AUTH_COOKIE_NAME, authCookieRequestHook } from './routes/auth/authCookie'
+import { DevRoutes } from './routes/dev'
+import { HealthRoutes } from './routes/health'
+import { LoginSessionsRoutes } from './routes/loginSessions'
+import { OrganizationMembershipsRoutes } from './routes/organizationMemberships'
+import { OrganizationRolesRoutes } from './routes/organizationRoles'
+import { OrganizationsRoutes } from './routes/organizations'
+import { PackageDownloadsRoutes } from './routes/packageDownloads'
+import { PackageVersionsRoutes } from './routes/packageVersions'
+import { PackagesRoutes } from './routes/packages'
+import { UsersRoutes } from './routes/users'
 
 // eslint-disable-next-line
 // @ts-ignore
@@ -121,10 +128,15 @@ export function launchServer () {
    *******************************************************************/
   const prefix = '/v1'
   void server.register(HealthRoutes, { prefix })
-  void server.register(UserRoutes, { prefix })
   void server.register(AuthRoutes, { prefix })
-  void server.register(AdminRoutes, { prefix })
-
+  void server.register(UsersRoutes, { prefix })
+  void server.register(PackageVersionsRoutes, { prefix })
+  void server.register(PackagesRoutes, { prefix })
+  void server.register(PackageDownloadsRoutes, { prefix })
+  void server.register(OrganizationsRoutes, { prefix })
+  void server.register(OrganizationRolesRoutes, { prefix })
+  void server.register(OrganizationMembershipsRoutes, { prefix })
+  void server.register(LoginSessionsRoutes, { prefix })
   if (ENV === 'development') {
     void server.register(DevRoutes, { prefix })
   }

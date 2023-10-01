@@ -1,15 +1,15 @@
 import { Admin, CustomRoutes } from 'react-admin'
 import { Navigate, Route, useParams } from 'react-router-dom'
-import { useMemo } from 'react'
 
-import { customAuthProvider } from '@/lib/providers/auth/authProvider'
-import CustomLayout from '@/app/app/layout/CustomLayout'
-import { createCustomDataProvider } from '@/lib/providers/data/dataProvider'
-import { queryClient } from '@/lib/clients/query/client'
-import AllUserRouter from '@/app/app/allUsers/AllUserRouter'
-import { theme } from './theme'
 import AllOrgRouter from '@/app/app/allOrgs/AllOrgRouter'
 import AllPackageRouter from '@/app/app/allPackages/AllPackageRouter'
+import AllUserRouter from '@/app/app/allUsers/AllUserRouter'
+import CustomLayout from '@/app/app/layout/CustomLayout'
+import { queryClient } from '@/lib/clients/query/client'
+import { customAuthProvider } from '@/lib/providers/auth/authProvider'
+import { createCustomDataProvider } from '@/lib/providers/data/dataProvider'
+
+import { theme } from './theme'
 
 function LoginRedirect () {
   return (
@@ -19,13 +19,9 @@ function LoginRedirect () {
     />
   )
 }
-
+const dataProvider = createCustomDataProvider()
 export default function App () {
   const { orgId } = useParams()
-  const dataProvider = useMemo(
-    () => createCustomDataProvider(orgId),
-    [orgId]
-  )
 
   if (!orgId) {
     return null

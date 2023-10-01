@@ -1,6 +1,6 @@
-import TabNavigation from '@/components/TabNavigation'
 import AllOrgMemberList from '@/app/app/allOrgs/edit/AllOrgMemberList'
 import AllOrgRoles from '@/app/app/allOrgs/edit/AllOrgRoles'
+import TabNavigation from '@/components/TabNavigation'
 
 interface IAllOrgMembersProps {
   orgId: string;

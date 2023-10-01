@@ -1,4 +1,5 @@
 import type { TableMetadata } from 'kysely'
+
 import { camelToSnakeCase } from './camelToSnakeCase'
 
 export function tableHasColumn (tables:TableMetadata[], tableName: string, columnName: string) {

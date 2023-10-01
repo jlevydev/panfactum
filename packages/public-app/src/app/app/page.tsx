@@ -1,10 +1,12 @@
 'use client'
 
-import type { NextPage } from 'next'
-import { StyledEngineProvider } from '@mui/material/styles'
-import dynamic from 'next/dynamic'
-import { ReactNode, useEffect, useState } from 'react'
 import { CssBaseline, ThemeProvider } from '@mui/material'
+import { StyledEngineProvider } from '@mui/material/styles'
+import type { NextPage } from 'next'
+import dynamic from 'next/dynamic'
+import type { ReactNode } from 'react'
+import { useEffect, useState } from 'react'
+
 import { theme } from '@/app/app/theme'
 
 // This disables SSR on all of the children of the component

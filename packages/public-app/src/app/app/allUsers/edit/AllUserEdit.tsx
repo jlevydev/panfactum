@@ -1,15 +1,16 @@
 import { useParams } from 'react-router-dom'
-import TabNavigation from '@/components/TabNavigation'
-import AllUserBasic from '@/app/app/allUsers/edit/AllUserBasic'
+
+import AllUserAudit from '@/app/app/allUsers/edit/AllUserAudit'
 import AllUserAuth from '@/app/app/allUsers/edit/AllUserAuth'
+import AllUserBasic from '@/app/app/allUsers/edit/AllUserBasic'
 import AllUserOrgs from '@/app/app/allUsers/edit/AllUserOrgs'
 import AllUserSubs from '@/app/app/allUsers/edit/AllUserSubs'
-import AllUserAudit from '@/app/app/allUsers/edit/AllUserAudit'
+import TabNavigation from '@/components/TabNavigation'
 import EditItemHeader from '@/components/headers/EditItemHeader'
-import { useGetOneAllUser } from '@/lib/hooks/queries/useGetOneAllUser'
+import { useGetOneUser } from '@/lib/hooks/queries/useGetOneUser'
 
 function AllUserEditRendered ({ userId }: {userId: string}) {
-  const { data } = useGetOneAllUser(userId)
+  const { data } = useGetOneUser(userId)
 
   if (data === undefined) {
     return null // TODO: Loading spinner
@@ -21,7 +22,7 @@ function AllUserEditRendered ({ userId }: {userId: string}) {
     <div className="pt-4 flex flex-col gap-2">
       <EditItemHeader
         name={`${firstName} ${lastName}`}
-        status={isDeleted ? 'Deleted' : 'Active'}
+        status={isDeleted ? 'Disabled' : 'Active'}
         updatedAt={updatedAt}
         deletedAt={deletedAt}
         createdAt={createdAt}

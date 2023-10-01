@@ -1,5 +1,6 @@
-import { getDB } from './db'
 import type { Kysely } from 'kysely'
+
+import { getDB } from './db'
 import type { Database } from './models/Database'
 
 export async function getTables (_db?: Kysely<Database>) {

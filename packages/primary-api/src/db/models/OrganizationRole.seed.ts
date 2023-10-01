@@ -1,8 +1,9 @@
 import { faker } from '@faker-js/faker'
-import { getDB } from '../db'
-import type { OrganizationRoleTable } from './OrganizationRole'
-import type { OrganizationTableSeed } from './Organization.seed'
 import type { Selectable } from 'kysely'
+
+import type { OrganizationTableSeed } from './Organization.seed'
+import type { OrganizationRoleTable } from './OrganizationRole'
+import { getDB } from '../db'
 
 export type OrganizationRoleTableSeed = Selectable<OrganizationRoleTable>
 
@@ -12,10 +13,14 @@ export function createRandomOrganizationRole (organization: OrganizationTableSee
     name = faker.person.jobType()
   }
   nameCache.add(name)
+  const createdAt = faker.date.soon({ refDate: organization.createdAt, days: 100 })
   return {
     id: faker.string.uuid(),
     organizationId: organization.id,
-    name
+    name,
+    description: faker.word.words({ count: { min: 5, max: 20 } }),
+    createdAt,
+    updatedAt: faker.date.soon({ refDate: createdAt, days: 100 })
   }
 }
 

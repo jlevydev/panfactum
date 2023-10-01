@@ -1,4 +1,5 @@
-import { getJSONFromDBResult, IInput } from './getJSONFromDBResult'
+import type { IInput } from './getJSONFromDBResult'
+import { getJSONFromDBResult } from './getJSONFromDBResult'
 
 export function createGetResult<T extends IInput> (results: T[], page: number, perPage: number) {
   return {

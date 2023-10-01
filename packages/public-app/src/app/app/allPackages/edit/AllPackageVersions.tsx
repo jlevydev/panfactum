@@ -2,8 +2,9 @@ import {
   BooleanInput, Datagrid, FilterButton, FilterForm, FunctionField, InfiniteList, NumberField,
   TextField
 } from 'react-admin'
-import TimeFromNowField from '@/components/time/TimeFromNowField'
+
 import ByteSizeField from '@/components/size/ByteSizeField'
+import TimeFromNowField from '@/components/time/TimeFromNowField'
 
 const Filters = [
   <BooleanInput
@@ -35,7 +36,7 @@ export default function AllPackageVersions (props: IProps) {
   return (
     <div className="p-4">
       <InfiniteList
-        resource="allPackageVersions"
+        resource="packageVersions"
         filter={{ packageId: props.packageId }}
         sort={{ field: 'createdAt', order: 'DESC' }}
         actions={<Actions/>}

@@ -1,4 +1,5 @@
 import type { Identifier, RaRecord } from 'react-admin'
+
 import { apiDelete as rawApiDelete } from '@/lib/clients/api/apiFetch'
 
 /**********************************************

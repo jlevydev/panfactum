@@ -3,21 +3,18 @@ import { API_URL } from '../../constants'
 /**********************************************
  * Standard API Errors
  * ********************************************/
-export class APIUnauthenticatedError extends Error {
-  constructor () {
-    super('User is not authenticated')
-  }
-}
-
-export class APIUnauthorizedError extends Error {
-  constructor () {
-    super('User is not authorized')
-  }
-}
-
+type ErrorArray = Array<{
+  type: string,
+  message: string
+  resourceId?: string
+}>
 export class APIServerError extends Error {
-  constructor () {
-    super('API server unavailable')
+  errors: ErrorArray
+  status: number
+  constructor (status: number, errors: ErrorArray) {
+    super()
+    this.errors = errors
+    this.status = status
   }
 }
 
@@ -32,24 +29,11 @@ async function handleResponse<ReturnType = undefined> (res: Response):Promise<Re
     } else {
       return undefined as ReturnType
     }
-  } else if (res.status === 400) {
-    const message = ((await res.json()) as {message: string} | undefined)?.message
-    if (message === undefined) {
-      // TODO: This should really never happen
-      // and so this indicates a problem with the API
-      // server that we need to do some additional logging around
-      throw new Error('Invalid request')
-    } else {
-      throw new Error(message)
-    }
-  } else if (res.status === 401) {
-    throw new APIUnauthenticatedError()
-  } else if (res.status === 403) {
-    throw new APIUnauthorizedError()
-  } else if (res.status >= 500) {
-    throw new APIServerError()
   } else {
-    throw new Error(res.statusText)
+    const errors = (await res.json()) as {errors: ErrorArray} | undefined
+    throw new APIServerError(res.status, errors?.errors || [{
+      type: 'Unknown', message: 'Unknown error occurred when trying to submit API request.'
+    }])
   }
 }
 

@@ -1,5 +1,6 @@
-import { getDB } from '../db'
 import { jsonArrayFrom } from 'kysely/helpers/postgres'
+
+import { getDB } from '../db'
 import type { OrganizationRolePermissionTable } from '../models/OrganizationRolePermission'
 
 export async function getUserInfoById (id: string) {

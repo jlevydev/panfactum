@@ -1,5 +1,6 @@
-import Modal, { ModalProps } from '@mui/material/Modal'
 import { Alert } from '@mui/material'
+import type { ModalProps } from '@mui/material/Modal'
+import Modal from '@mui/material/Modal'
 
 interface IBaseModalProps extends ModalProps{
   name: string;

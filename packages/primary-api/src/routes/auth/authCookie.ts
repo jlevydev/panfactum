@@ -1,4 +1,5 @@
 import type { FastifyReply, FastifyRequest } from 'fastify'
+
 import { getDB } from '../../db/db'
 
 export const AUTH_COOKIE_NAME = 'panforiAuth'

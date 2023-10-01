@@ -1,80 +1,93 @@
-import {
-  BooleanInput, Datagrid, EmailField, FilterButton, FilterForm,
-  FunctionField, InfiniteList,
-  TextField, useRecordContext
-} from 'react-admin'
-import TimeFromNowField from '@/components/time/TimeFromNowField'
+import type { OrganizationMembershipsResultType } from '@panfactum/primary-api'
 import React, { useState } from 'react'
+import {
+  Datagrid, EmailField,
+  FunctionField, InfiniteList,
+  TextField, TopToolbar, useListContext
+} from 'react-admin'
+
+import BulkActionButton from '@/components/list/BulkActionButton'
+import ChangeOrganizationMembershipsStatusModal from '@/components/modals/ChangeOrganizationMembershipsStatusModal'
+import ChangeUserRolesModal from '@/components/modals/ChangeUserRolesModal'
+import TimeFromNowField from '@/components/time/TimeFromNowField'
 import { useAdminBasePath } from '@/lib/hooks/navigation/useAdminBasePath'
-import ChangeUserRoleModal from '@/components/modals/ChangeUserRoleModal'
-import { Link } from 'react-router-dom'
-import Button, { ButtonProps } from '@mui/material/Button'
-import type { AllOrganizationMembershipsResultType } from '@panfactum/primary-api'
 
-const Filters = [
-  <BooleanInput
-    label="Is Active"
-    source="isActive"
-    key="isActive"
-    defaultValue={true}
-  />
-]
+interface IAllOrgMemberListProps {
+  orgId: string;
+}
 
-function MemberListActions () {
+/************************************************
+ * List Actions
+ * **********************************************/
+
+function Actions () {
   return (
-    <div className="flex justify-between w-full">
-      <FilterForm filters={Filters} />
-      <div className="flex">
-        <FilterButton
-          filters={Filters}
-          className="flex-grow"
-        />
-      </div>
-    </div>
+    <TopToolbar/>
   )
 }
 
-/*******************************************
- * Expand Panel
- * *****************************************/
-function PanelButton (props: ButtonProps) {
-  return (
-    <Button
-      variant="contained"
-      size="small"
-      {...props}
-      className={`py-1 px-2 text-xs normal-case bg-primary ${props.className ?? ''}`}
-    />
-  )
-}
-function Panel () {
-  const membershipRecord = useRecordContext<AllOrganizationMembershipsResultType>()
-  const basePath = useAdminBasePath()
-  const [isRoleModalOpen, setIsRoleModalOpen] = useState(false)
-  const onChangeRoleClick = () => setIsRoleModalOpen(true)
-  const onRoleModalClose = () => setIsRoleModalOpen(false)
+function BulkActions ({ orgId }: IAllOrgMemberListProps) {
+  const { selectedIds, data, onSelect } = useListContext<OrganizationMembershipsResultType>()
+  const [deactivateMembershipModalIsOpen, setDeactivateMembershipModalIsOpen] = useState<boolean>(false)
+  const [reactivateMembershipModalIsOpen, setReactivateMembershipModalIsOpen] = useState<boolean>(false)
+  const [changeRoleModalIsOpen, setChangeRoleModalIsOpen] = useState<boolean>(false)
+
+  const selectedMemberships = data
+    .filter(record => selectedIds.includes(record.id))
+  const activeMemberships = selectedMemberships.filter(record => !record.isDeleted)
+  const deactivatedMemberships = selectedMemberships.filter(record => record.isDeleted)
 
   return (
-    <div className="flex flex-wrap gap-4 py-2">
-      <Link to={`${basePath}/allUsers/${membershipRecord.userId}`}>
-        <PanelButton>
-          View User
-        </PanelButton>
-      </Link>
-      <PanelButton onClick={onChangeRoleClick}>
+    <>
+      <BulkActionButton
+        onClick={() => setChangeRoleModalIsOpen(true)}
+        disabled={activeMemberships.length === 0}
+        tooltipText={activeMemberships.length === 0 ? 'You must select at least one active membership.' : "Changes the users' role."}
+      >
         Change Role
-      </PanelButton>
-      <PanelButton className="bg-red">
-        Kick
-      </PanelButton>
-      <ChangeUserRoleModal
-        open={isRoleModalOpen}
-        onClose={onRoleModalClose}
-        orgId={membershipRecord.organizationId}
-        currentRoleId={membershipRecord.roleId}
-        membershipId={membershipRecord.id}
+      </BulkActionButton>
+      <BulkActionButton
+        actionType="danger"
+        onClick={() => setDeactivateMembershipModalIsOpen(true)}
+        disabled={activeMemberships.length === 0}
+        tooltipText={activeMemberships.length === 0 ? 'You must select at least one active membership.' : 'Removes the user from the selected organizations.'}
+      >
+        Remove
+      </BulkActionButton>
+
+      <BulkActionButton
+        actionType="danger"
+        onClick={() => setReactivateMembershipModalIsOpen(true)}
+        disabled={deactivatedMemberships.length === 0}
+        tooltipText={deactivatedMemberships.length === 0 ? 'You must select at least one deactivated membership.' : 'Reactivates the user in the selected organizations.'}
+      >
+        Reactivate
+      </BulkActionButton>
+      <ChangeUserRolesModal
+        perspective="organization"
+        orgId={orgId}
+        open={changeRoleModalIsOpen}
+        onClose={() => setChangeRoleModalIsOpen(false)}
+        onSuccess={() => onSelect([])}
+        memberships={activeMemberships}
       />
-    </div>
+      <ChangeOrganizationMembershipsStatusModal
+        perspective="organization"
+        isRemoving={true}
+        open={deactivateMembershipModalIsOpen}
+        onClose={() => setDeactivateMembershipModalIsOpen(false)}
+        onSuccess={() => onSelect([])}
+        memberships={activeMemberships}
+      />
+      <ChangeOrganizationMembershipsStatusModal
+        perspective="organization"
+        isRemoving={false}
+        open={reactivateMembershipModalIsOpen}
+        onClose={() => setReactivateMembershipModalIsOpen(false)}
+        onSuccess={() => onSelect([])}
+        memberships={deactivatedMemberships}
+      />
+    </>
   )
 }
 
@@ -82,25 +95,24 @@ function Panel () {
  * List
  * *****************************************/
 
-interface IAllOrgMemberListProps {
-  orgId: string;
-}
 export default function AllOrgMemberList (props: IAllOrgMemberListProps) {
+  const basePath = useAdminBasePath()
   return (
     <div className="p-4">
       <InfiniteList
-        resource="allOrgMemberships"
+        resource="organizationMemberships"
         filter={{ organizationId: props.orgId }}
         sort={{ field: 'userLastName', order: 'DESC' }}
-        actions={<MemberListActions/>}
+        actions={<Actions/>}
         empty={<div>No members in this organization</div>}
         component={'div'}
         perPage={25}
       >
         <Datagrid
-          rowClick="expand"
-          expand={<Panel/>}
-          expandSingle={true}
+          bulkActionButtons={<BulkActions orgId={props.orgId}/>}
+          rowClick={(_, __, record) => {
+            return `${basePath}/allUsers/${(record as OrganizationMembershipsResultType).userId}`
+          }}
         >
           <TextField
             source="userFirstName"

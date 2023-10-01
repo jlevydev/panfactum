@@ -1,6 +1,7 @@
 import type { Kysely } from 'kysely'
-import type { Database } from '../models/Database'
 import { sql } from 'kysely'
+
+import type { Database } from '../models/Database'
 import type { OrganizationRolePermissionTable } from '../models/OrganizationRolePermission'
 
 export async function up (db: Kysely<Database>): Promise<void> {

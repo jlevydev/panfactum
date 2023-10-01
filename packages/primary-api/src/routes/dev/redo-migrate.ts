@@ -1,4 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify'
+
+import { DEFAULT_SCHEMA_CODES } from '../../handlers/error'
 import { migrateToLatest } from '../../migrate'
 
 /**********************************************************************
@@ -15,12 +17,13 @@ export const RedoMigrateRoute:FastifyPluginAsync = async (fastify) => {
           200: {
             description: 'Database was migrated successfully',
             type: 'null'
-          }
+          },
+          ...DEFAULT_SCHEMA_CODES
         }
       }
     },
     async (_, reply) => {
-      void await migrateToLatest(true)
+      await migrateToLatest(true)
       void reply.send()
     }
   )

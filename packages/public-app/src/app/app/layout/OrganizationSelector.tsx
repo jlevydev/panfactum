@@ -1,13 +1,14 @@
+import AddIcon from '@mui/icons-material/Add'
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown'
 import Button from '@mui/material/Button'
+import Fade from '@mui/material/Fade'
 import Menu from '@mui/material/Menu'
 import MenuItem from '@mui/material/MenuItem'
-import Fade from '@mui/material/Fade'
+import Tooltip from '@mui/material/Tooltip'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown'
-import AddIcon from '@mui/icons-material/Add'
+
 import { useIdentityQuery } from '@/lib/providers/auth/authProvider'
-import Tooltip from '@mui/material/Tooltip'
 
 export default function OrganizationSelector (props: {collapsed?: boolean}) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)

@@ -1,8 +1,9 @@
-import { Pool } from 'pg'
 import { CamelCasePlugin, Kysely, PostgresDialect } from 'kysely'
+import { Pool } from 'pg'
+
 import type { Database } from './models/Database'
-import { readFile, watch } from 'fs/promises'
 import { NODE_ENV, PG_CREDS_PATH, PG_DATABASE, PG_HOSTNAME, PG_PORT } from '../environment'
+import { readFile, watch } from 'fs/promises'
 
 /*************************************
  * Public function for getting the db instance

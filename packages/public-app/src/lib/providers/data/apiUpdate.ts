@@ -1,4 +1,5 @@
 import type { RaRecord } from 'react-admin'
+
 import { apiPut } from '@/lib/clients/api/apiFetch'
 
 /**********************************************
@@ -8,6 +9,9 @@ import { apiPut } from '@/lib/clients/api/apiFetch'
  * with data provider-specific logic
  * ********************************************/
 
-export async function apiUpdate (path: string, record: RaRecord): Promise<RaRecord> {
-  return apiPut(path, record)
+export async function apiUpdate (path: string, ids: string[], delta: {[prop: string]: unknown}): Promise<RaRecord[]> {
+  return apiPut(path, {
+    ids,
+    delta
+  })
 }

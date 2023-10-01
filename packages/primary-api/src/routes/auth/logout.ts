@@ -1,4 +1,5 @@
 import type { FastifyPluginAsync } from 'fastify'
+
 import { clearAuthCookie } from './authCookie'
 
 /**********************************************************************

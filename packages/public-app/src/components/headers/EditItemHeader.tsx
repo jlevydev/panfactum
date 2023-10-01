@@ -47,7 +47,7 @@ export default function EditItemHeader (props : IEditItemHeaderProps) {
           )
           : (
             <div className="font-medium flex gap-2">
-              Deleted:
+              Deactivated:
               <TimeFromNowField unixSeconds={deletedAt}/>
             </div>
           )}

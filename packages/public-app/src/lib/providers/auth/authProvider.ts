@@ -1,14 +1,15 @@
+import type { LoginReturnType } from '@panfactum/primary-api'
 import type { AuthProvider, UserIdentity } from 'react-admin'
+import { useAuthProvider } from 'react-admin'
+import { useQuery } from 'react-query'
+
+import type { APIServerError } from '@/lib/clients/api/apiFetch'
+import { fetchAuthInfo } from '@/lib/clients/api/fetchAuthInfo'
 import { postLogin } from '@/lib/clients/api/postLogin'
 import { postLogout } from '@/lib/clients/api/postLogout'
-import { fetchAuthInfo } from '@/lib/clients/api/fetchAuthInfo'
-import { APIUnauthenticatedError } from '@/lib/clients/api/apiFetch'
-import { useAuthProvider } from 'react-admin'
 import { postMasquerade } from '@/lib/clients/api/postMasquerade'
-import { queryClient } from '@/lib/clients/query/client'
-import type { LoginReturnType } from '@panfactum/primary-api'
 import { postUndoMasquerade } from '@/lib/clients/api/postUndoMasquerade'
-import { useQuery } from 'react-query'
+import { queryClient } from '@/lib/clients/query/client'
 
 /********************************************
  * Login Types
@@ -109,8 +110,8 @@ export const customAuthProvider: ICustomAuthProvider = {
       await renewIdentity()
     }
   },
-  checkError: async (error) => {
-    if (error instanceof APIUnauthenticatedError) {
+  checkError: async (error: APIServerError) => {
+    if (error.status === 401) {
       await postLogout()
       return Promise.reject(error)
     }

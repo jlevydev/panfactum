@@ -1,13 +1,15 @@
-import { Static, Type } from '@sinclair/typebox'
-import { getDB } from '../../db/db'
-import { randomUUID } from 'crypto'
+import type { Static } from '@sinclair/typebox'
+import { Type } from '@sinclair/typebox'
 import type { FastifyPluginAsync } from 'fastify'
+
+import { setAuthCookie } from './authCookie'
+import { getDB } from '../../db/db'
+import { getUserInfoById } from '../../db/queries/getUserInfoById'
 import { getAuthInfo } from '../../util/getAuthInfo'
 import type { FastifySchemaWithSwagger } from '../constants'
-import { getUserInfoById } from '../../db/queries/getUserInfoById'
-import { setAuthCookie } from './authCookie'
 import type { LoginReplyType } from '../models/auth'
 import { LoginReply } from '../models/auth'
+import { randomUUID } from 'crypto'
 
 /**********************************************************************
  * Typings

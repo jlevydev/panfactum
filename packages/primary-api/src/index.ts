@@ -1,9 +1,9 @@
 import type { Static } from '@sinclair/typebox'
 
 import { FUNCTION } from './environment'
-import { launchServer } from './server'
 import { migrate } from './migrate'
 import type { LoginReply } from './routes/models/auth'
+import { launchServer } from './server'
 
 if (FUNCTION === 'http-server') {
   launchServer()
@@ -16,15 +16,22 @@ if (FUNCTION === 'http-server') {
  *******************************************************************/
 
 export type LoginReturnType = Static<typeof LoginReply>
-export type { UserOrganizationsReplyType } from './routes/user/organizations'
-export type { ReplyType } from './routes/admin/users/get'
-export type { ResultType as AllOrganizationResultType } from './routes/admin/organizations/get'
-export type { ResultType as AllPackageResultType } from './routes/admin/packages/get'
-export type { ResultType as AllUserResultType } from './routes/admin/users/get'
-export type { ResultType as AllPackageDownloadResultType } from './routes/admin/packageDownloads/get'
-export type { ResultType as AllOrganizationMembershipsResultType } from './routes/admin/organizationMemberships/get'
-export type { ResultType as AllOrganizationRolesResultType } from './routes/admin/organizationRoles/get'
-export type { UpdateBodyType as AllOrganizationMembershipUpdateBodyType } from './routes/admin/organizationMemberships/update'
-export type { UpdateResultType as AllOrganizationMembershipUpdateResultType } from './routes/admin/organizationMemberships/update'
-export type { UpdateBodyType as AllUserUpdateBodyType } from './routes/admin/users/update'
-export type { UpdateResultType as AllUserUpdateResultType } from './routes/admin/users/update'
+export type { ReplyType } from './routes/users/get'
+export type { ResultType as OrganizationResultType } from './routes/organizations/get'
+export type { ResultType as PackageResultType } from './routes/packages/get'
+export type { ResultType as UserResultType } from './routes/users/get'
+export type { ResultType as PackageDownloadResultType } from './routes/packageDownloads/get'
+export type { ResultType as OrganizationMembershipsResultType } from './routes/organizationMemberships/get'
+export type { ResultType as OrganizationRolesResultType } from './routes/organizationRoles/get'
+export type { DeltaType as OrganizationMembershipUpdateDeltaType } from './routes/organizationMemberships/update'
+export type { UpdateResultType as OrganizationMembershipUpdateResultType } from './routes/organizationMemberships/update'
+export type { DeltaType as UserUpdateDeltaType } from './routes/users/update'
+export type { UpdateResultType as UserUpdateResultType } from './routes/users/update'
+export type { DeltaType as OrganizationUpdateDeltaType } from './routes/organizations/update'
+export type { UpdateResultType as OrganizationUpdateResultType } from './routes/organizations/update'
+export type { DeltaType as PackageVersionsUpdateDeltaType } from './routes/packageVersions/update'
+export type { UpdateResultType as PackageVersionsUpdateResultType } from './routes/packageVersions/update'
+export type { DeltaType as PackagesUpdateDeltaType } from './routes/packages/update'
+export type { UpdateResultType as PackagesUpdateResultType } from './routes/packages/update'
+export type { DeltaType as OrganizationRolesUpdateDeltaType } from './routes/organizationRoles/update'
+export type { UpdateResultType as OrganizationRolesUpdateResultType } from './routes/organizationRoles/update'

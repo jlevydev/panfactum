@@ -1,4 +1,5 @@
 import type { RaRecord } from 'react-admin'
+
 import { apiPost } from '@/lib/clients/api/apiFetch'
 
 /**********************************************

@@ -1,5 +1,6 @@
 import '../globals.css'
 import type { ReactNode } from 'react'
+
 import { kanit } from './font'
 
 export const metadata = {

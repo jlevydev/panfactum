@@ -1,6 +1,7 @@
 import type { FastifyPluginAsync } from 'fastify'
-import { SeedRoute } from './seed'
+
 import { RedoMigrateRoute } from './redo-migrate'
+import { SeedRoute } from './seed'
 import { ThrowErrorRoute } from './throwError'
 
 export const DevRoutes: FastifyPluginAsync = async (fastify) => {

@@ -1,4 +1,5 @@
 import { Outlet, Route, Routes } from 'react-router-dom'
+
 import AllUserList from '@/app/app/allUsers/AllUserList'
 import AllUserEdit from '@/app/app/allUsers/edit/AllUserEdit'
 

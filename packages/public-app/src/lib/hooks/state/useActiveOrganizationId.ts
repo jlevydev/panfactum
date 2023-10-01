@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 
 // Parses the current pathname to extract the org id and trailing path parts from the /app directory
 const regex = /\/app\/?(?<orgId>[a-zA-Z0-9-]*)(?<pathParts>.*)/

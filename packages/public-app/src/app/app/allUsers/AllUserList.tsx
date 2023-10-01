@@ -1,17 +1,19 @@
-import Button, { ButtonProps } from '@mui/material/Button'
+import Button from '@mui/material/Button'
+import type { UserResultType } from '@panfactum/primary-api'
+import React, { useState } from 'react'
+import type { RaRecord } from 'react-admin'
 import {
   DatagridConfigurable,
   TextField,
   EmailField,
   FunctionField,
-  RaRecord,
   useLogin,
   SelectColumnsButton, TopToolbar, InfiniteList, useListContext
 } from 'react-admin'
+
+import BulkActionButton from '@/components/list/BulkActionButton'
+import ChangeUsersStatusModal from '@/components/modals/ChangeUsersStatusModal'
 import TimeFromNowField from '@/components/time/TimeFromNowField'
-import type { AllUserResultType } from '@panfactum/primary-api'
-import React, { useState } from 'react'
-import ReactivateUsersModal from '@/components/modals/ReactivateUsersModal'
 
 /************************************************
  * List Actions
@@ -25,39 +27,48 @@ function Actions () {
   )
 }
 
-function BulkActionButton (props: ButtonProps) {
-  return (
-    <Button
-      variant="contained"
-      size="small"
-      {...props}
-      className={`py-1 px-2 text-xs normal-case bg-primary ${props.className ?? ''}`}
-    />
-  )
-}
-
 function BulkActions () {
-  const { selectedIds, data, onSelect } = useListContext<AllUserResultType>()
+  const { selectedIds, data, onSelect } = useListContext<UserResultType>()
   const [reactivateUsersModalIsOpen, setReactivateUsersModalIsOpen] = useState<boolean>(false)
+  const [deactivateUsersModalIsOpen, setDeactivateUsersModalIsOpen] = useState<boolean>(false)
 
   const selectedUsers = data
     .filter(record => selectedIds.includes(record.id))
+  const activeUsers = selectedUsers.filter(record => !record.isDeleted)
+  const deactivatedUsers = selectedUsers.filter(record => record.isDeleted)
+
   return (
     <>
       <BulkActionButton
-        className="bg-red"
+        actionType="danger"
         onClick={() => setReactivateUsersModalIsOpen(true)}
+        disabled={deactivatedUsers.length === 0}
+        tooltipText={deactivatedUsers.length === 0 ? 'You must select at least one deactivated user.' : 'Reactivates the selected users.'}
       >
         Reactivate
       </BulkActionButton>
-      <BulkActionButton className="bg-red">
+      <BulkActionButton
+        actionType="danger"
+        onClick={() => setDeactivateUsersModalIsOpen(true)}
+        disabled={activeUsers.length === 0}
+        tooltipText={activeUsers.length === 0 ? 'You must select at least one active user.' : 'Deactivates the selected users.'}
+
+      >
         Deactivate
       </BulkActionButton>
-      <ReactivateUsersModal
+      <ChangeUsersStatusModal
         open={reactivateUsersModalIsOpen}
         onClose={() => setReactivateUsersModalIsOpen(false)}
         onSuccess={() => onSelect([])}
-        users={selectedUsers}
+        users={deactivatedUsers}
+        isRemoving={false}
+      />
+      <ChangeUsersStatusModal
+        open={deactivateUsersModalIsOpen}
+        onClose={() => setDeactivateUsersModalIsOpen(false)}
+        onSuccess={() => onSelect([])}
+        users={activeUsers}
+        isRemoving={true}
       />
     </>
   )
@@ -75,7 +86,7 @@ export default function AllUserList () {
   }
   return (
     <InfiniteList
-      resource="allUsers"
+      resource="users"
       actions={<Actions/>}
       perPage={25}
     >
@@ -104,7 +115,7 @@ export default function AllUserList () {
           source="numberOfOrgs"
           label="Organizations"
           // We don't want to count the unitary org in the display
-          render={(record: AllUserResultType) => (
+          render={(record: UserResultType) => (
             <div>
               {record.numberOfOrgs - 1}
             </div>
@@ -113,12 +124,12 @@ export default function AllUserList () {
         <FunctionField
           source="createdAt"
           label="Created"
-          render={(record: AllUserResultType) => <TimeFromNowField unixSeconds={record.createdAt}/>}
+          render={(record: UserResultType) => <TimeFromNowField unixSeconds={record.createdAt}/>}
         />
         <FunctionField
           source="deletedAt"
           label="Deactivated"
-          render={(record: AllUserResultType) => <TimeFromNowField unixSeconds={record.deletedAt}/>}
+          render={(record: UserResultType) => <TimeFromNowField unixSeconds={record.deletedAt}/>}
         />
         <FunctionField
           label="Masquerade"

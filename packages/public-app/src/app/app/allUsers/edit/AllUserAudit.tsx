@@ -1,6 +1,6 @@
-import TabNavigation from '@/components/TabNavigation'
 import AllUserLoginSessions from '@/app/app/allUsers/edit/AllUserLoginSessions'
 import AllUserPackageDownloads from '@/app/app/allUsers/edit/AllUserPackageDownloads'
+import TabNavigation from '@/components/TabNavigation'
 
 interface IAllUserAuditProps {
   userId: string;

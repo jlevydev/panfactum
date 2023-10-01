@@ -1,6 +1,7 @@
 import type { FastifyRequest } from 'fastify'
-import type { UserTable } from '../db/models/User'
+
 import { getPanfactumRoleFromSession } from './getPanfactumRoleFromSession'
+import type { UserTable } from '../db/models/User'
 import { WrongPanfactumRoleError } from '../handlers/customErrors'
 
 type PanfactumRole = UserTable['panfactumRole']

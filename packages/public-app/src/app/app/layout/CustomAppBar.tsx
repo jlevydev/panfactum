@@ -1,8 +1,9 @@
+import WarningIcon from '@mui/icons-material/Warning'
+import Button from '@mui/material/Button'
 import { AppBar, useLogin } from 'react-admin'
+
 import CustomUserMenu from '@/app/app/layout/CustomUserMenu'
 import { useIdentityQuery } from '@/lib/providers/auth/authProvider'
-import Button from '@mui/material/Button'
-import WarningIcon from '@mui/icons-material/Warning'
 
 function MasqueradeNotice () {
   const login = useLogin()

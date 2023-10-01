@@ -18,6 +18,17 @@ module.exports = {
           "checksVoidReturn": false
         }
       ],
+      "import/order": ["error", {
+        "groups": [
+          "external",
+          "internal"
+        ],
+        "newlines-between": "always",
+        "alphabetize": {
+          "order": "asc"
+        }
+      }],
+      "@typescript-eslint/consistent-type-imports": "error",
       "@typescript-eslint/no-unused-vars": "off",
         "unused-imports/no-unused-imports": "error",
         "unused-imports/no-unused-vars": [

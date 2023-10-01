@@ -1,29 +1,32 @@
-import type { FastifyPluginAsync } from 'fastify'
-import { Static, Type } from '@sinclair/typebox'
-import { getDB } from '../../db/db'
-import { sql } from 'kysely'
 import { faker } from '@faker-js/faker'
-import { seedUserTable, truncateUserTable } from '../../db/models/User.seed'
-import { seedUserLoginSessionTable, truncateLoginSessionTable } from '../../db/models/UserLoginSession.seed'
+import type { Static } from '@sinclair/typebox'
+import { Type } from '@sinclair/typebox'
+import type { FastifyPluginAsync } from 'fastify'
+import { sql } from 'kysely'
+
+import { getDB } from '../../db/db'
 import {
   seedOrganizationTable,
   seedOrganizationTableUnitary,
   truncateOrganizationTable
 } from '../../db/models/Organization.seed'
-import {
-  seedUserOrganizationTable,
-  seedUserOrganizationTableUnitary,
-  truncateUserOrganizationTable
-} from '../../db/models/UserOrganization.seed'
-import { seedPackageTable, truncatePackageTable } from '../../db/models/Package.seed'
-import { seedPackageVersionTable, truncatePackageVersionTable } from '../../db/models/PackageVersion.seed'
-import { seedPackageDownloadTable, truncatePackageDownloadTable } from '../../db/models/PackageDownload.seed'
-import type { FastifySchemaWithSwagger } from '../constants'
 import { seedOrganizationRoleTable, truncateOrganizationRoleTable } from '../../db/models/OrganizationRole.seed'
 import {
   seedOrganizationRolePermissionTable,
   truncateOrganizationRolePermissionTable
 } from '../../db/models/OrganizationRolePermission.seed'
+import { seedPackageTable, truncatePackageTable } from '../../db/models/Package.seed'
+import { seedPackageDownloadTable, truncatePackageDownloadTable } from '../../db/models/PackageDownload.seed'
+import { seedPackageVersionTable, truncatePackageVersionTable } from '../../db/models/PackageVersion.seed'
+import { seedUserTable, truncateUserTable } from '../../db/models/User.seed'
+import { seedUserLoginSessionTable, truncateLoginSessionTable } from '../../db/models/UserLoginSession.seed'
+import {
+  seedUserOrganizationTable,
+  seedUserOrganizationTableUnitary,
+  truncateUserOrganizationTable
+} from '../../db/models/UserOrganization.seed'
+import { DEFAULT_SCHEMA_CODES } from '../../handlers/error'
+import type { FastifySchemaWithSwagger } from '../constants'
 
 /**********************************************************************
  * Typings
@@ -184,7 +187,8 @@ export const SeedRoute:FastifyPluginAsync = async (fastify) => {
           200: {
             description: 'Database seeding was started',
             type: 'null'
-          }
+          },
+          ...DEFAULT_SCHEMA_CODES
         }
       }
     },

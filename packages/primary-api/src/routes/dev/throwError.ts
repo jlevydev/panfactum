@@ -1,4 +1,5 @@
 import type { FastifyPluginAsync } from 'fastify'
+
 import { DEFAULT_SCHEMA_CODES } from '../../handlers/error'
 /**********************************************************************
  * Route Logic

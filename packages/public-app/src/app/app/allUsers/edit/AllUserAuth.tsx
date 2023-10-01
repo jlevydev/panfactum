@@ -22,7 +22,7 @@ interface IAllUserBasicProps{
 export default function AllUserAuth (props: IAllUserBasicProps) {
   return (
     <Edit
-      resource="allUsers"
+      resource="users"
       id={props.userId}
       component="div"
     >

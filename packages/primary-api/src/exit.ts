@@ -1,7 +1,8 @@
-import { activeSeedingPromise } from './routes/dev/seed'
+import type { FastifyInstance } from 'fastify'
+
 import { dbDestroyPromise, getDB } from './db/db'
 import { NODE_ENV } from './environment'
-import type { FastifyInstance } from 'fastify'
+import { activeSeedingPromise } from './routes/dev/seed'
 
 interface IExitHandlerProps {
   server?: FastifyInstance

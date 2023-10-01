@@ -7,7 +7,7 @@ export async function getOrgInfoById (orgId: string) {
     .select(eb => [
       'organization.id',
       'organization.isUnitary',
-      eb('deletedAt', 'is', null).as('isDeleted')
+      eb('deletedAt', 'is not', null).as('isDeleted')
     ])
     .where('organization.id', '=', orgId)
     .executeTakeFirst()

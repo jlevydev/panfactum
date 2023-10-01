@@ -1,5 +1,6 @@
-import { dateToUnixSeconds } from './dateToUnixSeconds'
 import type { SqlBool } from 'kysely'
+
+import { dateToUnixSeconds } from './dateToUnixSeconds'
 
 export interface IInput {
   // We really do want to be able to handle any inputs here

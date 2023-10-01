@@ -35,7 +35,7 @@ export default function AllOrgRoles (props: IAllOrgRoles) {
   return (
     <div className="p-4">
       <InfiniteList
-        resource="allOrgRoles"
+        resource="organizationRoles"
         filter={{ organizationId: props.orgId }}
         sort={{ field: 'isCustom', order: 'DESC' }}
         actions={<OrgRoleActions/>}

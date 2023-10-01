@@ -1,6 +1,7 @@
 import type { Kysely } from 'kysely'
-import type { Database } from '../models/Database'
+
 import { getTables } from '../getTables'
+import type { Database } from '../models/Database'
 import { tableHasColumn } from '../tableHasColumn'
 
 export async function up (db: Kysely<Database>): Promise<void> {

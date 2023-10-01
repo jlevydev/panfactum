@@ -1,5 +1,6 @@
-import { Type, Static } from '@sinclair/typebox'
-import { StringEnum } from '../../util/customTypes'
+import type { Static } from '@sinclair/typebox'
+import { Type } from '@sinclair/typebox'
+
 import {
   OrganizationIsUnitary,
   OrganizationName,
@@ -8,6 +9,7 @@ import {
   OrganizationRoleName
 } from './organization'
 import { UserEmail, UserFirstName, UserLastName } from './user'
+import { StringEnum } from '../../util/customTypes'
 
 // Basic auth types
 export const AuthUserId = Type.String({ format: 'uuid', description: 'The unique identifier for the logged in user.' })
