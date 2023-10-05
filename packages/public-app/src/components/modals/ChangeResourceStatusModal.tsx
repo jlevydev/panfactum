@@ -87,7 +87,7 @@ export default function ChangeResourceStatusModal<T extends RaRecord<string>> (p
       errors={errors}
     >
       <div>
-        <div className="flex flex-row flex-wrap gap-4 py-4">
+        <div className="flex flex-row flex-wrap gap-4 py-4 text-base lg:text-lg">
           {records.map(record => {
             const name = renderRecord(record)
             return (

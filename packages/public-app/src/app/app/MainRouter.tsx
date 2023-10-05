@@ -1,5 +1,7 @@
 'use client'
 
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { useEffect, useState } from 'react'
 import { QueryClientProvider } from 'react-query'
 import { ReactQueryDevtools } from 'react-query/devtools'
@@ -49,24 +51,26 @@ function NavigateToDefaultOrg () {
 
 export default function AdminApp () {
   return (
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter basename={'/app'}>
-        <Routes>
-          <Route
-            path="/login"
-            element={<LoginPage/>}
-          />
-          <Route
-            path="/o/:orgId/*"
-            element={<App/>}
-          />
-          <Route
-            path="/*"
-            element={<NavigateToDefaultOrg />}
-          />
-        </Routes>
-      </BrowserRouter>
-      <ReactQueryDevtools initialIsOpen={false} />
-    </QueryClientProvider>
+    <LocalizationProvider dateAdapter={AdapterDayjs}>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter basename={'/app'}>
+          <Routes>
+            <Route
+              path="/login"
+              element={<LoginPage/>}
+            />
+            <Route
+              path="/o/:orgId/*"
+              element={<App/>}
+            />
+            <Route
+              path="/*"
+              element={<NavigateToDefaultOrg />}
+            />
+          </Routes>
+        </BrowserRouter>
+        <ReactQueryDevtools initialIsOpen={false} />
+      </QueryClientProvider>
+    </LocalizationProvider>
   )
 }

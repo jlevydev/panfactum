@@ -22,7 +22,7 @@ export default function ConfirmForm (props: IConfirmFormProps) {
       />
       <div className="flex flex-row gap-4 items-center">
         <WarningIcon/>
-        <div className="font-bold text-sm">
+        <div className="font-bold text-sm lg:text-base">
           {warningText}
         </div>
       </div>

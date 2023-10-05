@@ -16,7 +16,7 @@ export default function TimeFromNowField (props: {unixSeconds?: number | null, c
       {time
         ? (
           <Tooltip title={time.local().format('ddd MM/DD/YYYY hh:mm:ss a Z')}>
-            <div>
+            <div className="text-ellipsis overflow-hidden">
               {time.fromNow()}
             </div>
           </Tooltip>

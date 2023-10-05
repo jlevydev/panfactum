@@ -1,31 +1,19 @@
-import Button from '@mui/material/Button'
 import type { UserResultType } from '@panfactum/primary-api'
 import React, { useState } from 'react'
-import type { RaRecord } from 'react-admin'
 import {
-  DatagridConfigurable,
-  TextField,
-  EmailField,
-  FunctionField,
-  useLogin,
-  SelectColumnsButton, TopToolbar, InfiniteList, useListContext
+  useListContext
 } from 'react-admin'
+import { useNavigate } from 'react-router-dom'
 
-import BulkActionButton from '@/components/list/BulkActionButton'
+import BulkActionButton from '@/components/datagrid/BulkActionButton'
+import DataGrid from '@/components/datagrid/DataGrid'
+import MainListLayout from '@/components/layout/MainListLayout'
 import ChangeUsersStatusModal from '@/components/modals/ChangeUsersStatusModal'
-import TimeFromNowField from '@/components/time/TimeFromNowField'
+import { useAdminBasePath } from '@/lib/hooks/navigation/useAdminBasePath'
 
 /************************************************
  * List Actions
  * **********************************************/
-
-function Actions () {
-  return (
-    <TopToolbar>
-      <SelectColumnsButton/>
-    </TopToolbar>
-  )
-}
 
 function BulkActions () {
   const { selectedIds, data, onSelect } = useListContext<UserResultType>()
@@ -79,75 +67,61 @@ function BulkActions () {
  * **********************************************/
 
 export default function AllUserList () {
-  const login = useLogin()
-  const onMasqueradeClick = (targetUserId: string) => {
-    void login({ loginMethod: 'masquerade', targetUserId }, '/')
-      .catch(console.error)
-  }
+  const basePath = useAdminBasePath()
+  const navigate = useNavigate()
   return (
-    <InfiniteList
-      resource="users"
-      actions={<Actions/>}
-      perPage={25}
-    >
-      <DatagridConfigurable
-        rowClick={(id) => `${id}/basic`}
-        bulkActionButtons={<BulkActions/>}
-        omit={['id']}
-      >
-        <TextField
-          source="id"
-          label="id"
-        />
-        <TextField
-          source="firstName"
-          label="First Name"
-        />
-        <TextField
-          source="lastName"
-          label="Last Name"
-        />
-        <EmailField
-          source="email"
-          label="Email"
-        />
-        <FunctionField
-          source="numberOfOrgs"
-          label="Organizations"
-          // We don't want to count the unitary org in the display
-          render={(record: UserResultType) => (
-            <div>
-              {record.numberOfOrgs - 1}
-            </div>
-          )}
-        />
-        <FunctionField
-          source="createdAt"
-          label="Created"
-          render={(record: UserResultType) => <TimeFromNowField unixSeconds={record.createdAt}/>}
-        />
-        <FunctionField
-          source="deletedAt"
-          label="Deactivated"
-          render={(record: UserResultType) => <TimeFromNowField unixSeconds={record.deletedAt}/>}
-        />
-        <FunctionField
-          label="Masquerade"
-          render={(record: RaRecord<string>) => (
-            <Button
-              className="bg-primary"
-              variant="contained"
-              size="small"
-              onClick={(e) => {
-                e.stopPropagation()
-                onMasqueradeClick(record.id)
-              }}
-            >
-              Masquerade
-            </Button>
-          )}
-        />
-      </DatagridConfigurable>
-    </InfiniteList>
+    <MainListLayout title="All Users">
+      <DataGrid
+        listProps={{
+          resource: 'users'
+        }}
+        dataGridProps={{
+          BulkActions,
+          onRowClick: (record) => {
+            navigate(`${basePath}/allUsers/${record.id}`)
+          },
+          empty: <div>No users found</div>,
+          columns: [
+            {
+              field: 'id',
+              headerName: 'User ID',
+              type: 'string',
+              hidden: true
+            },
+            {
+              field: 'firstName',
+              headerName: 'First Name',
+              type: 'string'
+            },
+            {
+              field: 'lastName',
+              headerName: 'Last Name',
+              type: 'string'
+            },
+            {
+              field: 'email',
+              headerName: 'Email',
+              type: 'string'
+            },
+            {
+              field: 'numberOfOrgs',
+              headerName: 'Organizations',
+              type: 'number',
+              valueGetter: (params) => params.value - 1
+            },
+            {
+              field: 'createdAt',
+              headerName: 'Created',
+              type: 'dateTime'
+            },
+            {
+              field: 'deletedAt',
+              headerName: 'Deactivated',
+              type: 'dateTime'
+            }
+          ]
+        }}
+      />
+    </MainListLayout>
   )
 }

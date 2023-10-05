@@ -1,4 +1,4 @@
 module.exports = {
-  extends: [ '@panfactum', 'next/core-web-vitals'],
+  extends: [  'next/core-web-vitals', '@panfactum'],
   root: true
 }

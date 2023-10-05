@@ -1,5 +1,4 @@
 import Box from '@mui/material/Box'
-import Paper from '@mui/material/Paper'
 import Tab from '@mui/material/Tab'
 import Tabs from '@mui/material/Tabs'
 import type { ReactElement } from 'react'
@@ -21,6 +20,7 @@ function TabPanel (props: ITabPanelProps) {
       hidden={currentTab !== tab}
       id={`nav-tabpanel-${tab}`}
       aria-labelledby={`nav-tab-${tab}`}
+      className="overflow-clip w-full"
       {...other}
     >
       {currentTab === tab && children}
@@ -37,10 +37,9 @@ interface ITabNavigationProps {
     element: ReactElement;
   }>
   defaultPath: string;
-  header?: ReactElement;
 }
 function TabNavigationController (props: ITabNavigationProps) {
-  const { tabs, defaultPath, header, nested = false } = props
+  const { tabs, defaultPath, nested = false } = props
   const { tab, nestedTab } = useParams()
 
   const actualTabParam = nested ? nestedTab : tab
@@ -55,18 +54,15 @@ function TabNavigationController (props: ITabNavigationProps) {
     )
   }
 
-  const content = (
-    <>
-      <div>
-        {header && header}
-      </div>
+  return (
+    <Box>
       <Box className={`border-b-2 border-solid border-base-100 flex items-center ${nested ? '' : ''}`}>
         <Tabs
           value={actualTabParam}
           aria-label="tab navigation"
           variant="scrollable"
           scrollButtons="auto"
-          className="w-full"
+          className="h-[35px] min-h-[35px]"
         >
           {tabs.map(({ label, path }) => (
             <Tab
@@ -79,38 +75,26 @@ function TabNavigationController (props: ITabNavigationProps) {
               to={`../${path}`}
               relative="route"
               component={Link}
-              className={`normal-case text-black ${nested ? 'text-base' : 'text-lg'}`}
+              className={`normal-case text-black min-h-[35px] h-[35px] min-w-[40px] lg:min-w-[60px] px-4 lg:px-6 py-2 lg:py-4 ${nested ? 'text-xs lg:text-base' : 'text-sm lg:text-lg'}`}
             />
           ))}
         </Tabs>
       </Box>
-      {tabs.map(({ path, element }) => (
-        <TabPanel
-          currentTab={actualTabParam}
-          tab={path}
-          key={path}
-        >
-          {element}
-        </TabPanel>
-      ))}
-    </>
+      <div
+        className={'overflow-clip'}
+      >
+        {tabs.map(({ path, element }) => (
+          <TabPanel
+            currentTab={actualTabParam}
+            tab={path}
+            key={path}
+          >
+            {element}
+          </TabPanel>
+        ))}
+      </div>
+    </Box>
   )
-
-  if (nested) {
-    return (
-      <Box>
-        {content}
-      </Box>
-    )
-  } else {
-    return (
-      <Box>
-        <Paper>
-          {content}
-        </Paper>
-      </Box>
-    )
-  }
 }
 
 // Adds the routing functionality and then defers logic

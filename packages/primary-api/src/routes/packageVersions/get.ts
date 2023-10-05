@@ -52,6 +52,7 @@ const Result = Type.Object({
   isDeleted: PackageVersionIsDeleted,
   downloadCount: PackageVersionDownloadCount
 })
+export type ResultType = Static<typeof Result>
 
 const sortFields = StringEnum([
   'id',

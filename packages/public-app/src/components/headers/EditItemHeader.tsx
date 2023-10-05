@@ -1,4 +1,4 @@
-import TimeFromNowField from '@/components/time/TimeFromNowField'
+import TimeFromNowField from '@/components/fields/time/TimeFromNowField'
 
 interface IEditItemHeaderProps {
   name: string

@@ -1,27 +1,20 @@
 import type { OrganizationMembershipsResultType } from '@panfactum/primary-api'
 import React, { useState } from 'react'
 import {
-  Datagrid,
-  FunctionField, InfiniteList,
-  TextField, TopToolbar, useListContext
+  useListContext
 } from 'react-admin'
+import { useNavigate } from 'react-router-dom'
 
-import BulkActionButton from '@/components/list/BulkActionButton'
+import BulkActionButton from '@/components/datagrid/BulkActionButton'
+import DataGrid from '@/components/datagrid/DataGrid'
 import ChangeOrganizationMembershipsStatusModal
   from '@/components/modals/ChangeOrganizationMembershipsStatusModal'
 import ChangeUserRolesModal from '@/components/modals/ChangeUserRolesModal'
-import TimeFromNowField from '@/components/time/TimeFromNowField'
 import { useAdminBasePath } from '@/lib/hooks/navigation/useAdminBasePath'
 
 /************************************************
  * List Actions
  * **********************************************/
-
-function Actions () {
-  return (
-    <TopToolbar/>
-  )
-}
 
 function BulkActions () {
   const { selectedIds, data, onSelect } = useListContext<OrganizationMembershipsResultType>()
@@ -95,45 +88,43 @@ interface IAllUserOrgsProps {
 }
 export default function AllUserOrgs (props: IAllUserOrgsProps) {
   const basePath = useAdminBasePath()
-
+  const navigate = useNavigate()
   return (
-    <div className="p-4">
-      <InfiniteList
-        resource="organizationMemberships"
-        filter={{ userId: props.userId, isUnitary: false }}
-        sort={{ field: 'organizationId', order: 'DESC' }}
-        actions={<Actions/>}
-        empty={<div>No associated organizations</div>}
-        perPage={25}
-        component={'div'}
-      >
-        <Datagrid
-          bulkActionButtons={<BulkActions/>}
-          rowClick={(_, __, record) => {
-            return `${basePath}/allOrgs/${(record as OrganizationMembershipsResultType).organizationId}`
-          }}
-        >
-          <TextField
-            source="organizationName"
-            label="Name"
-          />
-          <TextField
-            source="roleName"
-            label="Role"
-          />
-          <FunctionField
-            source="createdAt"
-            label="Joined At"
-            render={(record: {createdAt: number}) => <TimeFromNowField unixSeconds={record.createdAt}/>}
-          />
-          <FunctionField
-            source="deletedAt"
-            label="Left At"
-            render={(record: {id: string, deletedAt: number | null}) => <TimeFromNowField unixSeconds={record.deletedAt}/>}
-          />
-        </Datagrid>
-      </InfiniteList>
-    </div>
-
+    <DataGrid<OrganizationMembershipsResultType>
+      listProps={{
+        resource: 'organizationMemberships',
+        filter: { userId: props.userId, isUnitary: false },
+        sort: { field: 'organizationId', order: 'DESC' }
+      }}
+      dataGridProps={{
+        BulkActions,
+        onRowClick: (record) => {
+          navigate(`${basePath}/allOrgs/${record.organizationId}`)
+        },
+        empty: <div>No associated sessions</div>,
+        columns: [
+          {
+            field: 'organizationName',
+            headerName: 'Name',
+            type: 'string'
+          },
+          {
+            field: 'roleName',
+            headerName: 'Role',
+            type: 'string'
+          },
+          {
+            field: 'createdAt',
+            headerName: 'Joined',
+            type: 'dateTime'
+          },
+          {
+            field: 'deletedAt',
+            headerName: 'Left',
+            type: 'dateTime'
+          }
+        ]
+      }}
+    />
   )
 }

@@ -1,95 +1,76 @@
-import {
-  BooleanInput, Datagrid, FilterButton, FilterForm, FunctionField, InfiniteList, NumberField,
-  TextField
-} from 'react-admin'
+import type { GridRenderCellParams } from '@mui/x-data-grid-pro'
+import type { PackageVersionResultType } from '@panfactum/primary-api'
+import React from 'react'
 
-import ByteSizeField from '@/components/size/ByteSizeField'
-import TimeFromNowField from '@/components/time/TimeFromNowField'
-
-const Filters = [
-  <BooleanInput
-    label="Is Active"
-    source="isActive"
-    key="isActive"
-    defaultValue={true}
-  />
-]
-
-function Actions () {
-  return (
-    <div className="flex justify-between w-full">
-      <FilterForm filters={Filters} />
-      <div className="flex">
-        <FilterButton
-          filters={Filters}
-          className="flex-grow"
-        />
-      </div>
-    </div>
-  )
-}
+import DataGrid from '@/components/datagrid/DataGrid'
 
 interface IProps {
   packageId: string;
 }
 export default function AllPackageVersions (props: IProps) {
   return (
-    <div className="p-4">
-      <InfiniteList
-        resource="packageVersions"
-        filter={{ packageId: props.packageId }}
-        sort={{ field: 'createdAt', order: 'DESC' }}
-        actions={<Actions/>}
-        empty={<div>No versions for this package</div>}
-        component={'div'}
-        perPage={25}
-      >
-        <Datagrid
-          bulkActionButtons={false}
-          rowClick={(id) => `${id}/basic`}
-        >
-          <TextField
-            source="versionTag"
-            label="Tag"
-          />
-          <FunctionField
-            source="createdAt"
-            label="Created"
-            render={(record: {createdAt: number}) => <TimeFromNowField unixSeconds={record.createdAt}/>}
-          />
-          <FunctionField
-            source="createdBy"
-            label="By"
-            render={(record: {createdByFirstName: string, createdByLastName: string}) => (
-              <div>
-                {record.createdByFirstName}
-                {' '}
-                {record.createdByLastName}
-              </div>
-            )}
-          />
-          <FunctionField
-            source="sizeBytes"
-            label="Size"
-            render={(record: {sizeBytes: number}) => <ByteSizeField bytes={record.sizeBytes}/>}
-          />
-          <NumberField
-            source="downloadCount"
-            label="Downloads"
-          />
-          <FunctionField
-            source="archivedAt"
-            label="Archived"
-            render={(record: {archivedAt: number | null}) => <TimeFromNowField unixSeconds={record.archivedAt}/>}
-          />
-          <FunctionField
-            source="deletedAt"
-            label="Deleted"
-            render={(record: {deletedAt: number | null}) => <TimeFromNowField unixSeconds={record.deletedAt}/>}
-          />
-        </Datagrid>
-      </InfiniteList>
-    </div>
-
+    <DataGrid<PackageVersionResultType>
+      listProps={{
+        resource: 'packageVersions',
+        filter: { packageId: props.packageId },
+        sort: { field: 'createdAt', order: 'DESC' }
+      }}
+      dataGridProps={{
+        empty: <div>No versions found</div>,
+        columns: [
+          {
+            field: 'id',
+            headerName: 'Version ID',
+            type: 'string',
+            hidden: true
+          },
+          {
+            field: 'versionTag',
+            headerName: 'Tag',
+            type: 'string'
+          },
+          {
+            field: 'createdAt',
+            headerName: 'Created',
+            type: 'dateTime'
+          },
+          {
+            field: 'createdBy',
+            headerName: 'By',
+            type: 'computed',
+            renderCell: (params: GridRenderCellParams<PackageVersionResultType, string>) => {
+              const { row: { createdByFirstName, createdByLastName } } = params
+              return (
+                <div>
+                  {createdByFirstName}
+                  {' '}
+                  {createdByLastName}
+                </div>
+              )
+            }
+          },
+          {
+            field: 'sizeBytes',
+            headerName: 'Size',
+            type: 'bytes'
+          },
+          {
+            field: 'downloadCount',
+            headerName: 'Downloads',
+            type: 'number'
+          },
+          {
+            field: 'archivedAt',
+            headerName: 'Archived',
+            type: 'dateTime'
+          },
+          {
+            field: 'deletedAt',
+            headerName: 'Deleted',
+            type: 'dateTime'
+          }
+        ]
+      }}
+    />
   )
 }

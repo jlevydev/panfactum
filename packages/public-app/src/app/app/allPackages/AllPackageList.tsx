@@ -1,27 +1,17 @@
 import type { PackageResultType } from '@panfactum/primary-api'
 import React, { useState } from 'react'
-import {
-  DatagridConfigurable,
-  TextField,
-  FunctionField,
-  SelectColumnsButton, TopToolbar, NumberField, InfiniteList, BooleanField, useListContext
-} from 'react-admin'
+import { useListContext } from 'react-admin'
+import { useNavigate } from 'react-router-dom'
 
-import BulkActionButton from '@/components/list/BulkActionButton'
+import BulkActionButton from '@/components/datagrid/BulkActionButton'
+import DataGrid from '@/components/datagrid/DataGrid'
+import MainListLayout from '@/components/layout/MainListLayout'
 import ChangePackagesStatusModal from '@/components/modals/ChangePackagesStatusModal'
-import TimeFromNowField from '@/components/time/TimeFromNowField'
+import { useAdminBasePath } from '@/lib/hooks/navigation/useAdminBasePath'
 
 /************************************************
  * List Actions
  * **********************************************/
-
-function Actions () {
-  return (
-    <TopToolbar>
-      <SelectColumnsButton/>
-    </TopToolbar>
-  )
-}
 
 function BulkActions () {
   const { selectedIds, data, onSelect } = useListContext<PackageResultType>()
@@ -76,58 +66,70 @@ function BulkActions () {
  * **********************************************/
 
 export default function AllPackageList () {
+  const basePath = useAdminBasePath()
+  const navigate = useNavigate()
   return (
-    <InfiniteList
-      resource="packages"
-      actions={<Actions/>}
-      perPage={25}
-    >
-      <DatagridConfigurable
-        rowClick={(id) => `${id}/basic`}
-        bulkActionButtons={<BulkActions/>}
-        omit={['id']}
-      >
-        <TextField
-          source="id"
-          label="id"
-        />
-        <TextField
-          source="name"
-          label="Name"
-        />
-        <TextField
-          source="organizationName"
-          label="Owned By"
-        />
-        <BooleanField
-          source="isPublished"
-          label="Published"
-        />
-        <NumberField
-          source="activeVersionCount"
-          label="Versions"
-        />
-        <FunctionField
-          source="createdAt"
-          label="Created"
-          render={(record: {createdAt: number}) => <TimeFromNowField unixSeconds={record.createdAt}/>}
-        />
-        <FunctionField
-          source="lastPublishedAt"
-          label="Last Published"
-          render={(record: {lastPublishedAt: number | null}) => <TimeFromNowField unixSeconds={record.lastPublishedAt}/>}
-        />
-        <FunctionField
-          source="archivedAt"
-          label="Archived"
-          render={(record: {archivedAt: number}) => <TimeFromNowField unixSeconds={record.archivedAt}/>}
-        />
-        <FunctionField
-          source="deletedAt"
-          label="Deleted"
-          render={(record: {deletedAt: number | null}) => <TimeFromNowField unixSeconds={record.deletedAt}/>}
-        />
-      </DatagridConfigurable>
-    </InfiniteList>
+    <MainListLayout title="All Packages">
+      <DataGrid
+        listProps={{
+          resource: 'packages'
+        }}
+        dataGridProps={{
+          BulkActions,
+          onRowClick: (record) => {
+            navigate(`${basePath}/allPackages/${record.id}`)
+          },
+          empty: <div>No packages found</div>,
+          columns: [
+            {
+              field: 'id',
+              headerName: 'Package ID',
+              type: 'string',
+              hidden: true
+            },
+            {
+              field: 'name',
+              headerName: 'Name',
+              type: 'string'
+            },
+            {
+              field: 'organizationName',
+              headerName: 'Owned By',
+              type: 'string'
+            },
+            {
+              field: 'isPublished',
+              headerName: 'Published',
+              type: 'boolean'
+            },
+            {
+              field: 'activeVersionCount',
+              headerName: 'Versions',
+              type: 'number'
+            },
+            {
+              field: 'createdAt',
+              headerName: 'Created',
+              type: 'dateTime'
+            },
+            {
+              field: 'lastPublishedAt',
+              headerName: 'Last Published',
+              type: 'dateTime'
+            },
+            {
+              field: 'archivedAt',
+              headerName: 'Archived',
+              type: 'dateTime'
+            },
+            {
+              field: 'deletedAt',
+              headerName: 'Deleted',
+              type: 'dateTime'
+            }
+          ]
+        }}
+      />
+    </MainListLayout>
   )
 }

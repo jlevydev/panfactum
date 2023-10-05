@@ -21,6 +21,8 @@ export type { ResultType as OrganizationResultType } from './routes/organization
 export type { ResultType as PackageResultType } from './routes/packages/get'
 export type { ResultType as UserResultType } from './routes/users/get'
 export type { ResultType as PackageDownloadResultType } from './routes/packageDownloads/get'
+export type { ResultType as PackageVersionResultType } from './routes/packageVersions/get'
+export type { ResultType as LoginSessionResultType } from './routes/loginSessions/get'
 export type { ResultType as OrganizationMembershipsResultType } from './routes/organizationMemberships/get'
 export type { ResultType as OrganizationRolesResultType } from './routes/organizationRoles/get'
 export type { DeltaType as OrganizationMembershipUpdateDeltaType } from './routes/organizationMemberships/update'

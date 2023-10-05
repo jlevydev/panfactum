@@ -47,3 +47,8 @@ variable "image_version" {
   description = "The version of the image to use for the deployment"
   type        = string
 }
+
+variable "mui_x_license_key" {
+  description = "The license key used for the MUI pro plan assets"
+  type        = string
+}

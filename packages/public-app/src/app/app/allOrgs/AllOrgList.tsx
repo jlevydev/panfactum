@@ -1,27 +1,17 @@
 import type { OrganizationResultType } from '@panfactum/primary-api'
-import { useState } from 'react'
-import {
-  DatagridConfigurable,
-  TextField,
-  FunctionField,
-  SelectColumnsButton, TopToolbar, NumberField, InfiniteList, BooleanField, useListContext
-} from 'react-admin'
+import React, { useState } from 'react'
+import { useListContext } from 'react-admin'
+import { useNavigate } from 'react-router-dom'
 
-import BulkActionButton from '@/components/list/BulkActionButton'
+import BulkActionButton from '@/components/datagrid/BulkActionButton'
+import DataGrid from '@/components/datagrid/DataGrid'
+import MainListLayout from '@/components/layout/MainListLayout'
 import ChangeOrgsStatusModal from '@/components/modals/ChangeOrgsStatusModal'
-import TimeFromNowField from '@/components/time/TimeFromNowField'
+import { useAdminBasePath } from '@/lib/hooks/navigation/useAdminBasePath'
 
 /************************************************
  * List Actions
  * **********************************************/
-
-function Actions () {
-  return (
-    <TopToolbar>
-      <SelectColumnsButton/>
-    </TopToolbar>
-  )
-}
 
 function BulkActions () {
   const { selectedIds, data, onSelect } = useListContext<OrganizationResultType>()
@@ -76,53 +66,65 @@ function BulkActions () {
  * **********************************************/
 
 export default function AllOrgList () {
+  const basePath = useAdminBasePath()
+  const navigate = useNavigate()
   return (
-    <InfiniteList
-      resource="organizations"
-      actions={<Actions/>}
-      perPage={25}
-    >
-      <DatagridConfigurable
-        bulkActionButtons={<BulkActions/>}
-        rowClick={(id) => `${id}/basic`}
-        omit={['id', 'updatedAt']}
-      >
-        <TextField
-          source="id"
-          label="id"
-        />
-        <TextField
-          source="name"
-          label="Name"
-        />
-        <BooleanField
-          source="isUnitary"
-          label="Personal"
-        />
-        <NumberField
-          source="activeMemberCount"
-          label="Members"
-        />
-        <NumberField
-          source="activePackageCount"
-          label="Packages"
-        />
-        <FunctionField
-          source="createdAt"
-          label="Created"
-          render={(record: {createdAt: number}) => <TimeFromNowField unixSeconds={record.createdAt}/>}
-        />
-        <FunctionField
-          source="updatedAt"
-          label="Updated"
-          render={(record: {updatedAt: number}) => <TimeFromNowField unixSeconds={record.updatedAt}/>}
-        />
-        <FunctionField
-          source="deletedAt"
-          label="Deactivated"
-          render={(record: {deletedAt: number | null}) => <TimeFromNowField unixSeconds={record.deletedAt}/>}
-        />
-      </DatagridConfigurable>
-    </InfiniteList>
+    <MainListLayout title="All Organizations">
+      <DataGrid<OrganizationResultType>
+        listProps={{
+          resource: 'organizations'
+        }}
+        dataGridProps={{
+          BulkActions,
+          onRowClick: (record) => {
+            navigate(`${basePath}/allOrgs/${record.id}`)
+          },
+          empty: <div>No organizations found</div>,
+          columns: [
+            {
+              field: 'id',
+              headerName: 'Organization ID',
+              type: 'string',
+              hidden: true
+            },
+            {
+              field: 'name',
+              headerName: 'Name',
+              type: 'string'
+            },
+            {
+              field: 'isUnitary',
+              headerName: 'Personal',
+              type: 'boolean'
+            },
+            {
+              field: 'activeMemberCount',
+              headerName: 'Members',
+              type: 'number'
+            },
+            {
+              field: 'activePackageCount',
+              headerName: 'Packages',
+              type: 'number'
+            },
+            {
+              field: 'createdAt',
+              headerName: 'Created',
+              type: 'dateTime'
+            },
+            {
+              field: 'updatedAt',
+              headerName: 'Updated',
+              type: 'dateTime'
+            },
+            {
+              field: 'deletedAt',
+              headerName: 'Deactivated',
+              type: 'dateTime'
+            }
+          ]
+        }}
+      />
+    </MainListLayout>
   )
 }

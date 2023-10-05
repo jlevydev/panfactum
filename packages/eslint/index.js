@@ -43,7 +43,8 @@ module.exports = {
       "react/jsx-one-expression-per-line": ["warn", {"allow": "literal"}],
       "react/jsx-indent": ["error", 2, {checkAttributes: true, indentLogicalExpressions: true}],
         "react/jsx-uses-react": "error",
-        "react/jsx-uses-vars": "error"
+        "react/jsx-uses-vars": "error",
+        "react/display-name": "off"
     },
     overrides: [{
       files: ['*.ts', '*.tsx'],

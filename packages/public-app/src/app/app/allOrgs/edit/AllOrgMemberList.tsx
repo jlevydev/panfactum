@@ -1,15 +1,12 @@
 import type { OrganizationMembershipsResultType } from '@panfactum/primary-api'
 import React, { useState } from 'react'
-import {
-  Datagrid, EmailField,
-  FunctionField, InfiniteList,
-  TextField, TopToolbar, useListContext
-} from 'react-admin'
+import { useListContext } from 'react-admin'
+import { useNavigate } from 'react-router-dom'
 
-import BulkActionButton from '@/components/list/BulkActionButton'
+import BulkActionButton from '@/components/datagrid/BulkActionButton'
+import DataGrid from '@/components/datagrid/DataGrid'
 import ChangeOrganizationMembershipsStatusModal from '@/components/modals/ChangeOrganizationMembershipsStatusModal'
 import ChangeUserRolesModal from '@/components/modals/ChangeUserRolesModal'
-import TimeFromNowField from '@/components/time/TimeFromNowField'
 import { useAdminBasePath } from '@/lib/hooks/navigation/useAdminBasePath'
 
 interface IAllOrgMemberListProps {
@@ -19,12 +16,6 @@ interface IAllOrgMemberListProps {
 /************************************************
  * List Actions
  * **********************************************/
-
-function Actions () {
-  return (
-    <TopToolbar/>
-  )
-}
 
 function BulkActions ({ orgId }: IAllOrgMemberListProps) {
   const { selectedIds, data, onSelect } = useListContext<OrganizationMembershipsResultType>()
@@ -97,52 +88,65 @@ function BulkActions ({ orgId }: IAllOrgMemberListProps) {
 
 export default function AllOrgMemberList (props: IAllOrgMemberListProps) {
   const basePath = useAdminBasePath()
+  const navigate = useNavigate()
   return (
-    <div className="p-4">
-      <InfiniteList
-        resource="organizationMemberships"
-        filter={{ organizationId: props.orgId }}
-        sort={{ field: 'userLastName', order: 'DESC' }}
-        actions={<Actions/>}
-        empty={<div>No members in this organization</div>}
-        component={'div'}
-        perPage={25}
-      >
-        <Datagrid
-          bulkActionButtons={<BulkActions orgId={props.orgId}/>}
-          rowClick={(_, __, record) => {
-            return `${basePath}/allUsers/${(record as OrganizationMembershipsResultType).userId}`
-          }}
-        >
-          <TextField
-            source="userFirstName"
-            label="First Name"
-          />
-          <TextField
-            source="userLastName"
-            label="Last Name"
-          />
-          <EmailField
-            source="userEmail"
-            label="Email"
-          />
-          <TextField
-            source="roleName"
-            label="Role"
-          />
-          <FunctionField
-            source="createdAt"
-            label="Joined"
-            render={(record: {createdAt: number}) => <TimeFromNowField unixSeconds={record.createdAt}/>}
-          />
-          <FunctionField
-            source="deletedAt"
-            label="Left"
-            render={(record: {id: string, deletedAt: number | null}) => <TimeFromNowField unixSeconds={record.deletedAt}/>}
-          />
-        </Datagrid>
-      </InfiniteList>
-    </div>
-
+    <DataGrid<OrganizationMembershipsResultType>
+      listProps={{
+        resource: 'organizationMemberships',
+        filter: { organizationId: props.orgId },
+        sort: { field: 'userLastName', order: 'DESC' }
+      }}
+      dataGridProps={{
+        BulkActions: () => <BulkActions orgId={props.orgId}/>,
+        onRowClick: (record) => {
+          navigate(`${basePath}/allUsers/${record.userId}`)
+        },
+        empty: <div>No users</div>,
+        columns: [
+          {
+            field: 'id',
+            headerName: 'Membership ID',
+            type: 'string',
+            hidden: true
+          },
+          {
+            field: 'userId',
+            headerName: 'User ID',
+            type: 'string',
+            hidden: true
+          },
+          {
+            field: 'userFirstName',
+            headerName: 'First name',
+            type: 'string'
+          },
+          {
+            field: 'userLastName',
+            headerName: 'Last name',
+            type: 'string'
+          },
+          {
+            field: 'userEmail',
+            headerName: 'Email',
+            type: 'string'
+          },
+          {
+            field: 'roleName',
+            headerName: 'Role',
+            type: 'string'
+          },
+          {
+            field: 'createdAt',
+            headerName: 'Joined',
+            type: 'dateTime'
+          },
+          {
+            field: 'deletedAt',
+            headerName: 'Left',
+            type: 'dateTime'
+          }
+        ]
+      }}
+    />
   )
 }

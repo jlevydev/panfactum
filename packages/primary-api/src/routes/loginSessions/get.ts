@@ -38,6 +38,7 @@ const Result = Type.Object({
   createdAt: AuthLoginSessionCreatedAt,
   lastApiCallAt: AuthLoginSessionLastApiCallAt
 })
+export type ResultType = Static<typeof Result>
 
 const sortFields = StringEnum([
   'userId',

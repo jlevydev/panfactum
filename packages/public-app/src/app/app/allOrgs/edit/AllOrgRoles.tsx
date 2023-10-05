@@ -1,67 +1,45 @@
-import {
-  BooleanField,
-  BooleanInput, Datagrid, FilterButton, FilterForm,
-  InfiniteList, NumberField,
-  TextField
-} from 'react-admin'
+import type { OrganizationRolesResultType } from '@panfactum/primary-api'
+import React from 'react'
 
-const Filters = [
-  <BooleanInput
-    label="Is Custom"
-    source="isCustom"
-    key="isCustom"
-    defaultValue={true}
-  />
-]
-
-function OrgRoleActions () {
-  return (
-    <div className="flex justify-between w-full">
-      <FilterForm filters={Filters} />
-      <div className="flex">
-        <FilterButton
-          filters={Filters}
-          className="flex-grow"
-        />
-      </div>
-    </div>
-  )
-}
+import DataGrid from '@/components/datagrid/DataGrid'
 
 interface IAllOrgRoles {
   orgId: string;
 }
 export default function AllOrgRoles (props: IAllOrgRoles) {
   return (
-    <div className="p-4">
-      <InfiniteList
-        resource="organizationRoles"
-        filter={{ organizationId: props.orgId }}
-        sort={{ field: 'isCustom', order: 'DESC' }}
-        actions={<OrgRoleActions/>}
-        empty={<div>No members in this organization</div>}
-        component={'div'}
-        perPage={25}
-      >
-        <Datagrid
-          bulkActionButtons={false}
-          rowClick={(id) => `${id}/basic`}
-        >
-          <TextField
-            source="name"
-            label="Name"
-          />
-          <BooleanField
-            source="isCustom"
-            label="Custom"
-          />
-          <NumberField
-            source="activeAssigneeCount"
-            label="Active Users"
-          />
-        </Datagrid>
-      </InfiniteList>
-    </div>
-
+    <DataGrid<OrganizationRolesResultType>
+      listProps={{
+        resource: 'organizationRoles',
+        filter: { organizationId: props.orgId },
+        sort: { field: 'isCustom', order: 'DESC' }
+      }}
+      dataGridProps={{
+        empty: <div>No roles</div>,
+        columns: [
+          {
+            field: 'id',
+            headerName: 'Role ID',
+            type: 'string',
+            hidden: true
+          },
+          {
+            field: 'name',
+            headerName: 'Name',
+            type: 'string'
+          },
+          {
+            field: 'isCustom',
+            headerName: 'Custom',
+            type: 'boolean'
+          },
+          {
+            field: 'activeAssigneeCount',
+            headerName: 'Active Users',
+            type: 'number'
+          }
+        ]
+      }}
+    />
   )
 }

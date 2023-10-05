@@ -8,6 +8,7 @@ locals {
   image         = get_env("TILT_IMAGE_0", ":")
   image_repo    = split(":", local.image)[0]
   image_version = split(":", local.image)[1]
+  license_keys  = yamldecode(sops_decrypt_file("${get_terragrunt_dir()}/license_keys.development.yaml"))
 }
 
 dependency "api" {
@@ -30,4 +31,6 @@ inputs = {
 
   // App Config
   primary_api_url = dependency.api.outputs.public_url
+
+  mui_x_license_key = local.license_keys.mui_x
 }

@@ -25,9 +25,12 @@ podman_build(
      "pnpm-lock.yaml",
      "tsconfig.json",
      "Containerfile",
-     "tilt.trigger"
+     "tilt.trigger",
+     "theme.js"
    ],
    live_update = [
+     sync('theme.js', '/code/packages/public-app/theme.js'),
+     sync('tailwind.config.js', '/code/packages/public-app/tailwind.config.js'),
      sync('src', '/code/packages/public-app/src'),
      sync('public', '/code/packages/public-app/public')
    ]

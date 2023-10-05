@@ -87,9 +87,11 @@ module "deployment" {
   tolerations = module.constants.spot_node_toleration
 
   environment_variables = {
-    NODE_ENV            = local.is_local ? "development" : "production"
-    NEXT_PUBLIC_API_URL = var.primary_api_url
+    NODE_ENV                      = local.is_local ? "development" : "production"
+    NEXT_PUBLIC_API_URL           = var.primary_api_url
+    NEXT_PUBLIC_MUI_X_LICENSE_KEY = var.mui_x_license_key
   }
+
   containers = {
     server = {
       image   = var.image_repo

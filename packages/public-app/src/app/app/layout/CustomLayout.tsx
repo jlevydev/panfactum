@@ -10,6 +10,11 @@ export default function CustomLayout (props: LayoutProps) {
       {...props}
       menu={Sidebar}
       appBar={CustomAppBar}
+      sx={{
+        '& .RaLayout-appFrame': {
+          marginTop: 0
+        }
+      }}
     />
   )
 }

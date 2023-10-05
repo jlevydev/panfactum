@@ -6,10 +6,10 @@ function humanFileSize (size: number) {
 }
 
 interface IByteSizeField {
-  bytes: number;
+  bytes?: number;
 }
 export default function ByteSizeField (props: IByteSizeField) {
-  const { bytes } = props
+  const { bytes = 0 } = props
   return (
     <Tooltip title={`${bytes} bytes`}>
       <div>

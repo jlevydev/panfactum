@@ -2,12 +2,16 @@
 
 import { CssBaseline, ThemeProvider } from '@mui/material'
 import { StyledEngineProvider } from '@mui/material/styles'
+import { LicenseInfo } from '@mui/x-license-pro'
 import type { NextPage } from 'next'
 import dynamic from 'next/dynamic'
 import type { ReactNode } from 'react'
 import { useEffect, useState } from 'react'
 
 import { theme } from '@/app/app/theme'
+
+// eslint-disable-next-line
+LicenseInfo.setLicenseKey(process.env['NEXT_PUBLIC_MUI_X_LICENSE_KEY'] || 'Invalid')
 
 // This disables SSR on all of the children of the component
 // tree which is fine b/c we do not want to do any server side

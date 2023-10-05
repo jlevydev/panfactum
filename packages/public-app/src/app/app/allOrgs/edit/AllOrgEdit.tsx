@@ -3,8 +3,8 @@ import { useParams } from 'react-router-dom'
 import AllOrgBasic from '@/app/app/allOrgs/edit/AllOrgBasic'
 import AllOrgMembers from '@/app/app/allOrgs/edit/AllOrgMembers'
 import AllOrgPackages from '@/app/app/allOrgs/edit/AllOrgPackages'
-import TabNavigation from '@/components/TabNavigation'
-import EditItemHeader from '@/components/headers/EditItemHeader'
+import SingleItemLayout from '@/components/layout/SingleItemLayout'
+import TabNavigation from '@/components/layout/TabNavigation'
 import { useGetOneOrganization } from '@/lib/hooks/queries/useGetOneOrganization'
 
 function AllOrgEditRendered ({ orgId }: {orgId: string}) {
@@ -14,17 +14,15 @@ function AllOrgEditRendered ({ orgId }: {orgId: string}) {
     return null // TODO: Loading spinner
   }
 
-  const { name, isDeleted, updatedAt, deletedAt, createdAt } = data
+  const { id, name } = data
 
   return (
-    <div className="pt-4 flex flex-col gap-2">
-      <EditItemHeader
-        name={name}
-        status={!isDeleted ? 'Active' : 'Inactive'}
-        updatedAt={updatedAt}
-        deletedAt={deletedAt}
-        createdAt={createdAt}
-      />
+    <SingleItemLayout
+      title={name}
+      id={id}
+      asideStateKey="all-org-edit-aside"
+      aside={<div/>}
+    >
       <TabNavigation
         defaultPath={'basic'}
         tabs={[
@@ -45,7 +43,7 @@ function AllOrgEditRendered ({ orgId }: {orgId: string}) {
           }
         ]}
       />
-    </div>
+    </SingleItemLayout>
   )
 }
 

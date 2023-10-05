@@ -1,86 +1,51 @@
 import type { PackageDownloadResultType } from '@panfactum/primary-api'
-import dayjs from 'dayjs'
-import duration from 'dayjs/plugin/duration'
-import relativeTime from 'dayjs/plugin/relativeTime'
-import utc from 'dayjs/plugin/utc'
-import {
-  BooleanInput, Datagrid, FilterButton, FilterForm,
-  FunctionField, InfiniteList,
-  TextField
-} from 'react-admin'
+import { useNavigate } from 'react-router-dom'
 
-import TimeFromNowField from '@/components/time/TimeFromNowField'
+import DataGrid from '@/components/datagrid/DataGrid'
 import { useAdminBasePath } from '@/lib/hooks/navigation/useAdminBasePath'
-dayjs.extend(duration)
-dayjs.extend(relativeTime)
-dayjs.extend(utc)
-
-const Filters = [
-  <BooleanInput
-    label="Is Active"
-    source="isActive"
-    key="isActive"
-    defaultValue={true}
-  />
-]
-
-function UserListActions () {
-  return (
-    <div className="flex justify-between w-full">
-      <FilterForm filters={Filters} />
-      <div className="flex">
-        <FilterButton
-          filters={Filters}
-          className="flex-grow"
-        />
-      </div>
-    </div>
-  )
-}
 
 interface IProps {
   userId: string;
 }
 export default function AllUserPackageDownloads (props: IProps) {
   const basePath = useAdminBasePath()
+  const navigate = useNavigate()
   return (
-    <div className="p-4">
-      <InfiniteList
-        resource="packageDownloads"
-        filter={{ userId: props.userId }}
-        sort={{ field: 'createdAt', order: 'DESC' }}
-        actions={<UserListActions/>}
-        empty={<div>No associated sessions</div>}
-        perPage={25}
-        component={'div'}
-      >
-        <Datagrid
-          bulkActionButtons={false}
-          rowClick={(_, __, record) => {
-            return `${basePath}/allPackages/${(record as PackageDownloadResultType).packageId}`
-          }}
-          optimized
-        >
-          <FunctionField
-            source="createdAt"
-            label="Time"
-            render={(record: {createdAt: number}) => <TimeFromNowField unixSeconds={record.createdAt}/>}
-          />
-          <TextField
-            source="packageName"
-            label="Package"
-          />
-          <TextField
-            source="versionTag"
-            label="Version"
-          />
-          <TextField
-            source="ip"
-            label="IP"
-          />
-        </Datagrid>
-      </InfiniteList>
-    </div>
-
+    <DataGrid<PackageDownloadResultType>
+      listProps={{
+        resource: 'packageDownloads',
+        filter: { userId: props.userId },
+        sort: { field: 'createdAt', order: 'DESC' }
+      }}
+      dataGridProps={{
+        empty: <div>No associated downloads</div>,
+        onRowClick: (record) => {
+          navigate(`${basePath}/allPackages/${record.packageId}`)
+        },
+        columns: [
+          {
+            field: 'createdAt',
+            headerName: 'Time',
+            type: 'dateTime'
+          },
+          {
+            field: 'packageName',
+            headerName: 'Name',
+            description: 'The package name',
+            type: 'string'
+          },
+          {
+            field: 'versionTag',
+            headerName: 'Version',
+            type: 'string'
+          },
+          {
+            field: 'ip',
+            headerName: 'IP',
+            type: 'ip'
+          }
+        ]
+      }}
+    />
   )
 }

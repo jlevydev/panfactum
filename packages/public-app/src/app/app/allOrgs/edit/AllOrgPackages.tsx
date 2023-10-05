@@ -1,48 +1,16 @@
 import type { PackageResultType } from '@panfactum/primary-api'
 import React, { useState } from 'react'
-import {
-  BooleanField,
-  BooleanInput, Datagrid, FilterButton, FilterForm, FunctionField,
-  InfiniteList, NumberField,
-  TextField, useListContext
-} from 'react-admin'
+import { useListContext } from 'react-admin'
+import { useNavigate } from 'react-router-dom'
 
-import BulkActionButton from '@/components/list/BulkActionButton'
+import BulkActionButton from '@/components/datagrid/BulkActionButton'
+import DataGrid from '@/components/datagrid/DataGrid'
 import ChangePackagesStatusModal from '@/components/modals/ChangePackagesStatusModal'
-import TimeFromNowField from '@/components/time/TimeFromNowField'
 import { useAdminBasePath } from '@/lib/hooks/navigation/useAdminBasePath'
 
 /************************************************
  * List Actions
  * **********************************************/
-const Filters = [
-  <BooleanInput
-    label="Is Archived"
-    source="isArchived"
-    key="isArchived"
-    defaultValue={false}
-  />,
-  <BooleanInput
-    label="Is Deleted"
-    source="isDeleted"
-    key="isDeleted"
-    defaultValue={false}
-  />
-]
-
-function Actions () {
-  return (
-    <div className="flex justify-between w-full">
-      <FilterForm filters={Filters} />
-      <div className="flex">
-        <FilterButton
-          filters={Filters}
-          className="flex-grow"
-        />
-      </div>
-    </div>
-  )
-}
 
 function BulkActions () {
   const { selectedIds, data, onSelect } = useListContext<PackageResultType>()
@@ -101,57 +69,64 @@ interface IProps {
 }
 export default function AllOrgPackages (props: IProps) {
   const basePath = useAdminBasePath()
+  const navigate = useNavigate()
   return (
-    <div className="p-4">
-      <InfiniteList
-        resource="packages"
-        filter={{ organizationId: props.orgId }}
-        sort={{ field: 'name', order: 'DESC' }}
-        actions={<Actions/>}
-        empty={<div>No packages in this organization</div>}
-        component={'div'}
-        perPage={25}
-      >
-        <Datagrid
-          bulkActionButtons={<BulkActions/>}
-          rowClick={(_, __, record) => {
-            return `${basePath}/allPackages/${(record as PackageResultType).id}`
-          }}
-        >
-          <TextField
-            source="name"
-            label="Name"
-          />
-          <BooleanField
-            source="isPublished"
-            label="Published"
-          />
-          <NumberField
-            source="activeVersionCount"
-            label="Versions"
-          />
-          <FunctionField
-            source="createdAt"
-            label="Created"
-            render={(record: {createdAt: number}) => <TimeFromNowField unixSeconds={record.createdAt}/>}
-          />
-          <FunctionField
-            source="lastPublishedAt"
-            label="Last Published"
-            render={(record: {lastPublishedAt: number | null}) => <TimeFromNowField unixSeconds={record.lastPublishedAt}/>}
-          />
-          <FunctionField
-            source="archivedAt"
-            label="Archived"
-            render={(record: {archivedAt: number}) => <TimeFromNowField unixSeconds={record.archivedAt}/>}
-          />
-          <FunctionField
-            source="deletedAt"
-            label="Deleted"
-            render={(record: {deletedAt: number | null}) => <TimeFromNowField unixSeconds={record.deletedAt}/>}
-          />
-        </Datagrid>
-      </InfiniteList>
-    </div>
+    <DataGrid
+      listProps={{
+        resource: 'packages',
+        filter: { organizationId: props.orgId },
+        sort: { field: 'name', order: 'DESC' }
+      }}
+      dataGridProps={{
+        BulkActions,
+        onRowClick: (record) => {
+          navigate(`${basePath}/allPackages/${record.id}`)
+        },
+        empty: <div>No packages found</div>,
+        columns: [
+          {
+            field: 'id',
+            headerName: 'Package ID',
+            type: 'string',
+            hidden: true
+          },
+          {
+            field: 'name',
+            headerName: 'Name',
+            type: 'string'
+          },
+          {
+            field: 'isPublished',
+            headerName: 'Published',
+            type: 'boolean'
+          },
+          {
+            field: 'activeVersionCount',
+            headerName: 'Versions',
+            type: 'number'
+          },
+          {
+            field: 'createdAt',
+            headerName: 'Created',
+            type: 'dateTime'
+          },
+          {
+            field: 'lastPublishedAt',
+            headerName: 'Last Published',
+            type: 'dateTime'
+          },
+          {
+            field: 'archivedAt',
+            headerName: 'Archived',
+            type: 'dateTime'
+          },
+          {
+            field: 'deletedAt',
+            headerName: 'Deleted',
+            type: 'dateTime'
+          }
+        ]
+      }}
+    />
   )
 }

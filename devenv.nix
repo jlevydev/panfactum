@@ -139,7 +139,7 @@ let
     ####################################
     # Postgres Management
     ####################################
-    pgadmin4-desktopmode # web UI for interacting with postgres
+    (customModule "pgadmin4")
     pgcli # postgres cli tools
     (customModule "get-db-creds") # cli for using vault to get db creds
 

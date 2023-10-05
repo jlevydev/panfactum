@@ -23,7 +23,7 @@ function SidebarLabel ({ label }: {label: string}) {
   return (
     <div className="flex mb-1 mt-3 gap-3">
       {open && (
-        <div className="uppercase text-secondary font-bold ">
+        <div className="uppercase text-sm lg:text-base text-secondary font-bold ">
           {label}
         </div>
       )}
@@ -52,7 +52,7 @@ function SidebarLink ({ path, text, Icon }: SidebarLinkProps) {
         className="no-underline text-black"
       >
         <MenuItem
-          className="flex px-2"
+          className="flex px-2 text-sm lg:text-base py-1.5 lg:py-2 min-h-0"
           selected={matches !== null}
         >
           {Icon && Icon}
