@@ -1,4 +1,6 @@
-import Tooltip from '@mui/material/Tooltip'
+import { memo } from 'react'
+
+import DefaultTooltip from '@/components/tooltip/DefaultTooltip'
 
 function humanFileSize (size: number) {
   const i = size === 0 ? 0 : Math.floor(Math.log(size) / Math.log(1024))
@@ -8,13 +10,13 @@ function humanFileSize (size: number) {
 interface IByteSizeField {
   bytes?: number;
 }
-export default function ByteSizeField (props: IByteSizeField) {
+export default memo(function ByteSizeField (props: IByteSizeField) {
   const { bytes = 0 } = props
   return (
-    <Tooltip title={`${bytes} bytes`}>
+    <DefaultTooltip title={`${bytes} bytes`}>
       <div>
         {humanFileSize(bytes)}
       </div>
-    </Tooltip>
+    </DefaultTooltip>
   )
-}
+})

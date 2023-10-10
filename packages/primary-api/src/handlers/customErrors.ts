@@ -73,7 +73,7 @@ export class InvalidRequestError extends PanfactumError<InvalidRequestErrorType>
 // Error consolidator - This is used if we receive an update/delete many
 // request and we have errors on multiple objects in the delta set
 export class PanfactumConsolidatedError extends Error {
-  errors: Array<PanfactumError | Error>
+  errors: Array<PanfactumError | Error & {statusCode?: number}>
   constructor (errors: Array<PanfactumError | Error>) {
     super()
     this.errors = errors

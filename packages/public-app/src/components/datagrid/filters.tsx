@@ -7,12 +7,25 @@ import {
   GridFilterInputBoolean, GridFilterInputValue, GridLogicOperator
 } from '@mui/x-data-grid-pro'
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker'
+import type { FilterSet } from '@panfactum/primary-api'
 import type { Dayjs } from 'dayjs'
 import dayjs from 'dayjs'
 import React from 'react'
 import type { FilterPayload } from 'react-admin'
 
-import type { ColumnType } from '@/components/datagrid/types'
+export enum ClientFilterOperation {
+  BOOLEAN = 'boolean',
+  STR_EQ = 'strEq',
+  NUM_EQ = 'numEq',
+  SEARCH = 'search',
+  NAME_SEARCH = 'nameSearch',
+  BEFORE = 'before',
+  AFTER = 'after',
+  GT = 'gt',
+  LT = 'lt',
+  GTE = 'gte',
+  LTE = 'lte'
+}
 
 /************************************************
  * Custom Filter Components
@@ -57,19 +70,7 @@ function GridFilterDateInput (
 /************************************************
  * Definitions
  * **********************************************/
-export enum FilterOperations {
-  BOOLEAN = 'boolean',
-  STR_EQ = 'strEq',
-  NUM_EQ = 'numEq',
-  SEARCH = 'search',
-  BEFORE = 'before',
-  AFTER = 'after',
-  GT = 'gt',
-  LT = 'lt',
-  GTE = 'gte',
-  LTE = 'lte'
-}
-const filterOperationsSet: Set<string> = new Set(Object.values(FilterOperations))
+const FilterOperationSet: Set<string> = new Set(Object.values(ClientFilterOperation))
 
 // We do all of our filtering server-side so these can be noop functions
 const getApplyFilterFn = () => null
@@ -79,10 +80,10 @@ const getApplyFilterFnV7 = (filterItem: GridFilterItem) => {
 }
 
 // A mapping of filter operations to their filter operator definitions
-export const FilterOperators: {[type in FilterOperations]: GridFilterOperator} = {
-  [FilterOperations.BOOLEAN]: {
-    label: 'is',
-    value: FilterOperations.BOOLEAN,
+export const FilterOperators: {[type in ClientFilterOperation]: GridFilterOperator} = {
+  [ClientFilterOperation.BOOLEAN]: {
+    label: '=',
+    value: ClientFilterOperation.BOOLEAN,
     getApplyFilterFn,
     getApplyFilterFnV7,
     InputComponent: GridFilterInputBoolean,
@@ -93,9 +94,9 @@ export const FilterOperators: {[type in FilterOperations]: GridFilterOperator} =
       }
     }
   },
-  [FilterOperations.STR_EQ]: {
+  [ClientFilterOperation.STR_EQ]: {
     label: '=',
-    value: FilterOperations.STR_EQ,
+    value: ClientFilterOperation.STR_EQ,
     getApplyFilterFn,
     getApplyFilterFnV7,
     InputComponent: GridFilterInputValue,
@@ -106,9 +107,9 @@ export const FilterOperators: {[type in FilterOperations]: GridFilterOperator} =
       }
     }
   },
-  [FilterOperations.NUM_EQ]: {
+  [ClientFilterOperation.NUM_EQ]: {
     label: '=',
-    value: FilterOperations.NUM_EQ,
+    value: ClientFilterOperation.NUM_EQ,
     getApplyFilterFn,
     getApplyFilterFnV7,
     InputComponent: GridFilterInputValue,
@@ -119,9 +120,9 @@ export const FilterOperators: {[type in FilterOperations]: GridFilterOperator} =
       }
     }
   },
-  [FilterOperations.SEARCH]: {
+  [ClientFilterOperation.SEARCH]: {
     label: '~',
-    value: FilterOperations.SEARCH,
+    value: ClientFilterOperation.SEARCH,
     getApplyFilterFn,
     getApplyFilterFnV7,
     InputComponent: GridFilterInputValue,
@@ -132,9 +133,22 @@ export const FilterOperators: {[type in FilterOperations]: GridFilterOperator} =
       }
     }
   },
-  [FilterOperations.BEFORE]: {
+  [ClientFilterOperation.NAME_SEARCH]: {
+    label: '~',
+    value: ClientFilterOperation.NAME_SEARCH,
+    getApplyFilterFn,
+    getApplyFilterFnV7,
+    InputComponent: GridFilterInputValue,
+    InputComponentProps: {
+      size: 'small',
+      InputProps: {
+        className: 'xl:text-lg'
+      }
+    }
+  },
+  [ClientFilterOperation.BEFORE]: {
     label: 'before',
-    value: FilterOperations.BEFORE,
+    value: ClientFilterOperation.BEFORE,
     getApplyFilterFn,
     getApplyFilterFnV7,
     InputComponent: GridFilterDateInput,
@@ -144,9 +158,9 @@ export const FilterOperators: {[type in FilterOperations]: GridFilterOperator} =
       }
     }
   },
-  [FilterOperations.AFTER]: {
+  [ClientFilterOperation.AFTER]: {
     label: 'after',
-    value: FilterOperations.AFTER,
+    value: ClientFilterOperation.AFTER,
     getApplyFilterFn,
     getApplyFilterFnV7,
     InputComponent: GridFilterDateInput,
@@ -157,9 +171,9 @@ export const FilterOperators: {[type in FilterOperations]: GridFilterOperator} =
     }
 
   },
-  [FilterOperations.GT]: {
+  [ClientFilterOperation.GT]: {
     label: '>',
-    value: FilterOperations.GT,
+    value: ClientFilterOperation.GT,
     getApplyFilterFn,
     getApplyFilterFnV7,
     InputComponent: GridFilterInputValue,
@@ -171,9 +185,9 @@ export const FilterOperators: {[type in FilterOperations]: GridFilterOperator} =
     }
 
   },
-  [FilterOperations.LT]: {
+  [ClientFilterOperation.LT]: {
     label: '<',
-    value: FilterOperations.LT,
+    value: ClientFilterOperation.LT,
     getApplyFilterFn,
     getApplyFilterFnV7,
     InputComponent: GridFilterInputValue,
@@ -184,9 +198,9 @@ export const FilterOperators: {[type in FilterOperations]: GridFilterOperator} =
       }
     }
   },
-  [FilterOperations.GTE]: {
+  [ClientFilterOperation.GTE]: {
     label: '>=',
-    value: FilterOperations.GTE,
+    value: ClientFilterOperation.GTE,
     getApplyFilterFn,
     getApplyFilterFnV7,
     InputComponent: GridFilterInputValue,
@@ -197,9 +211,9 @@ export const FilterOperators: {[type in FilterOperations]: GridFilterOperator} =
       }
     }
   },
-  [FilterOperations.LTE]: {
+  [ClientFilterOperation.LTE]: {
     label: '<=',
-    value: FilterOperations.LTE,
+    value: ClientFilterOperation.LTE,
     getApplyFilterFn,
     getApplyFilterFnV7,
     InputComponent: GridFilterInputValue,
@@ -213,27 +227,29 @@ export const FilterOperators: {[type in FilterOperations]: GridFilterOperator} =
 }
 
 /************************************************
- * Defaulting
+ * Returns the filter operators for the given column's
+ * set of filters
  * **********************************************/
 
-// Returns the default filters to be used on each column type
-export function getDefaultFilterOperators (columnType: ColumnType) {
-  if (columnType === 'dateTime') {
-    return [FilterOperators[FilterOperations.BEFORE], FilterOperators[FilterOperations.AFTER]]
-  } else if (columnType === 'boolean') {
-    return [FilterOperators[FilterOperations.BOOLEAN]]
-  } else if (columnType === 'number') {
+export function getFilterOperatorsForFilterSet (filterSet?: FilterSet) {
+  if (filterSet === 'date') {
+    return [FilterOperators[ClientFilterOperation.BEFORE], FilterOperators[ClientFilterOperation.AFTER]]
+  } else if (filterSet === 'boolean') {
+    return [FilterOperators[ClientFilterOperation.BOOLEAN]]
+  } else if (filterSet === 'number') {
     return [
-      FilterOperators[FilterOperations.NUM_EQ],
-      FilterOperators[FilterOperations.GT],
-      FilterOperators[FilterOperations.GTE],
-      FilterOperators[FilterOperations.LT],
-      FilterOperators[FilterOperations.LTE]
+      FilterOperators[ClientFilterOperation.NUM_EQ],
+      FilterOperators[ClientFilterOperation.GT],
+      FilterOperators[ClientFilterOperation.GTE],
+      FilterOperators[ClientFilterOperation.LT],
+      FilterOperators[ClientFilterOperation.LTE]
     ]
-  } else if (columnType === 'string') {
-    return [FilterOperators[FilterOperations.SEARCH], FilterOperators[FilterOperations.STR_EQ]]
+  } else if (filterSet === 'string') {
+    return [FilterOperators[ClientFilterOperation.STR_EQ]]
+  } else if (filterSet === 'name') {
+    return [FilterOperators[ClientFilterOperation.NAME_SEARCH], FilterOperators[ClientFilterOperation.STR_EQ]]
   } else {
-    return [FilterOperators[FilterOperations.STR_EQ]]
+    return []
   }
 }
 
@@ -246,9 +262,9 @@ export function convertDGtoRAFilters (model: GridFilterModel): FilterPayload {
   return Object.fromEntries(model.items.map(({ field, operator, value }) => {
     if (value === undefined || value === null) {
       return null
-    } else if (filterOperationsSet.has(operator as FilterOperations)) {
+    } else if (FilterOperationSet.has(operator as ClientFilterOperation)) {
       // eslint-disable-next-line
-      return [`${field}.${operator}` as string, value] as const
+      return [`${field}_${operator}` as string, value] as const
     } else {
       return null
     }
@@ -263,7 +279,7 @@ export function convertRAtoDGFilters (filters: FilterPayload | undefined): GridF
         return null
       }
 
-      const splitIndex = filter.indexOf('.')
+      const splitIndex = filter.indexOf('_')
       if (splitIndex === -1) {
         return null
       }
@@ -271,7 +287,7 @@ export function convertRAtoDGFilters (filters: FilterPayload | undefined): GridF
       const operator = filter.slice(splitIndex + 1)
       if (field === '') {
         return null
-      } else if (!filterOperationsSet.has(operator)) {
+      } else if (!FilterOperationSet.has(operator)) {
         return null
       }
       return { field, operator, value, id }

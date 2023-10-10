@@ -9,11 +9,9 @@ import Select from '@mui/material/Select'
 import type { SelectProps } from '@mui/material/Select'
 import { unstable_useId as useId } from '@mui/utils'
 import {
-  DataGridPro as MuiDataGrid,
+  DataGridPro as MuiDataGrid, GRID_CHECKBOX_SELECTION_COL_DEF,
   gridClasses,
   gridFilterActiveItemsSelector,
-  GridFilterPanel,
-  GridLogicOperator,
   GridMenu,
   gridPreferencePanelStateSelector,
   GridPreferencePanelsValue,
@@ -22,6 +20,7 @@ import {
   useGridApiRef,
   useGridRootProps,
   useGridSelector
+
 } from '@mui/x-data-grid-pro'
 import type {
   GridCsvExportOptions,
@@ -29,6 +28,7 @@ import type {
   GridPrintExportOptions
   , GridRowParams, GridRowSelectionModel, GridSortModel, MuiEvent
   , GridInitialState
+  , GridRenderCellParams
 } from '@mui/x-data-grid-pro'
 import React, {
   forwardRef, useCallback,
@@ -40,8 +40,7 @@ import React, {
 import type {
   ReactElement,
   ReactFragment,
-  MouseEvent
-  ,
+  MouseEvent,
   FC
 } from 'react'
 import {
@@ -51,44 +50,28 @@ import {
 } from 'react-admin'
 import type {
   InfiniteListProps, RaRecord,
-  SortPayload
-  ,
+  SortPayload,
   FilterPayload
 } from 'react-admin'
 
 import ActionButton from '@/components/datagrid/ActionButton'
 import BulkActionButton from '@/components/datagrid/BulkActionButton'
+import GridFilterPanel from '@/components/datagrid/GridFilterPanel'
 import { createColumnConfig } from '@/components/datagrid/columns'
 import { convertDGtoRAFilters, convertRAtoDGFilters } from '@/components/datagrid/filters'
-import type { CustomColDef } from '@/components/datagrid/types'
+import type { CustomColDef, Filters } from '@/components/datagrid/types'
+import RowSelectionField from '@/components/fields/boolean/RowSelectionField'
 import useDistanceFromScreenBottom from '@/lib/hooks/effects/useDistanceFromScreenBottom'
 
 /************************************************
  * Base Components
  * **********************************************/
 
-function CustomGridFilterPanel () {
+function CustomNoRowsOverlay () {
   return (
-    <GridFilterPanel
-      logicOperators={[GridLogicOperator.And]}
-      filterFormProps={{
-        logicOperatorInputProps: {
-          className: 'hidden'
-        },
-        columnInputProps: {
-          className: 'w-20 xl:w-36'
-        },
-        operatorInputProps: {
-          className: 'w-16 xl:w-28'
-        },
-        valueInputProps: {
-          className: 'w-48 xl:w-96'
-        },
-        deleteIconProps: {
-          className: 'w-6 text-xs'
-        }
-      }}
-    />
+    <div className="flex items-center justify-center h-full text-xl lg:text-2xl">
+      No results. Try changing your filter values.
+    </div>
   )
 }
 
@@ -349,7 +332,7 @@ interface IActionToolbarProps {
 }
 
 function ActionToolbar ({ BulkActions }: IActionToolbarProps) {
-  const { selectedIds, onUnselectItems } = useListContext<RaRecord<string>>()
+  const { selectedIds, onUnselectItems, data } = useListContext<RaRecord<string>>()
   const isXL = useMediaQuery<Theme>(theme =>
     theme.breakpoints.up('xl')
   )
@@ -380,7 +363,7 @@ function ActionToolbar ({ BulkActions }: IActionToolbarProps) {
           </BulkActionButton>
         </div>
         <div className="h-full flex items-center px-4 gap-2">
-          {BulkActions && <BulkActions/>}
+          {BulkActions && data && <BulkActions/>}
         </div>
       </div>
     </GridToolbarContainer>
@@ -391,17 +374,18 @@ function ActionToolbar ({ BulkActions }: IActionToolbarProps) {
  * Main Datagrid
  * **********************************************/
 
-interface IDataGridControllerProps<T> extends IActionToolbarProps {
-  columns: CustomColDef[]
+interface IDataGridControllerProps<T extends RaRecord<string>, F extends Filters<T>> extends IActionToolbarProps {
+  columns: CustomColDef<T, F>[]
   defaultSort?: SortPayload
   onRowClick?: (record: T) => void
   empty?: ReactElement | null
 }
 
-function DataGridController<T extends RaRecord<string>> (props: IDataGridControllerProps<T>) {
+function DataGridController<T extends RaRecord<string>, F extends Filters<T>> (props: IDataGridControllerProps<T, F>) {
   const { columns, defaultSort, BulkActions, onRowClick, empty } = props
   const listContext = useListContext<T>()
   const { data, isLoading, setSort, sort, setFilters, onSelect, selectedIds } = listContext
+  const filterValues = listContext.filterValues as FilterPayload // type defs are broken on this field
   const {
     isFetchingNextPage,
     fetchNextPage,
@@ -409,37 +393,73 @@ function DataGridController<T extends RaRecord<string>> (props: IDataGridControl
   } = useInfinitePaginationContext()
   const apiRef = useGridApiRef()
   const [filterModel, setFilterModel] = useState<GridFilterModel>(
-    convertRAtoDGFilters(listContext.filterValues as FilterPayload | undefined)
+    convertRAtoDGFilters(filterValues)
   )
   const [distanceFromBottom, contentRef] = useDistanceFromScreenBottom<HTMLDivElement>()
   const isXSmall = useMediaQuery<Theme>(theme =>
     theme.breakpoints.down('sm')
   )
 
+  // We start and stop loading quickly in succession due to infinite scroll. This causes the loading indicator
+  // to stutter as its state gets reset when loading temporarily pauses (even for <1 ms). This adds an artificial
+  // 50ms delay to hiding the loading indicator to ensure we are truly done with the current sequence of loads
+  const [isLoadingIndicatorVisible, setIsLoadingIndicatorVisible] = useState<boolean>(isLoading || isFetchingNextPage)
   useEffect(() => {
-    const minRows = (distanceFromBottom / 30) * 2
-    if (data && data.length <= minRows) {
-      // This fixes a bug where the data loading via infinite scroll does not work when changing
-      // the sort or filters. We can force it to load the data until scroll is enabled again (approx 100 elements)
-      // with the below side effect
-      if (data.length < minRows && hasNextPage) {
-        void fetchNextPage()
-      }
+    if (isLoading || isFetchingNextPage) {
+      setIsLoadingIndicatorVisible(true)
+      return () => {}
+    } else {
+      const timeout = setTimeout(() => {
+        setIsLoadingIndicatorVisible(false)
+      }, 50)
+      return () => clearTimeout(timeout)
     }
+  },
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  [isLoading, isFetchingNextPage, setIsLoadingIndicatorVisible]
+  )
 
-    // This is a convenience that will autofit the columns when data is first being loaded.
-    // This compensates for the fact that we usually don't have the data on the first render/mount so the
-    // autoresize on mount doesn't do anything
+  useEffect(() => {
+    // // This is a convenience that will autofit the columns when data is first being loaded.
+    // // This compensates for the fact that we usually don't have the data on the first render/mount so the
+    // // autoresize on mount doesn't do anything
     if (data && apiRef && apiRef.current && data.length > 0 && data.length < 100) {
-      setTimeout(() => apiRef.current.autosizeColumns({ expand: true, includeHeaders: true, includeOutliers: true }), 16)
+      const timeout = setTimeout(() => {
+        void apiRef.current?.autosizeColumns({ expand: true, includeHeaders: true, includeOutliers: true })
+      }, 1)
+      return () => clearTimeout(timeout)
+    } else {
+      return () => {}
     }
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, fetchNextPage, distanceFromBottom])
+  }, [data, fetchNextPage, distanceFromBottom, isFetchingNextPage, isLoading])
 
   // We have to memoize this as changing the object results in resetting the grid state (even if it has the same values)
   const augmentedColumns = useMemo(
-    () => createColumnConfig(columns),
+    () => [
+      // We use a custom checkbox element b/c the original
+      // one is too heavy and causes page lag on render
+      {
+        ...GRID_CHECKBOX_SELECTION_COL_DEF,
+        headerName: 'Selected',
+        renderCell: (params: GridRenderCellParams<T, boolean>) => (
+          <RowSelectionField
+            id={params.row.id}
+            value={params.value}
+            hasFocus={params.hasFocus}
+            tabIndex={params.tabIndex}
+            rowType={params.rowNode.type}
+            selectable={params.api.isRowSelectable(params.id)}
+            label={ apiRef.current.getLocaleText(
+              params.value ? 'checkboxSelectionUnselectRow' : 'checkboxSelectionSelectRow'
+            )}
+            onSelect={apiRef.current.publishEvent}
+          />
+        )
+      },
+      ...createColumnConfig(columns)
+    ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [JSON.stringify(columns)]
   )
@@ -460,24 +480,34 @@ function DataGridController<T extends RaRecord<string>> (props: IDataGridControl
   }, [data, onRowClick, apiRef])
 
   const handleSortModelChange = useCallback((model: GridSortModel) => {
+    console.log('sort changed', model, filterModel)
     const [sort] = model
     if (sort) {
       setSort({ field: sort.field, order: sort.sort === 'asc' ? 'ASC' : 'DESC' })
-    } else if (defaultSort) {
+    } else if (defaultSort && filterModel.items.length === 0) {
+      // Note: We don't apply the default sort if we have filters active because some
+      // filters (e.g., search) apply server-side ordering
       setSort(defaultSort)
+    } else {
+      // We cannot clear the sort, so this will represent the "don't override filter sorts" state
+      setSort({ field: 'id', order: 'DESC' })
     }
-  }, [setSort, defaultSort])
+  }, [setSort, defaultSort, filterModel])
 
   const handleRowScrollEnd = useCallback(() => {
-    if (hasNextPage) {
+    if (hasNextPage && !isFetchingNextPage && !isLoading) {
       void fetchNextPage()
     }
-  }, [hasNextPage, fetchNextPage])
+  }, [hasNextPage, fetchNextPage, isFetchingNextPage, isLoading])
 
+  // Save the filter model in local state so we can defer updating the RA filters
+  // until the preference panel is closed to avoid unnecessary data fetching
   const handleFilterModelChange = useCallback((model: GridFilterModel) => {
     setFilterModel(model)
-    setTimeout(() => setFilters(convertDGtoRAFilters(model), {}, true), 1)
-  }, [setFilterModel, setFilters])
+  }, [setFilterModel])
+  const onPreferencePanelClose = useCallback(() => {
+    setFilters(convertDGtoRAFilters(filterModel), {})
+  }, [setFilters, filterModel])
 
   const handleRowSelectionModelChange = useCallback((model: GridRowSelectionModel) => {
     setTimeout(() => onSelect(model as string[]), 1)
@@ -512,9 +542,10 @@ function DataGridController<T extends RaRecord<string>> (props: IDataGridControl
   const slots = useMemo(() => ({
     loadingOverlay: LinearProgress,
     toolbar: MemoizedActionToolbar,
-    filterPanel: CustomGridFilterPanel,
+    filterPanel: GridFilterPanel,
     baseSelect: CustomBaseSelect,
-    baseInputLabel: CustomBaseInputLabel
+    baseInputLabel: CustomBaseInputLabel,
+    noRowsOverlay: CustomNoRowsOverlay
   }), [MemoizedActionToolbar])
 
   const sx = useMemo(() => ({
@@ -532,14 +563,10 @@ function DataGridController<T extends RaRecord<string>> (props: IDataGridControl
     }
   }), [])
 
-  const getRowHeight = useCallback(() => 30, [])
-
   // This is required b/c some things break if we render
   // the Datagrid without any data (e.g., rehydrating selections)
   let content: null | ReactElement | ReactFragment
-  if (!data) {
-    content = null
-  } else if (data.length === 0 && empty !== undefined) {
+  if (data && data.length === 0 && empty !== undefined && Object.keys(filterValues).length === 0) {
     content = empty
   } else {
     content = (
@@ -547,9 +574,9 @@ function DataGridController<T extends RaRecord<string>> (props: IDataGridControl
         rows={data ?? []}
         autosizeOnMount={true}
         columns={augmentedColumns}
-        loading={isLoading || isFetchingNextPage}
+        loading={isLoadingIndicatorVisible}
         sortingMode="server"
-        getRowHeight={getRowHeight}
+        rowHeight={30}
         columnHeaderHeight={30}
         hideFooterPagination={true}
         hideFooter={isXSmall}
@@ -567,6 +594,7 @@ function DataGridController<T extends RaRecord<string>> (props: IDataGridControl
         sx={sx}
         filterModel={filterModel}
         onFilterModelChange={handleFilterModelChange}
+        onPreferencePanelClose={onPreferencePanelClose}
       />
     )
   }
@@ -587,14 +615,15 @@ function DataGridController<T extends RaRecord<string>> (props: IDataGridControl
 /************************************************
  * Root
  * **********************************************/
-interface IDatagridProps<T> {
+
+interface IDatagridProps<T extends RaRecord<string>, F extends Filters<T>> {
   listProps: Omit<InfiniteListProps, 'children'>,
-  dataGridProps: IDataGridControllerProps<T>
+  dataGridProps: IDataGridControllerProps<T, F>
 }
-export default function DataGrid<T extends RaRecord<string>> (props: IDatagridProps<T>) {
+export default function DataGrid<T extends RaRecord<string>, F extends Filters<T>> (props: IDatagridProps<T, F>) {
   const {
     listProps: {
-      perPage = 25,
+      perPage = 100,
       ...otherListProps
     },
     dataGridProps
@@ -604,6 +633,7 @@ export default function DataGrid<T extends RaRecord<string>> (props: IDatagridPr
     <InfiniteListBase
       {...otherListProps}
       perPage={perPage}
+      debounce={10}
     >
       <DataGridController
         {...dataGridProps}

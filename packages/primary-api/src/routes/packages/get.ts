@@ -3,6 +3,14 @@ import { Type } from '@sinclair/typebox'
 import type { FastifyPluginAsync, FastifySchema } from 'fastify'
 
 import { getDB } from '../../db/db'
+import { applyGetSettings } from '../../db/queryBuilders/applyGetSettings'
+import { filterByDate } from '../../db/queryBuilders/filterByDate'
+import { filterByHasTimeMarker } from '../../db/queryBuilders/filterByHasTimeMarker'
+import { filterByHaving } from '../../db/queryBuilders/filterByHaving'
+import { filterByHavingDate } from '../../db/queryBuilders/filterByHavingDate'
+import { filterByHavingNumber } from '../../db/queryBuilders/filterByHavingNumber'
+import { filterBySearchName } from '../../db/queryBuilders/filterBySearchName'
+import { filterByString } from '../../db/queryBuilders/filterByString'
 import { DEFAULT_SCHEMA_CODES } from '../../handlers/error'
 import { assertPanfactumRoleFromSession } from '../../util/assertPanfactumRoleFromSession'
 import { createGetResult } from '../../util/createGetResult'
@@ -19,18 +27,16 @@ import {
   PackageRepositoryUrl, PackageType, PackageUpdatedAt
 } from '../models/package'
 import {
-  convertSortOrder,
-  createGetReplyType,
-  createQueryString
-} from '../types'
+  createGetReplyType, createQueryString
+} from '../queryParams'
 import type {
   GetQueryString
-} from '../types'
+} from '../queryParams'
 
 /**********************************************************************
  * Typings
  **********************************************************************/
-const Result = Type.Object({
+const ResultProperties = {
   id: PackageId,
   organizationId: PackageOrganizationId,
   organizationName: OrganizationName,
@@ -49,29 +55,34 @@ const Result = Type.Object({
   lastPublishedAt: PackageLastPublishedAt,
   activeVersionCount: PackageActiveVersionCount,
   isPublished: PackageIsPublished
-})
+}
+const Result = Type.Object(ResultProperties)
 export type ResultType = Static<typeof Result>
 
-const sortFields = StringEnum([
-  'id',
-  'organizationId',
-  'organizationName',
-  'name',
-  'packageType',
-  'createdAt',
-  'archivedAt',
-  'deletedAt',
-  'updatedAt',
-  'activeVersionCount',
-  'lastPublishedAt',
-  'isPublished'
-], 'The field to sort by', 'name')
+const sortFields = StringEnum(
+  Object.keys(ResultProperties) as (keyof typeof ResultProperties)[]
+  , 'The field to sort by', 'name')
+
 const filters = {
-  organizationId: Type.String({ format: 'uuid', description: 'Return only packages for this organization' }),
-  packageType: PackageType,
-  isDeleted: Type.Boolean({ description: 'If provided, filters the result set depending on whether each package has been deleted.' }),
-  isArchived: Type.Boolean({ description: 'If provided, filters the result set depending on whether each package has been archived.' })
+  id: 'string' as const,
+  organizationId: 'string' as const,
+  organizationName: 'name' as const,
+  name: 'name' as const,
+
+  isDeleted: 'boolean' as const,
+  isArchived: 'boolean' as const,
+  isPublished: 'boolean' as const,
+
+  createdAt: 'date' as const,
+  archivedAt: 'date' as const,
+  deletedAt: 'date' as const,
+  updatedAt: 'date' as const,
+  lastPublishedAt: 'date' as const,
+
+  activeVersionCount: 'number' as const
 }
+export type FiltersType = typeof filters
+
 const QueryString = createQueryString(
   filters,
   sortFields
@@ -108,15 +119,39 @@ export const GetPackagesRoute:FastifyPluginAsync = async (fastify) => {
         page,
         perPage,
         ids,
-        organizationId,
-        packageType,
-        isDeleted,
-        isArchived
+        id_strEq,
+        organizationId_strEq,
+        organizationName_strEq,
+        name_strEq,
+
+        name_nameSearch,
+        organizationName_nameSearch,
+
+        isArchived_boolean,
+        isDeleted_boolean,
+        isPublished_boolean,
+
+        createdAt_after,
+        createdAt_before,
+        archivedAt_before,
+        archivedAt_after,
+        deletedAt_after,
+        deletedAt_before,
+        updatedAt_after,
+        updatedAt_before,
+        lastPublishedAt_after,
+        lastPublishedAt_before,
+
+        activeVersionCount_gt,
+        activeVersionCount_gte,
+        activeVersionCount_lt,
+        activeVersionCount_lte,
+        activeVersionCount_numEq
       } = req.query
 
       const db = await getDB()
 
-      const results = await db.selectFrom('package')
+      let query = db.selectFrom('package')
         .innerJoin('organization', 'organization.id', 'package.organizationId')
         .leftJoin('packageVersion', 'packageVersion.packageId', 'package.id')
         .select((eb) => [
@@ -145,18 +180,135 @@ export const GetPackagesRoute:FastifyPluginAsync = async (fastify) => {
           eb.fn.max<number>('packageVersion.createdAt' as any).as('lastPublishedAt'),
           eb(eb.fn.count<number>('packageVersion.id').distinct(), '>', 0).as('isPublished')
         ])
-        .$if(ids !== undefined, qb => qb.where('package.id', 'in', ids ?? []))
-        .$if(organizationId !== undefined, qb => qb.where('package.organizationId', '=', organizationId ?? ''))
-        .$if(packageType !== undefined, qb => qb.where('package.packageType', 'in', packageType ? [packageType] : []))
-        .$if(isDeleted !== undefined, qb => qb.where('package.deletedAt', isDeleted ? 'is not' : 'is', null))
-        .$if(isArchived !== undefined, qb => qb.where('package.archivedAt', isArchived ? 'is not' : 'is', null))
         .groupBy(['package.id', 'organization.id'])
-        .orderBy(`${sortField}`, convertSortOrder(sortOrder))
-        .$if(sortField !== 'id', qb => qb.orderBy('id')) // ensures stable sort
-        .limit(perPage)
-        .offset(page * perPage)
-        .execute()
 
+      query = filterByHasTimeMarker(
+        query,
+        { has: isDeleted_boolean },
+        'package.deletedAt'
+      )
+      query = filterByHasTimeMarker(
+        query,
+        { has: isArchived_boolean },
+        'package.archivedAt'
+      )
+
+      if (isPublished_boolean !== undefined) {
+        query = filterByHaving(
+          query,
+          eb => eb(
+            eb.fn.count<number>('packageVersion.id').distinct(),
+            '>',
+            0
+          )
+        )
+      }
+
+      query = filterByString(
+        query,
+        { eq: id_strEq },
+        'package.id'
+      )
+      query = filterByString(
+        query,
+        { eq: organizationId_strEq },
+        'package.organizationId'
+      )
+      query = filterByString(
+        query,
+        { eq: organizationName_strEq },
+        'organization.name'
+      )
+      query = filterByString(
+        query,
+        { eq: name_strEq },
+        'package.name'
+      )
+
+      query = filterByDate(
+        query,
+        {
+          after: createdAt_after,
+          before: createdAt_before
+        },
+        'package.createdAt'
+      )
+      query = filterByDate(
+        query,
+        {
+          after: deletedAt_after,
+          before: deletedAt_before
+        },
+        'package.deletedAt'
+      )
+      query = filterByDate(
+        query,
+        {
+          after: archivedAt_before,
+          before: archivedAt_after
+        },
+        'package.archivedAt'
+      )
+      query = filterByDate(
+        query,
+        {
+          after: updatedAt_after,
+          before: updatedAt_before
+        },
+        'package.updatedAt'
+      )
+      query = filterByHavingDate(
+        query,
+        {
+          after: lastPublishedAt_after,
+          before: lastPublishedAt_before
+        },
+        // There is an issue with the kysely typings that doesn't allow max on a Date field even
+        // though it is valid sql, so we use an `any` escape hatch
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument
+        eb => eb.fn.max<number>('packageVersion.createdAt' as any)
+      )
+
+      query = filterByHavingNumber(
+        query,
+        {
+          gt: activeVersionCount_gt,
+          gte: activeVersionCount_gte,
+          lt: activeVersionCount_lt,
+          lte: activeVersionCount_lte,
+          eq: activeVersionCount_numEq
+        },
+        eb => eb.fn.count<number>('packageVersion.id')
+          .filterWhere(eb => eb('packageVersion.archivedAt', 'is', null))
+          .distinct()
+      )
+
+      query = filterBySearchName(
+        query,
+        {
+          search: name_nameSearch
+        },
+        'package.name'
+      )
+
+      query = filterBySearchName(
+        query,
+        {
+          search: organizationName_nameSearch
+        },
+        'organization.name'
+      )
+
+      query = applyGetSettings(query, {
+        page,
+        perPage,
+        ids,
+        sortField,
+        sortOrder,
+        idField: 'package.id'
+      })
+
+      const results = await query.execute()
       return createGetResult(results, page, perPage)
     }
   )

@@ -26,7 +26,7 @@ variable "pg_cluster_namespace" {
 variable "pg_version" {
   description = "The version of postgres to deploy"
   type        = string
-  default     = "14.8-7"
+  default     = "16.0-6"
 }
 
 variable "pg_instances" {

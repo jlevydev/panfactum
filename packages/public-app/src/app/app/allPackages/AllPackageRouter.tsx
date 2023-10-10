@@ -1,7 +1,7 @@
 import { Outlet, Route, Routes } from 'react-router-dom'
 
-import AllPackageList from '@/app/app/allPackages/AllPackageList'
-import AllPackageEdit from '@/app/app/allPackages/edit/AllPackageEdit'
+import AllPackageEdit from '@/app/app/allPackages/pages/AllPackageEdit'
+import AllPackageList from '@/app/app/allPackages/pages/AllPackageList'
 
 export default function AllPackageRouter () {
   return (

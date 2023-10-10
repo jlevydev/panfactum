@@ -2,7 +2,7 @@ import type { ButtonProps } from '@mui/material/Button'
 import Button from '@mui/material/Button'
 import Tooltip from '@mui/material/Tooltip'
 import type { ReactElement } from 'react'
-import React, { forwardRef } from 'react'
+import React, { forwardRef, memo } from 'react'
 
 interface BulkActionsButtonProps extends ButtonProps {
   tooltipText: string;
@@ -44,4 +44,4 @@ const ActionButton = forwardRef<HTMLButtonElement, BulkActionsButtonProps>(
   }
 )
 
-export default ActionButton
+export default memo(ActionButton)

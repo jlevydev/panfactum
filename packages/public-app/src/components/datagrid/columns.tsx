@@ -1,45 +1,38 @@
 import type { GridValidRowModel, GridRenderCellParams, GridColDef } from '@mui/x-data-grid-pro'
+import type { RaRecord } from 'react-admin'
 
-import { FilterOperators, getDefaultFilterOperators } from '@/components/datagrid/filters'
-import type { CustomColDef } from '@/components/datagrid/types'
+import { getFilterOperatorsForFilterSet } from '@/components/datagrid/filters'
+import type { ColumnType, CustomColDef, Filters } from '@/components/datagrid/types'
 import CheckboxField from '@/components/fields/boolean/CheckboxField'
 import ByteSizeField from '@/components/fields/numeric/ByteSizeField'
 import NumberField from '@/components/fields/numeric/NumberField'
 import TimeFromNowField from '@/components/fields/time/TimeFromNowField'
 
-const defaultFieldClassNames = 'py-1 text-xs xl:text-base text-ellipsis w-full overflow-hidden'
-function getDefaultRenderCell (type: CustomColDef['type']): GridColDef['renderCell'] {
+import TextField from '../fields/text/TextField'
+
+function getDefaultRenderCell (type: ColumnType): GridColDef['renderCell'] {
   if (type === 'dateTime') {
     return (params: GridRenderCellParams<GridValidRowModel, number>) => {
       return (
-        <TimeFromNowField
-          className={defaultFieldClassNames}
-          unixSeconds={params.value}
-        />
+        <TimeFromNowField unixSeconds={params.value}/>
       )
     }
   } else if (type === 'string') {
     return (params: GridRenderCellParams<GridValidRowModel, string>) => {
       return (
-        <div className={defaultFieldClassNames}>
-          {params.value}
-        </div>
+        <TextField value={params.value}/>
       )
     }
   } else if (type === 'ip') {
     return (params: GridRenderCellParams<GridValidRowModel, string>) => {
       return (
-        <div className={defaultFieldClassNames}>
-          {params.value}
-        </div>
+        <TextField value={params.value}/>
       )
     }
   } else if (type === 'stringOrNull') {
     return (params: GridRenderCellParams<GridValidRowModel, string>) => {
       return (
-        <div className={defaultFieldClassNames}>
-          {params.value ? params.value : '-'}
-        </div>
+        <TextField value={params.value}/>
       )
     }
   } else if (type === 'number') {
@@ -49,7 +42,7 @@ function getDefaultRenderCell (type: CustomColDef['type']): GridColDef['renderCe
       )
     }
   } else if (type === 'boolean') {
-    return (params: GridRenderCellParams<GridValidRowModel, number>) => {
+    return (params: GridRenderCellParams<GridValidRowModel, boolean>) => {
       return (
         <CheckboxField value={params.value}/>
       )
@@ -67,15 +60,21 @@ function getDefaultRenderCell (type: CustomColDef['type']): GridColDef['renderCe
 
 // Utility function for simplifiying and standardizing the creation of the
 // the MUI DG column defs
-export function createColumnConfig (columns: CustomColDef[]) {
-  return columns.map(({ type, filters, sortable, renderCell, ...rest }) => {
+export function createColumnConfig<T extends RaRecord<string>, F extends Filters<T>> (
+  columns: CustomColDef<T, F>[]
+) {
+  return columns.map((col) => {
+    const { render, filter, type, sortable, renderCell, field, ...rest } = col
+    const filterOperators = getFilterOperatorsForFilterSet(filter)
     return {
       ...rest,
-      renderCell: renderCell ?? getDefaultRenderCell(type),
+      field,
+      renderCell: render ? (params: GridRenderCellParams<T, string>) => render(params.row) : renderCell ?? getDefaultRenderCell(type),
       minWidth: 80,
       headerClassName: 'text-xs xl:text-base',
       sortable: sortable ?? type !== 'computed',
-      filterOperators: filters ? filters.map(filter => FilterOperators[filter]) : getDefaultFilterOperators(type)
+      filterOperators,
+      filterable: filterOperators.length > 0
     }
   })
 }

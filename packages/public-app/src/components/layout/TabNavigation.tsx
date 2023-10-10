@@ -75,7 +75,7 @@ function TabNavigationController (props: ITabNavigationProps) {
               to={`../${path}`}
               relative="route"
               component={Link}
-              className={`normal-case text-black min-h-[35px] h-[35px] min-w-[40px] lg:min-w-[60px] px-4 lg:px-6 py-2 lg:py-4 ${nested ? 'text-xs lg:text-base' : 'text-sm lg:text-lg'}`}
+              className={`normal-case text-black min-h-[35px] h-[35px] min-w-[40px] lg:min-w-[60px] px-4 lg:px-6 py-2 lg:py-4 ${nested ? 'text-xs lg:text-base xl:text-lg' : 'text-sm lg:text-lg xl:text-xl'}`}
             />
           ))}
         </Tabs>

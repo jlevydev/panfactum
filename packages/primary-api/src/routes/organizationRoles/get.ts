@@ -4,6 +4,7 @@ import type { FastifyPluginAsync, FastifySchema } from 'fastify'
 
 import { getDB } from '../../db/db'
 import type { OrganizationRolePermissionTable } from '../../db/models/OrganizationRolePermission'
+import { applyGetSettings, convertSortOrder } from '../../db/queryBuilders/applyGetSettings'
 import { DEFAULT_SCHEMA_CODES } from '../../handlers/error'
 import { assertPanfactumRoleFromSession } from '../../util/assertPanfactumRoleFromSession'
 import { createGetResult } from '../../util/createGetResult'
@@ -17,43 +18,39 @@ import {
   OrganizationRolePermissions,
   OrganizationRoleUpdatedAt
 } from '../models/organization'
+import type { GetQueryString } from '../queryParams'
 import {
-  convertSortOrder,
   createGetReplyType,
   createQueryString
-} from '../types'
-import type {
-  GetQueryString
-} from '../types'
+} from '../queryParams'
 
 /**********************************************************************
  * Typings
  **********************************************************************/
-const Result = Type.Object({
+const ResultProperties = {
   id: OrganizationRoleId,
   organizationId: OrganizationRoleOrganizationId,
   name: OrganizationRoleName,
-  permissions: OrganizationRolePermissions,
   description: OrganizationRoleDescription,
   updatedAt: OrganizationRoleUpdatedAt,
   createdAt: OrganizationRoleCreatedAt,
   isCustom: Type.Boolean({ description: 'Iff true, the role is available only to this organization. Derived from `organizationId`.' }),
   activeAssigneeCount: OrganizationRoleAssigneeCount
+}
+const Result = Type.Object({
+  ...ResultProperties,
+  permissions: OrganizationRolePermissions
 })
 export type ResultType = Static<typeof Result>
 
-const sortFields = StringEnum([
-  'id',
-  'organizationId',
-  'name',
-  'isCustom',
-  'activeAssigneeCount',
-  'updatedAt',
-  'createdAt'
-], 'The field to sort by', 'organizationId')
+const sortFields = StringEnum(
+  Object.keys(ResultProperties) as (keyof typeof ResultProperties)[]
+  , 'The field to sort by', 'organizationId')
+
 const filters = {
-  organizationId: Type.String({ format: 'uuid', description: 'Return only roles for this organization' })
+  organizationId: 'string' as const
 }
+export type FiltersType = typeof filters
 const QueryString = createQueryString(
   filters,
   sortFields
@@ -90,19 +87,19 @@ export const GetOrganizationRolesRoute:FastifyPluginAsync = async (fastify) => {
         page,
         perPage,
         ids,
-        organizationId
+        organizationId_strEq
       } = req.query
 
       const db = await getDB()
 
-      const results = await db.with(
+      let query = db.with(
         'role', qb => qb.selectFrom('organizationRole')
           .leftJoin(
             eb => eb
               .selectFrom('userOrganization')
               .selectAll()
               .where('userOrganization.deletedAt', 'is', null) // we don't want to include non-active users in the assignee count
-              .$if(organizationId !== undefined, qb => qb.where('userOrganization.organizationId', '=', organizationId ?? ''))
+              .$if(organizationId_strEq !== undefined, qb => qb.where('userOrganization.organizationId', '=', organizationId_strEq ?? ''))
               .as('members'),
             join => join.onRef('members.roleId', '=', 'organizationRole.id')
           )
@@ -117,18 +114,23 @@ export const GetOrganizationRolesRoute:FastifyPluginAsync = async (fastify) => {
             eb.fn.count<number>('members.id').distinct().as('activeAssigneeCount')
           ])
           .$if(ids !== undefined, qb => qb.where('organizationRole.id', 'in', ids ?? []))
-          .$if(organizationId !== undefined, qb => qb
+          .$if(organizationId_strEq !== undefined, qb => qb
             .where(({ eb, or }) => or([
-              eb('organizationRole.organizationId', '=', organizationId ?? ''),
+              eb('organizationRole.organizationId', '=', organizationId_strEq ?? ''),
               eb('organizationRole.organizationId', 'is', null) // every org has access to roles where the organizationId is null (global roles)
             ]))
           )
           .groupBy('organizationRole.id')
-          .orderBy(`${sortField}`, convertSortOrder(sortOrder))
+
+          // For performance reasons, we need to do this sorting and limiting in the CTE;
+          // however, we cannot use our standard settings function for some reason as it drops the
+          // type info from the returning qb
+          .$if(sortField !== undefined, qb => qb.orderBy(`${sortField ?? 'id'}`, convertSortOrder(sortOrder)))
           .$if(sortField !== 'isCustom', qb => qb.orderBy('isCustom'))
           .$if(sortField !== 'id', qb => qb.orderBy('id')) // ensures stable sort
           .limit(perPage)
           .offset(page * perPage)
+
       ).selectFrom('role')
         .innerJoin('organizationRolePermission', 'role.id', 'organizationRolePermission.organizationRoleId')
         .select(eb => [
@@ -152,11 +154,18 @@ export const GetOrganizationRolesRoute:FastifyPluginAsync = async (fastify) => {
           'role.updatedAt',
           'role.description'
         ])
-        .orderBy(`${sortField}`, convertSortOrder(sortOrder)) // We need to sort again due to the CTE
         .$if(sortField !== 'isCustom', qb => qb.orderBy('isCustom'))
-        .$if(sortField !== 'id', qb => qb.orderBy('id'))
-        .execute()
 
+      query = applyGetSettings(query, {
+        page,
+        perPage,
+        ids,
+        sortField,
+        sortOrder,
+        idField: 'role.id'
+      })
+
+      const results = await query.execute()
       return createGetResult(results, page, perPage)
     }
   )

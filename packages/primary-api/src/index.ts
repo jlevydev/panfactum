@@ -12,19 +12,20 @@ if (FUNCTION === 'http-server') {
 }
 
 /********************************************************************
- * Test Exports
+ * Type Exports
  *******************************************************************/
-
+export type { FilterSet } from './routes/queryParams'
+export type { FilterOperation } from './routes/queryParams'
 export type LoginReturnType = Static<typeof LoginReply>
 export type { ReplyType } from './routes/users/get'
-export type { ResultType as OrganizationResultType } from './routes/organizations/get'
-export type { ResultType as PackageResultType } from './routes/packages/get'
-export type { ResultType as UserResultType } from './routes/users/get'
-export type { ResultType as PackageDownloadResultType } from './routes/packageDownloads/get'
-export type { ResultType as PackageVersionResultType } from './routes/packageVersions/get'
-export type { ResultType as LoginSessionResultType } from './routes/loginSessions/get'
-export type { ResultType as OrganizationMembershipsResultType } from './routes/organizationMemberships/get'
-export type { ResultType as OrganizationRolesResultType } from './routes/organizationRoles/get'
+export type { ResultType as OrganizationResultType, FiltersType as OrganizationFiltersType } from './routes/organizations/get'
+export type { ResultType as PackageResultType, FiltersType as PackageFiltersType } from './routes/packages/get'
+export type { ResultType as UserResultType, FiltersType as UserFiltersType } from './routes/users/get'
+export type { ResultType as PackageDownloadResultType, FiltersType as PackageDownloadFiltersType } from './routes/packageDownloads/get'
+export type { ResultType as PackageVersionResultType, FiltersType as PackageVersionFiltersType } from './routes/packageVersions/get'
+export type { ResultType as LoginSessionResultType, FiltersType as LoginSessionFiltersType } from './routes/loginSessions/get'
+export type { ResultType as OrganizationMembershipsResultType, FiltersType as OrganizationMembershipsFiltersType } from './routes/organizationMemberships/get'
+export type { ResultType as OrganizationRolesResultType, FiltersType as OrganizationRolesFiltersType } from './routes/organizationRoles/get'
 export type { DeltaType as OrganizationMembershipUpdateDeltaType } from './routes/organizationMemberships/update'
 export type { UpdateResultType as OrganizationMembershipUpdateResultType } from './routes/organizationMemberships/update'
 export type { DeltaType as UserUpdateDeltaType } from './routes/users/update'

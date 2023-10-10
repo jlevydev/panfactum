@@ -65,7 +65,7 @@ export const DEFAULT_SCHEMA_CODES = {
  * Main Error Handler Function for the Server
  * ****************************************************/
 
-export function errorHandler (error: PanfactumError | PanfactumConsolidatedError | Error, _: FastifyRequest, reply: FastifyReply) {
+export function errorHandler (error: PanfactumError | PanfactumConsolidatedError | Error & {statusCode?: number}, _: FastifyRequest, reply: FastifyReply) {
   if (error instanceof PanfactumConsolidatedError) {
     const errors = error.errors
 
@@ -85,6 +85,12 @@ export function errorHandler (error: PanfactumError | PanfactumConsolidatedError
             message: error.message,
             resourceId: error.resourceId
           }
+        } else if (error.statusCode) {
+          reply.statusCode = error.statusCode
+          return {
+            type: Errors.UnknownServerError,
+            message: error.message
+          }
         } else {
           return {
             type: Errors.UnknownServerError,
@@ -100,8 +106,8 @@ export function errorHandler (error: PanfactumError | PanfactumConsolidatedError
       reply.statusCode = 403
     } else if (error instanceof InvalidRequestError) {
       reply.statusCode = 400
-    } else {
-      reply.statusCode = 500
+    } else if (!(error instanceof PanfactumError) && error.statusCode) {
+      reply.statusCode = error.statusCode
     }
 
     if (error instanceof PanfactumError) {
@@ -112,8 +118,14 @@ export function errorHandler (error: PanfactumError | PanfactumConsolidatedError
           resourceId: error.resourceId
         }]
       })
+    } else if (error.statusCode) {
+      void reply.send({
+        errors: [{
+          type: Errors.UnknownServerError,
+          message: error.message
+        }]
+      })
     } else {
-      console.error(error)
       void reply.send({
         errors: [{
           type: Errors.UnknownServerError,

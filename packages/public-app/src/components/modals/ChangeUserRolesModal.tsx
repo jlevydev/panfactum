@@ -65,7 +65,7 @@ export default function ChangeUserRolesModal (props: IProps) {
     >
       <List
         resource="organizationRoles"
-        filter={{ organizationId: orgId }}
+        filter={{ organizationId_strEq: orgId }}
         sort={{ field: 'isCustom', order: 'DESC' }}
         actions={<div/>}
         disableSyncWithLocation={true}

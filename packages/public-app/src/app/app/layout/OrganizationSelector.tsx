@@ -62,7 +62,7 @@ export default function OrganizationSelector (props: {collapsed?: boolean}) {
           aria-haspopup="true"
           aria-expanded={open ? 'true' : undefined}
           onClick={handleClick}
-          className={`${collapsed ? 'p-2' : 'w-full'} min-w-0 flex justify-between bg-primary`}
+          className={`${collapsed ? 'p-2' : 'w-full'} min-w-0 flex justify-between bg-primary xl:text-base`}
           variant="contained"
         >
           {!collapsed && (

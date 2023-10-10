@@ -3,6 +3,12 @@ import { Type } from '@sinclair/typebox'
 import type { FastifyPluginAsync, FastifySchema } from 'fastify'
 
 import { getDB } from '../../db/db'
+import { applyGetSettings } from '../../db/queryBuilders/applyGetSettings'
+import { filterByDate } from '../../db/queryBuilders/filterByDate'
+import { filterByHasTimeMarker } from '../../db/queryBuilders/filterByHasTimeMarker'
+import { filterByNumber } from '../../db/queryBuilders/filterByNumber'
+import { filterBySearchName } from '../../db/queryBuilders/filterBySearchName'
+import { filterByString } from '../../db/queryBuilders/filterByString'
 import { DEFAULT_SCHEMA_CODES } from '../../handlers/error'
 import { assertPanfactumRoleFromSession } from '../../util/assertPanfactumRoleFromSession'
 import { createGetResult } from '../../util/createGetResult'
@@ -23,18 +29,12 @@ import {
   PackageVersionTag
 } from '../models/package'
 import { UserEmail, UserFirstName, UserLastName } from '../models/user'
-import {
-  convertSortOrder,
-  createGetReplyType,
-  createQueryString
-} from '../types'
-import type {
-  GetQueryString
-} from '../types'
+import type { GetQueryString } from '../queryParams'
+import { createGetReplyType, createQueryString } from '../queryParams'
 /**********************************************************************
  * Typings
  **********************************************************************/
-const Result = Type.Object({
+const ResultProperties = {
   id: PackageVersionId,
   packageId: PackageVersionPackageId,
   packageName: PackageVersionPackageName,
@@ -51,27 +51,29 @@ const Result = Type.Object({
   deletedAt: PackageVersionDeletedAt,
   isDeleted: PackageVersionIsDeleted,
   downloadCount: PackageVersionDownloadCount
-})
+}
+const Result = Type.Object(ResultProperties)
 export type ResultType = Static<typeof Result>
 
-const sortFields = StringEnum([
-  'id',
-  'packageId',
-  'packageName',
-  'packageType',
-  'versionTag',
-  'sizeBytes',
-  'createdBy',
-  'createdAt',
-  'archivedAt',
-  'deletedAt',
-  'downloadCount'
-], 'The field to sort by', 'createdAt')
+const sortFields = StringEnum(
+  Object.keys(ResultProperties) as (keyof typeof ResultProperties)[]
+  , 'The field to sort by', 'createdAt')
+
 const filters = {
-  packageId: Type.String({ format: 'uuid', description: 'Return only versions for this package' }),
-  isDeleted: Type.Boolean({ description: 'If provided, filters the result set depending on whether each package version has been deleted.' }),
-  isArchived: Type.Boolean({ description: 'If provided, filters the result set depending on whether each package version has been archived.' })
+  packageId: 'string' as const,
+  isDeleted: 'boolean' as const,
+  isArchived: 'boolean' as const,
+  packageName: 'name' as const,
+  versionTag: 'name' as const,
+  sizeBytes: 'number' as const,
+  createdBy: 'string' as const,
+  createdAt: 'date' as const,
+  archivedAt: 'date' as const,
+  deletedAt: 'date' as const,
+  downloadCount: 'number' as const
 }
+export type FiltersType = typeof filters
+
 const QueryString = createQueryString(
   filters,
   sortFields
@@ -108,16 +110,41 @@ export const GetPackageVersionsRoute:FastifyPluginAsync = async (fastify) => {
         page,
         perPage,
         ids,
-        packageId,
-        isDeleted,
-        isArchived
+        packageId_strEq,
+        packageName_strEq,
+        versionTag_strEq,
+        createdBy_strEq,
+
+        packageName_nameSearch,
+        versionTag_nameSearch,
+
+        isDeleted_boolean,
+        isArchived_boolean,
+
+        createdAt_before,
+        createdAt_after,
+        deletedAt_before,
+        deletedAt_after,
+        archivedAt_after,
+        archivedAt_before,
+
+        sizeBytes_gt,
+        sizeBytes_numEq,
+        sizeBytes_gte,
+        sizeBytes_lt,
+        sizeBytes_lte,
+        downloadCount_gt,
+        downloadCount_gte,
+        downloadCount_lt,
+        downloadCount_lte,
+        downloadCount_numEq
       } = req.query
 
       const db = await getDB()
 
       // Todo: The download count operation here is _VERY_ expensive due to the amount
       // of rows that need to be traversed. At even moderate, this will need to be memoized.
-      const results = await db.with(
+      let query = db.with(
         'downloads',
         eb => eb.selectFrom('packageVersion')
           .innerJoin('packageDownload', 'packageDownload.versionId', 'packageVersion.id')
@@ -149,16 +176,116 @@ export const GetPackageVersionsRoute:FastifyPluginAsync = async (fastify) => {
           eb('packageVersion.deletedAt', 'is not', null).as('isDeleted'),
           'downloads.downloadCount as downloadCount'
         ])
-        .$if(ids !== undefined, qb => qb.where('packageVersion.id', 'in', ids ?? []))
-        .$if(isDeleted !== undefined, qb => qb.where('packageVersion.deletedAt', isDeleted ? 'is not' : 'is', null))
-        .$if(isArchived !== undefined, qb => qb.where('packageVersion.archivedAt', isArchived ? 'is not' : 'is', null))
-        .$if(packageId !== undefined, qb => qb.where('packageVersion.packageId', '=', packageId ?? ''))
-        .orderBy(`${sortField}`, convertSortOrder(sortOrder))
-        .$if(sortField !== 'id', qb => qb.orderBy('id')) // ensures stable sort
-        .limit(perPage)
-        .offset(page * perPage)
-        .execute()
 
+      query = filterByHasTimeMarker(
+        query,
+        { has: isDeleted_boolean },
+        'packageVersion.deletedAt'
+      )
+
+      query = filterByHasTimeMarker(
+        query,
+        { has: isArchived_boolean },
+        'packageVersion.archivedAt'
+      )
+
+      console.log('package ids', packageId_strEq)
+      query = filterByString(
+        query,
+        { eq: packageId_strEq },
+        'packageVersion.packageId'
+      )
+      query = filterByString(
+        query,
+        { eq: packageName_strEq },
+        'package.name'
+      )
+      query = filterByString(
+        query,
+        { eq: versionTag_strEq },
+        'packageVersion.versionTag'
+      )
+      query = filterByString(
+        query,
+        { eq: createdBy_strEq },
+        'packageVersion.createdBy'
+      )
+
+      query = filterByDate(
+        query,
+        {
+          before: createdAt_before,
+          after: createdAt_after
+        },
+        'packageVersion.createdAt'
+      )
+      query = filterByDate(
+        query,
+        {
+          before: deletedAt_before,
+          after: deletedAt_after
+        },
+        'packageVersion.deletedAt'
+      )
+      query = filterByDate(
+        query,
+        {
+          before: archivedAt_before,
+          after: archivedAt_after
+        },
+        'packageVersion.archivedAt'
+      )
+
+      query = filterByNumber(
+        query,
+        {
+          eq: sizeBytes_numEq,
+          gt: sizeBytes_gt,
+          gte: sizeBytes_gte,
+          lt: sizeBytes_lt,
+          lte: sizeBytes_lte
+        },
+        'packageVersion.sizeBytes'
+      )
+
+      query = filterByNumber(
+        query,
+        {
+          eq: downloadCount_numEq,
+          gt: downloadCount_gt,
+          gte: downloadCount_gte,
+          lt: downloadCount_lt,
+          lte: downloadCount_lte
+        },
+        'downloads.downloadCount'
+      )
+
+      query = filterBySearchName(
+        query,
+        {
+          search: versionTag_nameSearch
+        },
+        'packageVersion.versionTag'
+      )
+
+      query = filterBySearchName(
+        query,
+        {
+          search: packageName_nameSearch
+        },
+        'package.name'
+      )
+
+      query = applyGetSettings(query, {
+        page,
+        perPage,
+        ids,
+        sortField,
+        sortOrder,
+        idField: 'packageVersion.id'
+      })
+
+      const results = await query.execute()
       return createGetResult(results, page, perPage)
     }
   )

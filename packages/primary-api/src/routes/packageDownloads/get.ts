@@ -3,6 +3,10 @@ import { Type } from '@sinclair/typebox'
 import type { FastifyPluginAsync, FastifySchema } from 'fastify'
 
 import { getDB } from '../../db/db'
+import { applyGetSettings } from '../../db/queryBuilders/applyGetSettings'
+import { filterByDate } from '../../db/queryBuilders/filterByDate'
+import { filterBySearchName } from '../../db/queryBuilders/filterBySearchName'
+import { filterByString } from '../../db/queryBuilders/filterByString'
 import { DEFAULT_SCHEMA_CODES } from '../../handlers/error'
 import { assertPanfactumRoleFromSession } from '../../util/assertPanfactumRoleFromSession'
 import { createGetResult } from '../../util/createGetResult'
@@ -13,19 +17,16 @@ import {
   PackageVersionTag
 } from '../models/package'
 import { UserEmail, UserFirstName, UserLastName } from '../models/user'
+import type { GetQueryString } from '../queryParams'
 import {
-  convertSortOrder,
   createGetReplyType,
   createQueryString
-} from '../types'
-import type {
-  GetQueryString
-} from '../types'
+} from '../queryParams'
 
 /**********************************************************************
  * Typings
  **********************************************************************/
-const Result = Type.Object({
+const ResultProperties = {
   id: PackageDownloadId,
   versionId: PackageDownloadVersionId,
   versionTag: PackageVersionTag,
@@ -37,28 +38,30 @@ const Result = Type.Object({
   userEmail: UserEmail,
   createdAt: PackageDownloadCreatedAt,
   ip: PackageDownloadIP
-})
+}
+const Result = Type.Object(ResultProperties)
 export type ResultType = Static<typeof Result>
 
-const sortFields = StringEnum([
-  'id',
-  'versionId',
-  'versionTag',
-  'packageId',
-  'packageName',
-  'userId',
-  'userFirstName',
-  'userLastName',
-  'userEmail',
-  'ip',
-  'createdAt'
-], 'The field to sort by', 'createdAt')
+const sortFields = StringEnum(
+  Object.keys(ResultProperties) as (keyof typeof ResultProperties)[]
+  , 'The field to sort by', 'createdAt')
+
 const filters = {
-  versionId: Type.String({ format: 'uuid', description: 'Return only downloads for this package version' }),
-  packageId: Type.String({ format: 'uuid', description: 'Return only downloads for this package' }),
-  userId: Type.String({ format: 'uuid', description: 'Return only downloads for this user' }),
-  ip: Type.String({ format: 'ipv4', description: 'Return only downloads for this IP address' })
+  id: 'string' as const,
+  versionId: 'string' as const,
+  versionTag: 'name' as const,
+  packageId: 'string' as const,
+  packageName: 'name' as const,
+  userId: 'string' as const,
+  ip: 'string' as const,
+  userFirstName: 'name' as const,
+  userLastName: 'name' as const,
+  userEmail: 'name' as const,
+
+  createdAt: 'date' as const
 }
+export type FiltersType = typeof filters
+
 const QueryString = createQueryString(
   filters,
   sortFields
@@ -95,17 +98,30 @@ export const GetPackageDownloadsRoute:FastifyPluginAsync = async (fastify) => {
         page,
         perPage,
         ids,
-        packageId,
-        versionId,
-        userId,
-        ip
+        id_strEq,
+        versionTag_strEq,
+        versionId_strEq,
+        packageId_strEq,
+        packageName_strEq,
+        userId_strEq,
+        userEmail_strEq,
+        userFirstName_strEq,
+        userLastName_strEq,
+        ip_strEq,
+
+        packageName_nameSearch,
+        versionTag_nameSearch,
+        userFirstName_nameSearch,
+        userLastName_nameSearch,
+        userEmail_nameSearch,
+
+        createdAt_before,
+        createdAt_after
       } = req.query
 
       const db = await getDB()
 
-      // Todo: The download count operation here is _VERY_ expensive due to the amount
-      // of rows that need to be traversed. At even moderate, this will need to be memoized.
-      const results = await db
+      let query = db
         .selectFrom('packageDownload')
         .innerJoin('packageVersion', 'packageVersion.id', 'packageDownload.versionId')
         .innerJoin('package', 'package.id', 'packageVersion.packageId')
@@ -123,16 +139,117 @@ export const GetPackageDownloadsRoute:FastifyPluginAsync = async (fastify) => {
           'packageDownload.createdAt as createdAt',
           'packageDownload.ip as ip'
         ])
-        .$if(ids !== undefined, qb => qb.where('packageDownload.id', 'in', ids ?? []))
-        .$if(versionId !== undefined, qb => qb.where('packageVersion.id', '=', versionId ?? ''))
-        .$if(packageId !== undefined, qb => qb.where('package.id', '=', packageId ?? ''))
-        .$if(userId !== undefined, qb => qb.where('user.id', '=', userId ?? ''))
-        .$if(ip !== undefined, qb => qb.where('packageDownload.ip', '=', ip ?? ''))
-        .orderBy(`${sortField}`, convertSortOrder(sortOrder))
-        .$if(sortField !== 'id', qb => qb.orderBy('id')) // ensures stable sort
-        .limit(perPage)
-        .offset(page * perPage)
-        .execute()
+
+      query = filterByString(
+        query,
+        { eq: id_strEq },
+        'packageDownload.id'
+      )
+      query = filterByString(
+        query,
+        { eq: versionTag_strEq },
+        'packageVersion.versionTag'
+      )
+      query = filterByString(
+        query,
+        { eq: versionId_strEq },
+        'packageDownload.versionId'
+      )
+      query = filterByString(
+        query,
+        { eq: packageId_strEq },
+        'package.id'
+      )
+      query = filterByString(
+        query,
+        { eq: packageName_strEq },
+        'package.name'
+      )
+      query = filterByString(
+        query,
+        { eq: userId_strEq },
+        'user.id'
+      )
+      query = filterByString(
+        query,
+        { eq: userEmail_strEq },
+        'user.email'
+      )
+      query = filterByString(
+        query,
+        { eq: userFirstName_strEq },
+        'user.firstName'
+      )
+      query = filterByString(
+        query,
+        { eq: userLastName_strEq },
+        'user.lastName'
+      )
+      query = filterByString(
+        query,
+        { eq: ip_strEq },
+        'packageDownload.ip'
+      )
+
+      query = filterByDate(
+        query,
+        {
+          after: createdAt_after,
+          before: createdAt_before
+        },
+        'packageDownload.createdAt'
+      )
+
+      query = filterBySearchName(
+        query,
+        {
+          search: packageName_nameSearch
+        },
+        'package.name'
+      )
+
+      query = filterBySearchName(
+        query,
+        {
+          search: versionTag_nameSearch
+        },
+        'packageVersion.versionTag'
+      )
+
+      query = filterBySearchName(
+        query,
+        {
+          search: userFirstName_nameSearch
+        },
+        'user.firstName'
+      )
+
+      query = filterBySearchName(
+        query,
+        {
+          search: userLastName_nameSearch
+        },
+        'user.lastName'
+      )
+
+      query = filterBySearchName(
+        query,
+        {
+          search: userEmail_nameSearch
+        },
+        'user.email'
+      )
+
+      query = applyGetSettings(query, {
+        page,
+        perPage,
+        ids,
+        sortField,
+        sortOrder,
+        idField: 'packageDownload.id'
+      })
+
+      const results = await query.execute()
 
       return createGetResult(results, page, perPage)
     }

@@ -3,6 +3,9 @@ import { Type } from '@sinclair/typebox'
 import type { FastifyPluginAsync, FastifySchema } from 'fastify'
 
 import { getDB } from '../../db/db'
+import { applyGetSettings } from '../../db/queryBuilders/applyGetSettings'
+import { filterByDate } from '../../db/queryBuilders/filterByDate'
+import { filterByString } from '../../db/queryBuilders/filterByString'
 import { DEFAULT_SCHEMA_CODES } from '../../handlers/error'
 import { assertPanfactumRoleFromSession } from '../../util/assertPanfactumRoleFromSession'
 import { createGetResult } from '../../util/createGetResult'
@@ -16,19 +19,16 @@ import {
 import {
   UserId
 } from '../models/user'
+import type { GetQueryString } from '../queryParams'
 import {
-  convertSortOrder,
   createGetReplyType,
   createQueryString
-} from '../types'
-import type {
-  GetQueryString
-} from '../types'
+} from '../queryParams'
 
 /**********************************************************************
  * Typings
  **********************************************************************/
-const Result = Type.Object({
+const ResultProperties = {
   id: AuthLoginSessionId,
   userId: UserId,
   masqueradingUserId: Type.Union([
@@ -37,20 +37,24 @@ const Result = Type.Object({
   ], { description: 'If `null`, the user is not being masqueraded.' }),
   createdAt: AuthLoginSessionCreatedAt,
   lastApiCallAt: AuthLoginSessionLastApiCallAt
-})
+}
+const Result = Type.Object(ResultProperties)
 export type ResultType = Static<typeof Result>
 
-const sortFields = StringEnum([
-  'userId',
-  'masqueradingUserId',
-  'createdAt',
-  'lastApiCallAt',
-  'id'
-], 'The field to sort by', 'lastApiCallAt')
+const sortFields = StringEnum(
+  Object.keys(ResultProperties) as (keyof typeof ResultProperties)[]
+  , 'The field to sort by', 'lastApiCallAt')
+
 const filters = {
-  userId: Type.String({ format: 'uuid', description: 'Return only login sessions for this user' }),
-  masqueradingUserId: Type.String({ format: 'uuid', description: 'Return only login sessions for this masquerading user' })
+  id: 'string' as const,
+  userId: 'string' as const,
+  masqueradingUserId: 'string' as const,
+
+  createdAt: 'date' as const,
+  lastApiCallAt: 'date' as const
 }
+export type FiltersType = typeof filters
+
 const QueryString = createQueryString(
   filters,
   sortFields
@@ -87,13 +91,19 @@ export const GetLoginSessions:FastifyPluginAsync = async (fastify) => {
         page,
         perPage,
         ids,
-        userId,
-        masqueradingUserId
+        id_strEq,
+        userId_strEq,
+        masqueradingUserId_strEq,
+
+        createdAt_before,
+        createdAt_after,
+        lastApiCallAt_before,
+        lastApiCallAt_after
       } = req.query
 
       const db = await getDB()
 
-      const results = await db.selectFrom('userLoginSession')
+      let query = db.selectFrom('userLoginSession')
         .select([
           'userLoginSession.id as id',
           'userLoginSession.userId as userId',
@@ -101,15 +111,50 @@ export const GetLoginSessions:FastifyPluginAsync = async (fastify) => {
           'userLoginSession.createdAt as createdAt',
           'userLoginSession.lastApiCallAt as lastApiCallAt'
         ])
-        .$if(ids !== undefined, qb => qb.where('userLoginSession.id', 'in', ids ?? []))
-        .$if(userId !== undefined, qb => qb.where('userLoginSession.userId', '=', userId ?? ''))
-        .$if(masqueradingUserId !== undefined, qb => qb.where('userLoginSession.masqueradingUserId', '=', masqueradingUserId ?? ''))
-        .orderBy(`${sortField}`, convertSortOrder(sortOrder))
-        .$if(sortField !== 'id', qb => qb.orderBy('id')) // ensures stable sort
-        .limit(perPage)
-        .offset(page * perPage)
-        .execute()
 
+      query = filterByString(
+        query,
+        { eq: id_strEq },
+        'userLoginSession.id'
+      )
+      query = filterByString(
+        query,
+        { eq: userId_strEq },
+        'userLoginSession.userId'
+      )
+      query = filterByString(
+        query,
+        { eq: masqueradingUserId_strEq },
+        'userLoginSession.masqueradingUserId'
+      )
+
+      query = filterByDate(
+        query,
+        {
+          before: createdAt_before,
+          after: createdAt_after
+        },
+        'userLoginSession.createdAt'
+      )
+      query = filterByDate(
+        query,
+        {
+          before: lastApiCallAt_before,
+          after: lastApiCallAt_after
+        },
+        'userLoginSession.lastApiCallAt'
+      )
+
+      query = applyGetSettings(query, {
+        page,
+        perPage,
+        ids,
+        sortField,
+        sortOrder,
+        idField: 'userLoginSession.id'
+      })
+
+      const results = await query.execute()
       return createGetResult(results, page, perPage)
     }
   )

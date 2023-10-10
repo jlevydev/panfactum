@@ -2,7 +2,7 @@ import type { ButtonProps } from '@mui/material/Button'
 import Button from '@mui/material/Button'
 import Tooltip from '@mui/material/Tooltip'
 import type { ReactElement } from 'react'
-import React from 'react'
+import React, { memo } from 'react'
 
 interface BulkActionsButtonProps extends ButtonProps {
   tooltipText: string;
@@ -10,7 +10,7 @@ interface BulkActionsButtonProps extends ButtonProps {
   Icon?: ReactElement
 }
 
-export default function BulkActionButton (props: BulkActionsButtonProps) {
+export default memo(function BulkActionButton (props: BulkActionsButtonProps) {
   const {
     tooltipText,
     actionType = 'normal',
@@ -37,4 +37,4 @@ export default function BulkActionButton (props: BulkActionsButtonProps) {
       </span>
     </Tooltip>
   )
-}
+})

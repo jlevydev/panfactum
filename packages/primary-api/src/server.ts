@@ -1,6 +1,9 @@
 import type { FastifyCookieOptions } from '@fastify/cookie'
 import cors from '@fastify/cors'
 import type { TypeBoxTypeProvider } from '@fastify/type-provider-typebox'
+import Ajv from 'ajv'
+import addFormats from 'ajv-formats'
+import FastURI from 'fast-uri'
 import Fastify from 'fastify'
 
 import { COOKIE_SIGNING_SECRET, ENV, PUBLIC_URL } from './environment'
@@ -31,6 +34,24 @@ declare module 'fastify' {
 
 export function launchServer () {
   const server = Fastify().withTypeProvider<TypeBoxTypeProvider>()
+
+  /********************************************************************
+   * Setup Validators
+   *******************************************************************/
+  const ajv = new Ajv({
+    coerceTypes: 'array', // change data type of data to match type keyword
+    useDefaults: true, // replace missing properties and items with the values from corresponding default keyword
+    removeAdditional: false,
+    uriResolver: FastURI,
+    addUsedSchema: false,
+    // Explicitly set allErrors to `false`.
+    // When set to `true`, a DoS attack is possible.
+    allErrors: false
+  })
+  addFormats(ajv)
+  server.setValidatorCompiler(({ schema }) => {
+    return ajv.compile(schema)
+  })
 
   /********************************************************************
    * Error Handlers

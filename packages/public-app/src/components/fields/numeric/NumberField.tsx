@@ -1,12 +1,14 @@
-import Tooltip from '@mui/material/Tooltip'
+import { memo } from 'react'
+
+import DefaultTooltip from '@/components/tooltip/DefaultTooltip'
 
 interface INumberFieldProps {
   value?: number;
 }
-export default function NumberField (props: INumberFieldProps) {
+export default memo(function NumberField (props: INumberFieldProps) {
   const { value } = props
   return (
-    <Tooltip title={`${value}`}>
+    <DefaultTooltip title={`${value}`}>
       <div>
         { value
           ? Intl.NumberFormat('en-US', {
@@ -15,6 +17,6 @@ export default function NumberField (props: INumberFieldProps) {
           }).format(value)
           : '-'}
       </div>
-    </Tooltip>
+    </DefaultTooltip>
   )
-}
+})

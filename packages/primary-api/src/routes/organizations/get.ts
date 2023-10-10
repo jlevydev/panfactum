@@ -3,6 +3,13 @@ import { Type } from '@sinclair/typebox'
 import type { FastifyPluginAsync, FastifySchema } from 'fastify'
 
 import { getDB } from '../../db/db'
+import { applyGetSettings } from '../../db/queryBuilders/applyGetSettings'
+import { filterByBoolean } from '../../db/queryBuilders/filterByBoolean'
+import { filterByDate } from '../../db/queryBuilders/filterByDate'
+import { filterByHasTimeMarker } from '../../db/queryBuilders/filterByHasTimeMarker'
+import { filterByHavingNumber } from '../../db/queryBuilders/filterByHavingNumber'
+import { filterBySearchName } from '../../db/queryBuilders/filterBySearchName'
+import { filterByString } from '../../db/queryBuilders/filterByString'
 import { DEFAULT_SCHEMA_CODES } from '../../handlers/error'
 import { assertPanfactumRoleFromSession } from '../../util/assertPanfactumRoleFromSession'
 import { createGetResult } from '../../util/createGetResult'
@@ -16,19 +23,16 @@ import {
   OrganizationName,
   OrganizationUpdatedAt
 } from '../models/organization'
+import type { GetQueryString } from '../queryParams'
 import {
-  convertSortOrder,
   createGetReplyType,
   createQueryString
-} from '../types'
-import type {
-  GetQueryString
-} from '../types'
+} from '../queryParams'
 
 /**********************************************************************
  * Typings
  **********************************************************************/
-const Result = Type.Object({
+const ResultProperties = {
   id: Type.String(),
   name: OrganizationName,
   isUnitary: OrganizationIsUnitary,
@@ -38,24 +42,30 @@ const Result = Type.Object({
   isDeleted: OrganizationIsDeleted,
   activeMemberCount: OrganizationActiveMemberCount,
   activePackageCount: OrganizationActivePackageCount
-})
+}
+const Result = Type.Object(ResultProperties)
 export type ResultType = Static<typeof Result>
 
-const sortFields = StringEnum([
-  'id',
-  'name',
-  'isUnitary',
-  'createdAt',
-  'deletedAt',
-  'updatedAt',
-  'isDeleted',
-  'activeMemberCount',
-  'activePackageCount'
-], 'The field to sort by', 'name')
+const sortFields = StringEnum(
+  Object.keys(ResultProperties) as (keyof typeof ResultProperties)[]
+  , 'The field to sort by', 'name')
+
 const filters = {
-  isUnitary: Type.Boolean({ description: 'If provided, filter the results by whether the organization is unitary' }),
-  isDeleted: Type.Boolean({ description: 'If provided, filter the results by whether the organization has been deleted' })
+  id: 'string' as const,
+  name: 'name' as const,
+
+  isUnitary: 'boolean' as const,
+  isDeleted: 'boolean' as const,
+
+  createdAt: 'date' as const,
+  deletedAt: 'date' as const,
+  updatedAt: 'date' as const,
+
+  activeMemberCount: 'number' as const,
+  activePackageCount: 'number' as const
 }
+export type FiltersType = typeof filters
+
 const QueryString = createQueryString(
   filters,
   sortFields
@@ -92,13 +102,36 @@ export const GetOrganizationsRoute:FastifyPluginAsync = async (fastify) => {
         page,
         perPage,
         ids,
-        isUnitary,
-        isDeleted
+        id_strEq,
+        name_strEq,
+
+        name_nameSearch,
+
+        isDeleted_boolean,
+        isUnitary_boolean,
+
+        createdAt_before,
+        createdAt_after,
+        deletedAt_before,
+        deletedAt_after,
+        updatedAt_before,
+        updatedAt_after,
+
+        activeMemberCount_gt,
+        activeMemberCount_gte,
+        activeMemberCount_lt,
+        activeMemberCount_lte,
+        activeMemberCount_numEq,
+        activePackageCount_gt,
+        activePackageCount_gte,
+        activePackageCount_lt,
+        activePackageCount_lte,
+        activePackageCount_numEq
       } = req.query
 
       const db = await getDB()
 
-      const results = await db.selectFrom('organization')
+      let query = db.selectFrom('organization')
         .leftJoin('userOrganization', 'organization.id', 'userOrganization.organizationId')
         .leftJoin('package', 'organization.id', 'package.organizationId')
         .select((eb) => [
@@ -118,15 +151,101 @@ export const GetOrganizationsRoute:FastifyPluginAsync = async (fastify) => {
             .distinct()
             .as('activeMemberCount')
         ])
-        .$if(ids !== undefined, qb => qb.where('organization.id', 'in', ids ?? []))
-        .$if(isUnitary !== undefined, qb => qb.where('organization.isUnitary', '=', Boolean(isUnitary)))
-        .$if(isDeleted !== undefined, qb => qb.where('userOrganization.deletedAt', isDeleted ? 'is not' : 'is', null))
         .groupBy('organization.id')
-        .orderBy(`${sortField}`, convertSortOrder(sortOrder))
-        .$if(sortField !== 'id', qb => qb.orderBy('id')) // ensures stable sort
-        .limit(perPage)
-        .offset(page * perPage)
-        .execute()
+
+      query = filterByString(
+        query,
+        { eq: id_strEq },
+        'organization.id'
+      )
+      query = filterByString(
+        query,
+        { eq: name_strEq },
+        'organization.name'
+      )
+
+      query = filterByBoolean(
+        query,
+        { is: isUnitary_boolean },
+        'organization.isUnitary'
+      )
+      query = filterByHasTimeMarker(
+        query,
+        { has: isDeleted_boolean },
+        'organization.deletedAt'
+      )
+
+      query = filterByDate(
+        query,
+        {
+          before: createdAt_before,
+          after: createdAt_after
+        },
+        'organization.createdAt'
+      )
+      query = filterByDate(
+        query,
+        {
+          before: deletedAt_before,
+          after: deletedAt_after
+        },
+        'organization.deletedAt'
+      )
+      query = filterByDate(
+        query,
+        {
+          before: updatedAt_before,
+          after: updatedAt_after
+        },
+        'organization.updatedAt'
+      )
+
+      query = filterByHavingNumber(
+        query,
+        {
+          eq: activeMemberCount_numEq,
+          gt: activeMemberCount_gt,
+          gte: activeMemberCount_gte,
+          lt: activeMemberCount_lt,
+          lte: activeMemberCount_lte
+        },
+        eb => eb.fn.count<number>('userOrganization.id')
+          .filterWhere(eb => eb('userOrganization.deletedAt', 'is', null))
+          .distinct()
+      )
+
+      query = filterByHavingNumber(
+        query,
+        {
+          eq: activePackageCount_numEq,
+          gt: activePackageCount_gt,
+          gte: activePackageCount_gte,
+          lt: activePackageCount_lt,
+          lte: activePackageCount_lte
+        },
+        eb => eb.fn.count<number>('package.id')
+          .filterWhere(eb => eb('package.archivedAt', 'is', null))
+          .distinct()
+      )
+
+      query = filterBySearchName(
+        query,
+        {
+          search: name_nameSearch
+        },
+        'organization.name'
+      )
+
+      query = applyGetSettings(query, {
+        page,
+        perPage,
+        ids,
+        sortField,
+        sortOrder,
+        idField: 'organization.id'
+      })
+
+      const results = await query.execute()
 
       return createGetResult(results, page, perPage)
     }

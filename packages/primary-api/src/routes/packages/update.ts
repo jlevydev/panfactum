@@ -27,7 +27,7 @@ const Delta = Type.Object({
   repositoryUrl: Type.Optional(PackageRepositoryUrl),
   homepageUrl: Type.Optional(PackageHomepageUrl),
   documentationUrl: Type.Optional(PackageHomepageUrl)
-}, { additionalProperties: true })
+}, { additionalProperties: false })
 export type DeltaType = Static<typeof Delta>
 
 const UpdateBody = Type.Object({
@@ -181,7 +181,7 @@ export const UpdatePackagesRoute:FastifyPluginAsync = async (fastify) => {
     {
       schema: {
         description: 'Applies package patches and returns the updated package objects',
-        body: Delta,
+        body: UpdateBody,
         response: {
           200: UpdateReply,
           ...DEFAULT_SCHEMA_CODES
@@ -193,6 +193,7 @@ export const UpdatePackagesRoute:FastifyPluginAsync = async (fastify) => {
       await assertPanfactumRoleFromSession(req, 'admin')
 
       const { ids, delta } = req.body
+      console.log(delta)
       const results = await Promise.allSettled(ids.map(id => applyMutation(id, delta)))
       return getJSONFromSettledPromises(results)
     }

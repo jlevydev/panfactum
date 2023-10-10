@@ -1,8 +1,15 @@
 import type { Static } from '@sinclair/typebox'
 import { Type } from '@sinclair/typebox'
 import type { FastifyPluginAsync, FastifySchema } from 'fastify'
+import { sql } from 'kysely'
 
 import { getDB } from '../../db/db'
+import { applyGetSettings } from '../../db/queryBuilders/applyGetSettings'
+import { filterByDate } from '../../db/queryBuilders/filterByDate'
+import { filterByHasTimeMarker } from '../../db/queryBuilders/filterByHasTimeMarker'
+import { filterByHavingNumber } from '../../db/queryBuilders/filterByHavingNumber'
+import { filterBySearchName } from '../../db/queryBuilders/filterBySearchName'
+import { filterByString } from '../../db/queryBuilders/filterByString'
 import { DEFAULT_SCHEMA_CODES } from '../../handlers/error'
 import { assertPanfactumRoleFromSession } from '../../util/assertPanfactumRoleFromSession'
 import { createGetResult } from '../../util/createGetResult'
@@ -16,20 +23,16 @@ import {
   UserNumberOfOrgs,
   UserUpdatedAt
 } from '../models/user'
+import type { GetQueryString } from '../queryParams'
 import {
-  convertSortOrder,
   createGetReplyType,
   createQueryString
-} from '../types'
-import type {
-  GetQueryString
-} from '../types'
+} from '../queryParams'
 
 /**********************************************************************
  * Typings
  **********************************************************************/
-
-const Result = Type.Object({
+const ResultProperties = {
   id: UserId,
   firstName: UserFirstName,
   lastName: UserLastName,
@@ -39,22 +42,26 @@ const Result = Type.Object({
   updatedAt: UserUpdatedAt,
   deletedAt: UserDeletedAt,
   isDeleted: UserIsDeleted
-})
+}
+const Result = Type.Object(ResultProperties)
 export type ResultType = Static<typeof Result>
 
-const sortFields = StringEnum([
-  'id',
-  'firstName',
-  'lastName',
-  'email',
-  'createdAt',
-  'deletedAt',
-  'numberOfOrgs',
-  'isDeleted'
-], 'The field to sort by', 'id')
+const sortFields = StringEnum(
+  Object.keys(ResultProperties) as (keyof typeof ResultProperties)[]
+  , 'The field to sort by')
+
 const filters = {
-  isDeleted: Type.Boolean({ description: 'If provided, filter the results by whether the user has been deleted' })
+  id: 'string' as const,
+  firstName: 'name' as const,
+  lastName: 'name' as const,
+  email: 'name' as const,
+  createdAt: 'date' as const,
+  deletedAt: 'date' as const,
+  numberOfOrgs: 'number' as const,
+  isDeleted: 'boolean' as const
 }
+export type FiltersType = typeof filters
+
 const QueryString = createQueryString(
   filters,
   sortFields
@@ -84,17 +91,36 @@ export const GetUsersRoute:FastifyPluginAsync = async (fastify) => {
     },
     async (req) => {
       await assertPanfactumRoleFromSession(req, 'admin')
+
       const {
         sortField,
         sortOrder,
         page,
         perPage,
         ids,
-        isDeleted
+        isDeleted_boolean,
+        id_strEq,
+        firstName_strEq,
+        lastName_strEq,
+        email_strEq,
+
+        firstName_nameSearch,
+        lastName_nameSearch,
+        email_nameSearch,
+
+        createdAt_after,
+        createdAt_before,
+        deletedAt_after,
+        deletedAt_before,
+        numberOfOrgs_gt,
+        numberOfOrgs_gte,
+        numberOfOrgs_lt,
+        numberOfOrgs_lte,
+        numberOfOrgs_numEq
       } = req.query
 
       const db = await getDB()
-      const results = await db.selectFrom('user')
+      let query = db.selectFrom('user')
         .innerJoin('userOrganization', 'user.id', 'userOrganization.userId')
         .select(eb => [
           'user.id as id',
@@ -105,17 +131,112 @@ export const GetUsersRoute:FastifyPluginAsync = async (fastify) => {
           'user.updatedAt as updatedAt',
           'user.deletedAt as deletedAt',
           eb('user.deletedAt', 'is not', null).as('isDeleted'),
-          db.fn.count<number>('userOrganization.organizationId').as('numberOfOrgs')
+          sql<number>`${eb.fn.count<number>('userOrganization.organizationId')
+            .filterWhere(eb => eb('userOrganization.deletedAt', 'is', null))
+            .distinct()} - 1`.as('numberOfOrgs')
         ])
-        .where('userOrganization.deletedAt', 'is', null)
         .groupBy('user.id')
-        .$if(Boolean(ids), qb => qb.where('user.id', 'in', ids ?? []))
-        .$if(isDeleted !== undefined, qb => qb.where('user.deletedAt', isDeleted ? 'is not' : 'is', null))
-        .orderBy(`${sortField}`, convertSortOrder(sortOrder))
-        .$if(sortField !== 'id', qb => qb.orderBy('id')) // ensures stable sort
-        .limit(perPage)
-        .offset(page * perPage)
-        .execute()
+
+      query = filterByString(
+        query,
+        {
+          eq: id_strEq
+        },
+        'user.id'
+      )
+      query = filterByString(
+        query,
+        {
+          eq: firstName_strEq
+        },
+        'user.firstName'
+      )
+
+      query = filterByString(
+        query,
+        {
+          eq: lastName_strEq
+        },
+        'user.lastName'
+      )
+      query = filterByString(
+        query,
+        {
+          eq: email_strEq
+        },
+        'user.email'
+      )
+
+      query = filterByDate(
+        query,
+        {
+          before: createdAt_before,
+          after: createdAt_after
+        },
+        'user.createdAt'
+      )
+
+      query = filterByDate(
+        query,
+        {
+          before: deletedAt_before,
+          after: deletedAt_after
+        },
+        'user.deletedAt'
+      )
+
+      query = filterByHavingNumber(
+        query,
+        {
+          eq: numberOfOrgs_numEq,
+          gt: numberOfOrgs_gt,
+          gte: numberOfOrgs_gte,
+          lt: numberOfOrgs_lt,
+          lte: numberOfOrgs_lte
+        },
+        eb => eb.fn.count('userOrganization.id')
+      )
+
+      query = filterByHasTimeMarker(
+        query,
+        { has: isDeleted_boolean },
+        'user.deletedAt'
+      )
+
+      query = filterBySearchName(
+        query,
+        {
+          search: firstName_nameSearch
+        },
+        'user.firstName'
+      )
+
+      query = filterBySearchName(
+        query,
+        {
+          search: lastName_nameSearch
+        },
+        'user.lastName'
+      )
+
+      query = filterBySearchName(
+        query,
+        {
+          search: email_nameSearch
+        },
+        'user.email'
+      )
+
+      query = applyGetSettings(query, {
+        page,
+        perPage,
+        ids,
+        sortField,
+        sortOrder,
+        idField: 'user.id'
+      })
+
+      const results = await query.execute()
       return createGetResult(results, page, perPage)
     }
   )

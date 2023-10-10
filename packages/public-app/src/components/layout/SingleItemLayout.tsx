@@ -10,6 +10,7 @@ import type { ReactElement } from 'react'
 import { useEffect, useState } from 'react'
 import { Title, useSidebarState } from 'react-admin'
 
+import DefaultTooltip from '@/components/tooltip/DefaultTooltip'
 import useDistanceFromScreenBottom from '@/lib/hooks/effects/useDistanceFromScreenBottom'
 import { useLocalStorage } from '@/lib/hooks/state/useLocalStorage'
 
@@ -58,22 +59,22 @@ export default function SingleItemLayout (props: ISingleItemLayoutProps) {
     <>
       <Title
         title={(
-          <div className="flex flex-row flex-wrap items-baseline gap-x-4">
-            <h1 className="text-xl lg:text-2xl">
+          <div className="flex flex-row flex-wrap items-baseline gap-x-4 w-full overflow-hidden">
+            <h1 className="text-xl lg:text-2xl xl:text-3xl  max-w-[100%] lg:max-w-[50%] text-ellipsis overflow-hidden">
               {title}
             </h1>
-            <div className="text-xs lg:text-sm flex gap-x-2 items-baseline">
-              <span className="hidden sm:inline">
+            <div className="text-xs lg:text-sm xl:text-base text-ellipsis overflow-hidden flex gap-x-2 items-baseline">
+              <span className="hidden sm:inline ">
                 {id}
               </span>
-              <Tooltip title="Copy ID to clipboard">
+              <DefaultTooltip title="Copy ID to clipboard">
                 <ContentCopyIcon
                   fontSize={'10px' as 'small'}
                   onClick={() => {
                     void navigator.clipboard.writeText(id)
                   }}
                 />
-              </Tooltip>
+              </DefaultTooltip>
             </div>
           </div>
         )}

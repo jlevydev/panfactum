@@ -5,6 +5,7 @@
     "@floating-ui/react": "^0.25.4",
     "@headlessui/react": "1.7.16",
     "@mui/icons-material": "^5.14.9",
+    "@mui/lab": "5.0.0-alpha.147",
     "@mui/material": "5.14.9",
     "@mui/utils": "^5.14.11",
     "@mui/x-data-grid-pro": "^6.16.0",
