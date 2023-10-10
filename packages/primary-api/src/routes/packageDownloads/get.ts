@@ -1,16 +1,20 @@
 import type { Static } from '@sinclair/typebox'
 import { Type } from '@sinclair/typebox'
-import type { FastifyPluginAsync, FastifySchema } from 'fastify'
+import type { FastifyPluginAsync, FastifyRequest, FastifySchema } from 'fastify'
 
 import { getDB } from '../../db/db'
+import type { Permission } from '../../db/models/OrganizationRolePermission'
+import { getOrgIdsFromPackageDownloadIds } from '../../db/queries/getOrgIdsFromPackageDownloadIds'
 import { applyGetSettings } from '../../db/queryBuilders/applyGetSettings'
 import { filterByDate } from '../../db/queryBuilders/filterByDate'
 import { filterBySearchName } from '../../db/queryBuilders/filterBySearchName'
 import { filterByString } from '../../db/queryBuilders/filterByString'
+import { InvalidQueryScope } from '../../handlers/customErrors'
 import { DEFAULT_SCHEMA_CODES } from '../../handlers/error'
-import { assertPanfactumRoleFromSession } from '../../util/assertPanfactumRoleFromSession'
+import { assertUserHasOrgPermissions } from '../../util/assertUserHasOrgPermissions'
 import { createGetResult } from '../../util/createGetResult'
 import { StringEnum } from '../../util/customTypes'
+import { getPanfactumRoleFromSession } from '../../util/getPanfactumRoleFromSession'
 import {
   PackageDownloadCreatedAt,
   PackageDownloadId, PackageDownloadIP, PackageDownloadUserId, PackageDownloadVersionId, PackageId, PackageName,
@@ -54,6 +58,8 @@ const filters = {
   packageName: 'name' as const,
   userId: 'string' as const,
   ip: 'string' as const,
+  organizationId: 'string' as const,
+
   userFirstName: 'name' as const,
   userLastName: 'name' as const,
   userEmail: 'name' as const,
@@ -70,6 +76,24 @@ type QueryStringType = GetQueryString<typeof sortFields, typeof filters>
 
 const Reply = createGetReplyType(Result)
 type ReplyType = Static<typeof Reply>
+
+/**********************************************************************
+ * Helpers
+ **********************************************************************/
+const requiredPermissions = { oneOf: ['read:package', 'write:package'] as Permission[] }
+async function assertHasPermission (req: FastifyRequest, downloadIds?: string[], orgId?: string) {
+  const role = await getPanfactumRoleFromSession(req)
+  if (role === null) {
+    if (orgId !== undefined) {
+      await assertUserHasOrgPermissions(req, orgId, requiredPermissions)
+    } else if (downloadIds !== undefined) {
+      const orgIds = await getOrgIdsFromPackageDownloadIds(downloadIds)
+      await Promise.all(orgIds.map(id => assertUserHasOrgPermissions(req, id, requiredPermissions)))
+    } else {
+      throw new InvalidQueryScope('Query too broad. Must specify at least one of the following query params: ids, id_strEq, or organizationId_strEq')
+    }
+  }
+}
 
 /**********************************************************************
  * Route Logic
@@ -90,8 +114,6 @@ export const GetPackageDownloadsRoute:FastifyPluginAsync = async (fastify) => {
       } as FastifySchema
     },
     async (req) => {
-      await assertPanfactumRoleFromSession(req, 'admin')
-
       const {
         sortField,
         sortOrder,
@@ -108,6 +130,7 @@ export const GetPackageDownloadsRoute:FastifyPluginAsync = async (fastify) => {
         userFirstName_strEq,
         userLastName_strEq,
         ip_strEq,
+        organizationId_strEq,
 
         packageName_nameSearch,
         versionTag_nameSearch,
@@ -118,6 +141,8 @@ export const GetPackageDownloadsRoute:FastifyPluginAsync = async (fastify) => {
         createdAt_before,
         createdAt_after
       } = req.query
+
+      await assertHasPermission(req, id_strEq ? [id_strEq] : ids, organizationId_strEq)
 
       const db = await getDB()
 
@@ -140,6 +165,11 @@ export const GetPackageDownloadsRoute:FastifyPluginAsync = async (fastify) => {
           'packageDownload.ip as ip'
         ])
 
+      query = filterByString(
+        query,
+        { eq: organizationId_strEq },
+        'package.organizationId'
+      )
       query = filterByString(
         query,
         { eq: id_strEq },

@@ -24,7 +24,13 @@ export const ErrorMessage = Type.String({
 
 export const NotAuthorizedSchema = Type.Object({
   errors: Type.Array(Type.Object({
-    type: Type.Literal(Errors.NotAuthorized),
+    type: StringEnum([
+      Errors.NotAuthorizedQueryScope,
+      Errors.NotAuthorizedOrganizationPermissions,
+      Errors.NotAuthorized,
+      Errors.NotAuthorizedPanfactumRole,
+      Errors.NotAuthorizedCrossUserAccess
+    ], 'The error code'),
     message: ErrorMessage,
     resourceId: ErrorResourceId
   }))

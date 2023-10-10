@@ -13,6 +13,9 @@ export enum Errors {
   NotAuthenticatedMissingCookie = 'NOT_AUTHENTICATED_MISSING_COOKIE',
   NotAuthorized = 'NOT_AUTHORIZED',
   NotAuthorizedPanfactumRole = 'NOT_AUTHORIZED_PANFACTUM_ROLE',
+  NotAuthorizedOrganizationPermissions = 'NOT_AUTHORIZED_ORGANIZATION_PERMISSIONS',
+  NotAuthorizedQueryScope = 'NOT_AUTHORIZED_QUERY_SCOPE',
+  NotAuthorizedCrossUserAccess = 'NOT_AUTHORIZED_CROSS_USER_ACCESS',
   UserDoesNotExist = 'USER_DOES_NOT_EXIST',
   UserDeleted = 'USER_DELETED',
   OrganizationDoesNotExist = 'ORGANIZATION_DOES_NOT_EXIST',
@@ -61,7 +64,11 @@ export abstract class PanfactumError<T extends Errors = Errors> extends Error {
 export type UnauthenticatedErrorType = Errors.NotAuthenticated | Errors.NotAuthenticatedMissingCookie
 export class UnauthenticatedError extends PanfactumError<UnauthenticatedErrorType> {}
 
-export type NotAuthorizedErrorType = Errors.NotAuthorized | Errors.NotAuthorizedPanfactumRole
+export type NotAuthorizedErrorType = Errors.NotAuthorized |
+  Errors.NotAuthorizedPanfactumRole |
+  Errors.NotAuthorizedOrganizationPermissions |
+  Errors.NotAuthorizedQueryScope |
+  Errors.NotAuthorizedCrossUserAccess
 export class UnauthorizedError extends PanfactumError<NotAuthorizedErrorType> {}
 
 export type ServerErrorType = Errors.UnknownServerError
@@ -88,6 +95,33 @@ export class WrongPanfactumRoleError extends UnauthorizedError {
     super(
       `Wrong panfactum role. Got ${foundRole}. Required ${requiredRole}.`,
       Errors.NotAuthorizedPanfactumRole
+    )
+  }
+}
+
+export class InsufficientOrganizationPrivileges extends UnauthorizedError {
+  constructor (message: string) {
+    super(
+      message,
+      Errors.NotAuthorizedOrganizationPermissions
+    )
+  }
+}
+
+export class InvalidQueryScope extends UnauthorizedError {
+  constructor (message: string) {
+    super(
+      message,
+      Errors.NotAuthorizedQueryScope
+    )
+  }
+}
+
+export class CrossUserAccess extends UnauthorizedError {
+  constructor (message: string) {
+    super(
+      message,
+      Errors.NotAuthorizedCrossUserAccess
     )
   }
 }

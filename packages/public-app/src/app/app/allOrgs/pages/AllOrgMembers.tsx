@@ -1,5 +1,5 @@
-import AllOrgMemberList from '@/app/app/allOrgs/pages/AllOrgMemberList'
 import AllOrgRoles from '@/app/app/allOrgs/pages/AllOrgRoles'
+import OrgMemberList from '@/app/app/commonPages/orgs/OrgMemberList'
 import TabNavigation from '@/components/layout/TabNavigation'
 
 interface IAllOrgMembersProps {
@@ -15,7 +15,12 @@ export default function IAllOrgMembers (props: IAllOrgMembersProps) {
           {
             label: 'List',
             path: 'list',
-            element: <AllOrgMemberList orgId={props.orgId}/>
+            element: (
+              <OrgMemberList
+                orgId={props.orgId}
+                isAdminView={true}
+              />
+            )
           },
           {
             label: 'Roles',

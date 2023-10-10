@@ -15,3 +15,5 @@ export interface OrganizationRolePermissionTable {
     organizationRoleId: string;
     permission: `${ReadAndWrite}:${PermissionResources}` | 'admin';
 }
+
+export type Permission = OrganizationRolePermissionTable['permission']

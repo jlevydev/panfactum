@@ -1,18 +1,22 @@
 import type { Static } from '@sinclair/typebox'
 import { Type } from '@sinclair/typebox'
-import type { FastifyPluginAsync, FastifySchema } from 'fastify'
+import type { FastifyPluginAsync, FastifyRequest, FastifySchema } from 'fastify'
 
 import { getDB } from '../../db/db'
+import type { Permission } from '../../db/models/OrganizationRolePermission'
+import { getOrgIdsFromPackageVersionIds } from '../../db/queries/getOrgIdsFromPackageVersionIds'
 import { applyGetSettings } from '../../db/queryBuilders/applyGetSettings'
 import { filterByDate } from '../../db/queryBuilders/filterByDate'
 import { filterByHasTimeMarker } from '../../db/queryBuilders/filterByHasTimeMarker'
 import { filterByNumber } from '../../db/queryBuilders/filterByNumber'
 import { filterBySearchName } from '../../db/queryBuilders/filterBySearchName'
 import { filterByString } from '../../db/queryBuilders/filterByString'
+import { InvalidQueryScope } from '../../handlers/customErrors'
 import { DEFAULT_SCHEMA_CODES } from '../../handlers/error'
-import { assertPanfactumRoleFromSession } from '../../util/assertPanfactumRoleFromSession'
+import { assertUserHasOrgPermissions } from '../../util/assertUserHasOrgPermissions'
 import { createGetResult } from '../../util/createGetResult'
 import { StringEnum } from '../../util/customTypes'
+import { getPanfactumRoleFromSession } from '../../util/getPanfactumRoleFromSession'
 import {
   PackageType,
   PackageVersionArchivedAt,
@@ -61,6 +65,7 @@ const sortFields = StringEnum(
 
 const filters = {
   packageId: 'string' as const,
+  organizationId: 'string' as const,
   isDeleted: 'boolean' as const,
   isArchived: 'boolean' as const,
   packageName: 'name' as const,
@@ -84,6 +89,24 @@ const Reply = createGetReplyType(Result)
 type ReplyType = Static<typeof Reply>
 
 /**********************************************************************
+ * Helpers
+ **********************************************************************/
+const requiredPermissions = { oneOf: ['read:package', 'write:package'] as Permission[] }
+async function assertHasPermission (req: FastifyRequest, packageIds?: string[], orgId?: string) {
+  const role = await getPanfactumRoleFromSession(req)
+  if (role === null) {
+    if (orgId !== undefined) {
+      await assertUserHasOrgPermissions(req, orgId, requiredPermissions)
+    } else if (packageIds !== undefined) {
+      const orgIds = await getOrgIdsFromPackageVersionIds(packageIds)
+      await Promise.all(orgIds.map(id => assertUserHasOrgPermissions(req, id, requiredPermissions)))
+    } else {
+      throw new InvalidQueryScope('Query too broad. Must specify at least one of the following query params: ids, id_strEq, or organizationId_strEq')
+    }
+  }
+}
+
+/**********************************************************************
  * Route Logic
  **********************************************************************/
 
@@ -102,8 +125,6 @@ export const GetPackageVersionsRoute:FastifyPluginAsync = async (fastify) => {
       } as FastifySchema
     },
     async (req) => {
-      await assertPanfactumRoleFromSession(req, 'admin')
-
       const {
         sortField,
         sortOrder,
@@ -114,6 +135,7 @@ export const GetPackageVersionsRoute:FastifyPluginAsync = async (fastify) => {
         packageName_strEq,
         versionTag_strEq,
         createdBy_strEq,
+        organizationId_strEq,
 
         packageName_nameSearch,
         versionTag_nameSearch,
@@ -139,6 +161,8 @@ export const GetPackageVersionsRoute:FastifyPluginAsync = async (fastify) => {
         downloadCount_lte,
         downloadCount_numEq
       } = req.query
+
+      await assertHasPermission(req, packageId_strEq ? [packageId_strEq] : ids, organizationId_strEq)
 
       const db = await getDB()
 
@@ -189,7 +213,11 @@ export const GetPackageVersionsRoute:FastifyPluginAsync = async (fastify) => {
         'packageVersion.archivedAt'
       )
 
-      console.log('package ids', packageId_strEq)
+      query = filterByString(
+        query,
+        { eq: organizationId_strEq },
+        'package.organizationId'
+      )
       query = filterByString(
         query,
         { eq: packageId_strEq },

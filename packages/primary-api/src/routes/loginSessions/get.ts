@@ -1,15 +1,18 @@
 import type { Static } from '@sinclair/typebox'
 import { Type } from '@sinclair/typebox'
-import type { FastifyPluginAsync, FastifySchema } from 'fastify'
+import type { FastifyPluginAsync, FastifyRequest, FastifySchema } from 'fastify'
 
 import { getDB } from '../../db/db'
+import { getUserIdsFromLoginSessionIds } from '../../db/queries/getUserIdsFromLoginSessionIds'
 import { applyGetSettings } from '../../db/queryBuilders/applyGetSettings'
 import { filterByDate } from '../../db/queryBuilders/filterByDate'
 import { filterByString } from '../../db/queryBuilders/filterByString'
+import { InvalidQueryScope } from '../../handlers/customErrors'
 import { DEFAULT_SCHEMA_CODES } from '../../handlers/error'
-import { assertPanfactumRoleFromSession } from '../../util/assertPanfactumRoleFromSession'
+import { assertUserHasUserPermissions } from '../../util/assertUserHasUserPermissions'
 import { createGetResult } from '../../util/createGetResult'
 import { StringEnum } from '../../util/customTypes'
+import { getPanfactumRoleFromSession } from '../../util/getPanfactumRoleFromSession'
 import {
   AuthLoginSessionCreatedAt,
   AuthLoginSessionId,
@@ -65,6 +68,23 @@ const Reply = createGetReplyType(Result)
 type ReplyType = Static<typeof Reply>
 
 /**********************************************************************
+ * Helpers
+ **********************************************************************/
+async function assertHasPermission (req: FastifyRequest, sessionIds?: string[], userId?: string) {
+  const role = await getPanfactumRoleFromSession(req)
+  if (role === null) {
+    if (userId !== undefined) {
+      await assertUserHasUserPermissions(req, userId)
+    } else if (sessionIds !== undefined) {
+      const userIds = await getUserIdsFromLoginSessionIds(sessionIds)
+      await Promise.all(userIds.map(id => assertUserHasUserPermissions(req, id)))
+    } else {
+      throw new InvalidQueryScope('Query too broad. Must specify at least one of the following query params: ids, id_strEq, userId_strEq')
+    }
+  }
+}
+
+/**********************************************************************
  * Route Logic
  **********************************************************************/
 
@@ -83,8 +103,6 @@ export const GetLoginSessions:FastifyPluginAsync = async (fastify) => {
       } as FastifySchema
     },
     async (req) => {
-      await assertPanfactumRoleFromSession(req, 'admin')
-
       const {
         sortField,
         sortOrder,
@@ -100,6 +118,8 @@ export const GetLoginSessions:FastifyPluginAsync = async (fastify) => {
         lastApiCallAt_before,
         lastApiCallAt_after
       } = req.query
+
+      await assertHasPermission(req, id_strEq ? [id_strEq] : ids, userId_strEq)
 
       const db = await getDB()
 

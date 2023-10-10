@@ -1,8 +1,10 @@
 import type { Static } from '@sinclair/typebox'
 import { Type } from '@sinclair/typebox'
-import type { FastifyPluginAsync, FastifySchema } from 'fastify'
+import type { FastifyPluginAsync, FastifyRequest, FastifySchema } from 'fastify'
 
 import { getDB } from '../../db/db'
+import type { Permission } from '../../db/models/OrganizationRolePermission'
+import { getOrgIdsFromPackageIds } from '../../db/queries/getOrgIdsFromPackageIds'
 import { applyGetSettings } from '../../db/queryBuilders/applyGetSettings'
 import { filterByDate } from '../../db/queryBuilders/filterByDate'
 import { filterByHasTimeMarker } from '../../db/queryBuilders/filterByHasTimeMarker'
@@ -11,10 +13,12 @@ import { filterByHavingDate } from '../../db/queryBuilders/filterByHavingDate'
 import { filterByHavingNumber } from '../../db/queryBuilders/filterByHavingNumber'
 import { filterBySearchName } from '../../db/queryBuilders/filterBySearchName'
 import { filterByString } from '../../db/queryBuilders/filterByString'
+import { InvalidQueryScope } from '../../handlers/customErrors'
 import { DEFAULT_SCHEMA_CODES } from '../../handlers/error'
-import { assertPanfactumRoleFromSession } from '../../util/assertPanfactumRoleFromSession'
+import { assertUserHasOrgPermissions } from '../../util/assertUserHasOrgPermissions'
 import { createGetResult } from '../../util/createGetResult'
 import { StringEnum } from '../../util/customTypes'
+import { getPanfactumRoleFromSession } from '../../util/getPanfactumRoleFromSession'
 import { OrganizationName } from '../models/organization'
 import {
   PackageActiveVersionCount,
@@ -93,6 +97,24 @@ const Reply = createGetReplyType(Result)
 type ReplyType = Static<typeof Reply>
 
 /**********************************************************************
+ * Helpers
+ **********************************************************************/
+const requiredPermissions = { oneOf: ['read:package', 'write:package'] as Permission[] }
+async function assertHasPermission (req: FastifyRequest, packageIds?: string[], orgId?: string) {
+  const role = await getPanfactumRoleFromSession(req)
+  if (role === null) {
+    if (orgId !== undefined) {
+      await assertUserHasOrgPermissions(req, orgId, requiredPermissions)
+    } else if (packageIds !== undefined) {
+      const orgIds = await getOrgIdsFromPackageIds(packageIds)
+      await Promise.all(orgIds.map(id => assertUserHasOrgPermissions(req, id, requiredPermissions)))
+    } else {
+      throw new InvalidQueryScope('Query too broad. Must specify at least one of the following query params: ids, id_strEq, or organizationId_strEq')
+    }
+  }
+}
+
+/**********************************************************************
  * Route Logic
  **********************************************************************/
 
@@ -111,8 +133,6 @@ export const GetPackagesRoute:FastifyPluginAsync = async (fastify) => {
       } as FastifySchema
     },
     async (req) => {
-      await assertPanfactumRoleFromSession(req, 'admin')
-
       const {
         sortField,
         sortOrder,
@@ -148,6 +168,8 @@ export const GetPackagesRoute:FastifyPluginAsync = async (fastify) => {
         activeVersionCount_lte,
         activeVersionCount_numEq
       } = req.query
+
+      await assertHasPermission(req, id_strEq ? [id_strEq] : ids, organizationId_strEq)
 
       const db = await getDB()
 

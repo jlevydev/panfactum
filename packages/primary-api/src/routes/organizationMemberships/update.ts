@@ -1,6 +1,6 @@
 import type { Static } from '@sinclair/typebox'
 import { Type } from '@sinclair/typebox'
-import type { FastifyPluginAsync, FastifySchema } from 'fastify'
+import type { FastifyPluginAsync, FastifySchema, FastifyRequest } from 'fastify'
 import { sql } from 'kysely'
 import type { ExpressionBuilder } from 'kysely'
 
@@ -8,13 +8,16 @@ import { getDB } from '../../db/db'
 import type { Database } from '../../db/models/Database'
 import { getActiveSiblingMembershipsWithRole } from '../../db/queries/getActiveSiblingMemberships'
 import { getMembershipInfoById } from '../../db/queries/getMembershipInfoById'
+import { getOrgIdsFromOrgMembershipIds } from '../../db/queries/getOrgIdsFromOrgMembershipIds'
 import { getOrgInfoById } from '../../db/queries/getOrgInfoById'
 import { getRoleInfoById } from '../../db/queries/getRoleInfoById'
 import { getSimpleUserInfoById } from '../../db/queries/getSimpleUserInfoById'
 import { Errors, InvalidRequestError, UnknownServerError } from '../../handlers/customErrors'
 import { DEFAULT_SCHEMA_CODES } from '../../handlers/error'
-import { assertPanfactumRoleFromSession } from '../../util/assertPanfactumRoleFromSession'
+import type { OrgPermissionCheck } from '../../util/assertUserHasOrgPermissions'
+import { assertUserHasOrgPermissions } from '../../util/assertUserHasOrgPermissions'
 import { getJSONFromSettledPromises } from '../../util/getJSONFromSettledPromises'
+import { getPanfactumRoleFromSession } from '../../util/getPanfactumRoleFromSession'
 import {
   OrganizationMembershipCreatedAt,
   OrganizationMembershipDeletedAt,
@@ -57,6 +60,15 @@ export type UpdateReplyType = Static<typeof UpdateReply>
 /**********************************************************************
  * Query Helpers
  **********************************************************************/
+
+const requiredPermissions = { allOf: ['write:membership'] } as OrgPermissionCheck
+async function assertHasPermission (req: FastifyRequest, membershipIds: string[]) {
+  const role = await getPanfactumRoleFromSession(req)
+  if (role === null) {
+    const orgIds = await getOrgIdsFromOrgMembershipIds(membershipIds)
+    await Promise.all(orgIds.map(id => assertUserHasOrgPermissions(req, id, requiredPermissions)))
+  }
+}
 
 function standardReturn (eb: ExpressionBuilder<Database, 'userOrganization'>) {
   return [
@@ -227,9 +239,8 @@ export const UpdateOrganizationMembershipsRoutes:FastifyPluginAsync = async (fas
       } as FastifySchema
     },
     async (req) => {
-      await assertPanfactumRoleFromSession(req, 'admin')
-
       const { ids, delta } = req.body
+      await assertHasPermission(req, ids)
       const results = await Promise.allSettled(ids.map(id => applyMutation(id, delta)))
       return getJSONFromSettledPromises(results)
     }

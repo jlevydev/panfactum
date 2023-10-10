@@ -1,14 +1,17 @@
 import type { Static } from '@sinclair/typebox'
 import { Type } from '@sinclair/typebox'
-import type { FastifyPluginAsync, FastifySchema } from 'fastify'
+import type { FastifyPluginAsync, FastifyRequest, FastifySchema } from 'fastify'
 
 import { getDB } from '../../db/db'
-import type { OrganizationRolePermissionTable } from '../../db/models/OrganizationRolePermission'
+import type { OrganizationRolePermissionTable, Permission } from '../../db/models/OrganizationRolePermission'
+import { getOrgIdsFromOrgRoleIds } from '../../db/queries/getOrgIdsFromOrgRoleIds'
 import { applyGetSettings, convertSortOrder } from '../../db/queryBuilders/applyGetSettings'
+import { InvalidQueryScope } from '../../handlers/customErrors'
 import { DEFAULT_SCHEMA_CODES } from '../../handlers/error'
-import { assertPanfactumRoleFromSession } from '../../util/assertPanfactumRoleFromSession'
+import { assertUserHasOrgPermissions } from '../../util/assertUserHasOrgPermissions'
 import { createGetResult } from '../../util/createGetResult'
 import { StringEnum } from '../../util/customTypes'
+import { getPanfactumRoleFromSession } from '../../util/getPanfactumRoleFromSession'
 import {
   OrganizationRoleAssigneeCount, OrganizationRoleCreatedAt,
   OrganizationRoleDescription,
@@ -61,6 +64,24 @@ const Reply = createGetReplyType(Result)
 type ReplyType = Static<typeof Reply>
 
 /**********************************************************************
+ * Helpers
+ **********************************************************************/
+const requiredPermissions = { oneOf: ['read:membership', 'write:membership'] as Permission[] }
+async function assertHasPermission (req: FastifyRequest, orgId?: string, roleIds?: string[]) {
+  const role = await getPanfactumRoleFromSession(req)
+  if (role === null) {
+    if (orgId !== undefined) {
+      await assertUserHasOrgPermissions(req, orgId, requiredPermissions)
+    } else if (roleIds !== undefined) {
+      const orgIds = await getOrgIdsFromOrgRoleIds(roleIds)
+      await Promise.all(orgIds.map(id => assertUserHasOrgPermissions(req, id, requiredPermissions)))
+    } else {
+      throw new InvalidQueryScope('Query too broad. Must specify at least one of the following query params: ids, organizationId_strEq')
+    }
+  }
+}
+
+/**********************************************************************
  * Route Logic
  **********************************************************************/
 
@@ -79,8 +100,6 @@ export const GetOrganizationRolesRoute:FastifyPluginAsync = async (fastify) => {
       } as FastifySchema
     },
     async (req) => {
-      await assertPanfactumRoleFromSession(req, 'admin')
-
       const {
         sortField,
         sortOrder,
@@ -89,6 +108,8 @@ export const GetOrganizationRolesRoute:FastifyPluginAsync = async (fastify) => {
         ids,
         organizationId_strEq
       } = req.query
+
+      await assertHasPermission(req, organizationId_strEq, ids)
 
       const db = await getDB()
 

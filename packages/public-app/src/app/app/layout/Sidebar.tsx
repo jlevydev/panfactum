@@ -92,7 +92,7 @@ export default function Sidebar () {
   const permissionsSet = new Set(permissions)
   const isOrgAdmin = permissionsSet.has('admin')
 
-  const shouldShowAdminLinks = Boolean(identity && (identity.panfactumRole || identity.masqueradingPanfactumRole))
+  const shouldShowAdminLinks = Boolean(identity && identity.panfactumRole)
   const shouldShowSubscriptions = isOrgAdmin ||
     permissionsSet.has('write:subscription') ||
     permissionsSet.has('read:subscription')

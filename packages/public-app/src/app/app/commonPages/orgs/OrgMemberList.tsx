@@ -1,5 +1,5 @@
 import type { OrganizationMembershipsResultType, OrganizationMembershipsFiltersType } from '@panfactum/primary-api'
-import React, { useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import { useListContext } from 'react-admin'
 import { useNavigate } from 'react-router-dom'
 
@@ -8,16 +8,14 @@ import DataGrid from '@/components/datagrid/DataGrid'
 import ChangeOrganizationMembershipsStatusModal from '@/components/modals/ChangeOrganizationMembershipsStatusModal'
 import ChangeUserRolesModal from '@/components/modals/ChangeUserRolesModal'
 import { useAdminBasePath } from '@/lib/hooks/navigation/useAdminBasePath'
-
-interface IAllOrgMemberListProps {
-  orgId: string;
-}
+import { useHasPanfactumRole } from '@/lib/hooks/queries/useHasPanfactumRole'
+import { useHasPermissions } from '@/lib/hooks/queries/useHasPermissions'
 
 /************************************************
  * List Actions
  * **********************************************/
 
-function BulkActions ({ orgId }: IAllOrgMemberListProps) {
+function BulkActions ({ orgId }: {orgId: string}) {
   const { selectedIds, data, onSelect } = useListContext<OrganizationMembershipsResultType>()
   const [deactivateMembershipModalIsOpen, setDeactivateMembershipModalIsOpen] = useState<boolean>(false)
   const [reactivateMembershipModalIsOpen, setReactivateMembershipModalIsOpen] = useState<boolean>(false)
@@ -85,22 +83,39 @@ function BulkActions ({ orgId }: IAllOrgMemberListProps) {
 /*******************************************
  * List
  * *****************************************/
+interface IOrgMemberListProps {
+  orgId: string;
+  isAdminView: boolean;
+}
 
-export default function AllOrgMemberList (props: IAllOrgMemberListProps) {
+export default function OrgMemberList (props: IOrgMemberListProps) {
+  const { orgId, isAdminView } = props
+
   const basePath = useAdminBasePath()
   const navigate = useNavigate()
+  const hasAdmin = useHasPanfactumRole(['admin'])
+  const check = useMemo(() => ({ hasOneOf: ['write:membership'] }), [])
+  const hasWrite = useHasPermissions(check)
+  const canUpdate = hasAdmin || hasWrite
+
+  const Actions = useCallback(() => <BulkActions orgId={orgId}/>, [orgId])
+
+  const onRowClick = useCallback((record: OrganizationMembershipsResultType) => {
+    if (isAdminView) {
+      navigate(`${basePath}/allUsers/${record.userId}`)
+    }
+  }, [basePath, isAdminView, navigate])
+
   return (
     <DataGrid<OrganizationMembershipsResultType, OrganizationMembershipsFiltersType>
       listProps={{
         resource: 'organizationMemberships',
-        filter: { organizationId_strEq: props.orgId },
+        filter: { organizationId_strEq: orgId },
         sort: { field: 'userLastName', order: 'DESC' }
       }}
       dataGridProps={{
-        BulkActions: () => <BulkActions orgId={props.orgId}/>,
-        onRowClick: (record) => {
-          navigate(`${basePath}/allUsers/${record.userId}`)
-        },
+        BulkActions: canUpdate ? Actions : undefined,
+        onRowClick,
         empty: <div>No users</div>,
         columns: [
           {

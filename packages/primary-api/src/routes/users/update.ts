@@ -1,6 +1,6 @@
 import type { Static } from '@sinclair/typebox'
 import { Type } from '@sinclair/typebox'
-import type { FastifyPluginAsync, FastifySchema } from 'fastify'
+import type { FastifyPluginAsync, FastifySchema, FastifyRequest } from 'fastify'
 import type { ExpressionBuilder } from 'kysely'
 import { sql } from 'kysely'
 
@@ -11,8 +11,9 @@ import { getAllActiveMembershipsWithRoleByUserId } from '../../db/queries/getAll
 import { getSimpleUserInfoById } from '../../db/queries/getSimpleUserInfoById'
 import { Errors, InvalidRequestError, UnknownServerError } from '../../handlers/customErrors'
 import { DEFAULT_SCHEMA_CODES } from '../../handlers/error'
-import { assertPanfactumRoleFromSession } from '../../util/assertPanfactumRoleFromSession'
+import { assertUserHasUserPermissions } from '../../util/assertUserHasUserPermissions'
 import { getJSONFromSettledPromises } from '../../util/getJSONFromSettledPromises'
+import { getPanfactumRoleFromSession } from '../../util/getPanfactumRoleFromSession'
 import {
   UserDeletedAt,
   UserEmail,
@@ -58,7 +59,12 @@ export type UpdateReplyType = Static<typeof UpdateReply>
 /**********************************************************************
  * Query Helpers
  **********************************************************************/
-
+async function assertHasPermission (req: FastifyRequest, userIds: string[]) {
+  const role = await getPanfactumRoleFromSession(req)
+  if (role === null) {
+    await Promise.all(userIds.map(id => assertUserHasUserPermissions(req, id)))
+  }
+}
 function standardReturn (eb: ExpressionBuilder<Database, 'user'>) {
   return [
     'id',
@@ -211,8 +217,8 @@ export const UpdateUsersRoute:FastifyPluginAsync = async (fastify) => {
       } as FastifySchema
     },
     async (req) => {
-      await assertPanfactumRoleFromSession(req, 'admin')
       const { ids, delta } = req.body
+      await assertHasPermission(req, ids)
       const results = await Promise.allSettled(ids.map(id => applyMutation(id, delta)))
       return getJSONFromSettledPromises(results)
     }

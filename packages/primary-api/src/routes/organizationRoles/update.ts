@@ -1,14 +1,17 @@
 import type { Static } from '@sinclair/typebox'
 import { Type } from '@sinclair/typebox'
-import type { FastifyPluginAsync, FastifySchema } from 'fastify'
+import type { FastifyPluginAsync, FastifySchema, FastifyRequest } from 'fastify'
 import { sql } from 'kysely'
 
 import { getDB } from '../../db/db'
+import { getOrgIdsFromOrgRoleIds } from '../../db/queries/getOrgIdsFromOrgRoleIds'
 import { getOrgRoleInfoById } from '../../db/queries/getOrgRoleInfoById'
 import { Errors, InvalidRequestError, UnknownServerError } from '../../handlers/customErrors'
 import { DEFAULT_SCHEMA_CODES } from '../../handlers/error'
-import { assertPanfactumRoleFromSession } from '../../util/assertPanfactumRoleFromSession'
+import type { OrgPermissionCheck } from '../../util/assertUserHasOrgPermissions'
+import { assertUserHasOrgPermissions } from '../../util/assertUserHasOrgPermissions'
 import { getJSONFromSettledPromises } from '../../util/getJSONFromSettledPromises'
+import { getPanfactumRoleFromSession } from '../../util/getPanfactumRoleFromSession'
 import { OrganizationRoleDescription, OrganizationRoleId, OrganizationRoleUpdatedAt } from '../models/organization'
 
 /**********************************************************************
@@ -41,6 +44,15 @@ export type UpdateReplyType = Static<typeof UpdateReply>
 /**********************************************************************
  * Query Helpers
  **********************************************************************/
+
+const requiredPermissions = { allOf: ['write:membership'] } as OrgPermissionCheck
+async function assertHasPermission (req: FastifyRequest, roleIds: string[]) {
+  const role = await getPanfactumRoleFromSession(req)
+  if (role === null) {
+    const orgIds = await getOrgIdsFromOrgRoleIds(roleIds)
+    await Promise.all(orgIds.map(id => assertUserHasOrgPermissions(req, id, requiredPermissions)))
+  }
+}
 
 function standardReturn () {
   return [
@@ -98,9 +110,8 @@ export const UpdateOrganizationRolesRoute:FastifyPluginAsync = async (fastify) =
       } as FastifySchema
     },
     async (req) => {
-      await assertPanfactumRoleFromSession(req, 'admin')
-
       const { ids, delta } = req.body
+      await assertHasPermission(req, ids)
       const results = await Promise.allSettled(ids.map(id => applyMutation(id, delta)))
       return getJSONFromSettledPromises(results)
     }

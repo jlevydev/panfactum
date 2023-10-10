@@ -9,6 +9,7 @@ import { queryClient } from '@/lib/clients/query/client'
 import { customAuthProvider } from '@/lib/providers/auth/authProvider'
 import { createCustomDataProvider } from '@/lib/providers/data/dataProvider'
 
+import Team from './team/Team'
 import { theme } from './theme'
 
 function LoginRedirect () {
@@ -55,6 +56,10 @@ export default function App () {
         <Route
           path="allPackages/*"
           element={<AllPackageRouter/>}
+        />
+        <Route
+          path="team/*"
+          element={<Team/>}
         />
         <Route
           index

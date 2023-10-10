@@ -1,6 +1,6 @@
 import type { Static } from '@sinclair/typebox'
 import { Type } from '@sinclair/typebox'
-import type { FastifyPluginAsync, FastifySchema } from 'fastify'
+import type { FastifyPluginAsync, FastifySchema, FastifyRequest } from 'fastify'
 import type { ExpressionBuilder } from 'kysely'
 import { sql } from 'kysely'
 
@@ -10,8 +10,10 @@ import { getAdminRoleInfo } from '../../db/queries/getAdminRoleInfo'
 import { getOrgInfoById } from '../../db/queries/getOrgInfoById'
 import { Errors, InvalidRequestError, UnknownServerError } from '../../handlers/customErrors'
 import { DEFAULT_SCHEMA_CODES } from '../../handlers/error'
-import { assertPanfactumRoleFromSession } from '../../util/assertPanfactumRoleFromSession'
+import type { OrgPermissionCheck } from '../../util/assertUserHasOrgPermissions'
+import { assertUserHasOrgPermissions } from '../../util/assertUserHasOrgPermissions'
 import { getJSONFromSettledPromises } from '../../util/getJSONFromSettledPromises'
+import { getPanfactumRoleFromSession } from '../../util/getPanfactumRoleFromSession'
 import {
   OrganizationDeletedAt,
   OrganizationId,
@@ -53,6 +55,13 @@ export type UpdateReplyType = Static<typeof UpdateReply>
 /**********************************************************************
  * Query Helpers
  **********************************************************************/
+const requiredPermissions = { allOf: ['write:organization'] } as OrgPermissionCheck
+async function assertHasPermission (req: FastifyRequest, orgIds: string[]) {
+  const role = await getPanfactumRoleFromSession(req)
+  if (role === null) {
+    await Promise.all(orgIds.map(id => assertUserHasOrgPermissions(req, id, requiredPermissions)))
+  }
+}
 
 function standardReturn (eb: ExpressionBuilder<Database, 'organization'>) {
   return [
@@ -185,9 +194,8 @@ export const UpdateOrganizationsRoute:FastifyPluginAsync = async (fastify) => {
       } as FastifySchema
     },
     async (req) => {
-      await assertPanfactumRoleFromSession(req, 'admin')
-
       const { ids, delta } = req.body
+      await assertHasPermission(req, ids)
       const results = await Promise.allSettled(ids.map(id => applyMutation(id, delta)))
       return getJSONFromSettledPromises(results)
     }
