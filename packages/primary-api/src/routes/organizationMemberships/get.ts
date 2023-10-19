@@ -231,7 +231,6 @@ export const GetOrganizationMemberships:FastifyPluginAsync = async (fastify) => 
         'organizationRole.name'
       )
 
-      console.log('isUnitary', isUnitary_boolean)
       query = filterByBoolean(
         query,
         { is: isUnitary_boolean },

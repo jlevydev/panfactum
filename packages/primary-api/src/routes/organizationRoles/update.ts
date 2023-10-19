@@ -29,7 +29,7 @@ const Delta = Type.Object({
   name: Type.Optional(OrganizationRoleName),
   description: Type.Optional(OrganizationRoleDescription),
   permissions: Type.Optional(OrganizationRolePermissions)
-}, { additionalProperties: true })
+}, { additionalProperties: false })
 export type DeltaType = Static<typeof Delta>
 
 const UpdateBody = Type.Object({
@@ -176,7 +176,7 @@ export const UpdateOrganizationRolesRoute:FastifyPluginAsync = async (fastify) =
     {
       schema: {
         description: 'Applies organization role patches and returns the updated organization role objects',
-        body: Delta,
+        body: UpdateBody,
         response: {
           200: UpdateReply,
           ...DEFAULT_SCHEMA_CODES

@@ -52,7 +52,6 @@ export async function assertUserHasOrgPermissions (req: FastifyRequest, orgId: s
   const { userId } = getAuthInfo(req)
 
   const permissions = await permissionsCache.fetch(`${userId}.${orgId}`)
-  console.log(permissions)
   if (!permissions || permissions.size === 0) {
     throw new InsufficientOrganizationPrivilegesError(`User ${userId} has no privileges in organization ${orgId} but tried to access a resource belonging to it.`)
   }

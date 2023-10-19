@@ -231,7 +231,7 @@ export const UpdateOrganizationMembershipsRoutes:FastifyPluginAsync = async (fas
     {
       schema: {
         description: 'Applies a set of membership patches and returns the updated membership objects.',
-        body: Delta,
+        body: UpdateBody,
         response: {
           200: UpdateReply,
           ...DEFAULT_SCHEMA_CODES

@@ -185,7 +185,7 @@ export const UpdateOrganizationsRoute:FastifyPluginAsync = async (fastify) => {
     {
       schema: {
         description: 'Applies organization patches and returns the updated org objects',
-        body: Delta,
+        body: UpdateBody,
         response: {
           200: UpdateReply,
           ...DEFAULT_SCHEMA_CODES

@@ -208,7 +208,7 @@ export const UpdateUsersRoute:FastifyPluginAsync = async (fastify) => {
     {
       schema: {
         description: 'Applies user patches and returns the updated user objects',
-        body: Delta,
+        body: UpdateBody,
         response: {
           200: UpdateReply,
           ...DEFAULT_SCHEMA_CODES

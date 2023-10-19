@@ -164,7 +164,7 @@ export const UpdatePackageVersionsRoute:FastifyPluginAsync = async (fastify) => 
     {
       schema: {
         description: 'Applies package patches and returns the updated package objects',
-        body: Delta,
+        body: UpdateBody,
         response: {
           200: UpdateReply,
           ...DEFAULT_SCHEMA_CODES
