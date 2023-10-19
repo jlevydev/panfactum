@@ -16,12 +16,14 @@ export enum Errors {
   NotAuthorizedOrganizationPermissions = 'NOT_AUTHORIZED_ORGANIZATION_PERMISSIONS',
   NotAuthorizedQueryScope = 'NOT_AUTHORIZED_QUERY_SCOPE',
   NotAuthorizedCrossUserAccess = 'NOT_AUTHORIZED_CROSS_USER_ACCESS',
+  NotAuthorizedImmutableObject = 'NOT_AUTHORIZED_IMMUTABLE_OBJECT',
   UserDoesNotExist = 'USER_DOES_NOT_EXIST',
   UserDeleted = 'USER_DELETED',
   OrganizationDoesNotExist = 'ORGANIZATION_DOES_NOT_EXIST',
   OrganizationDeleted = 'ORGANIZATION_DELETED',
   RoleDoesNotExist = 'ROLE_DOES_NOT_EXIST',
   RoleNotAvailable = 'ROLE_NOT_AVAILABLE',
+  RestrictedRoleName = 'RESTRICTED_ROLE_NAME',
   MembershipDoesNotExist = 'MEMBERSHIP_DOES_NOT_EXIST',
   MembershipDeleted = 'MEMBERSHIP_DELETED',
   OrganizationRoleConstraintViolation = 'ORGANIZATION_ROLE_CONSTRAINT_VIOLATION',
@@ -68,7 +70,8 @@ export type NotAuthorizedErrorType = Errors.NotAuthorized |
   Errors.NotAuthorizedPanfactumRole |
   Errors.NotAuthorizedOrganizationPermissions |
   Errors.NotAuthorizedQueryScope |
-  Errors.NotAuthorizedCrossUserAccess
+  Errors.NotAuthorizedCrossUserAccess |
+  Errors.NotAuthorizedImmutableObject
 export class UnauthorizedError extends PanfactumError<NotAuthorizedErrorType> {}
 
 export type ServerErrorType = Errors.UnknownServerError
@@ -99,7 +102,7 @@ export class WrongPanfactumRoleError extends UnauthorizedError {
   }
 }
 
-export class InsufficientOrganizationPrivileges extends UnauthorizedError {
+export class InsufficientOrganizationPrivilegesError extends UnauthorizedError {
   constructor (message: string) {
     super(
       message,
@@ -108,7 +111,7 @@ export class InsufficientOrganizationPrivileges extends UnauthorizedError {
   }
 }
 
-export class InvalidQueryScope extends UnauthorizedError {
+export class InvalidQueryScopeError extends UnauthorizedError {
   constructor (message: string) {
     super(
       message,
@@ -117,11 +120,20 @@ export class InvalidQueryScope extends UnauthorizedError {
   }
 }
 
-export class CrossUserAccess extends UnauthorizedError {
+export class CrossUserAccessError extends UnauthorizedError {
   constructor (message: string) {
     super(
       message,
       Errors.NotAuthorizedCrossUserAccess
+    )
+  }
+}
+
+export class ImmutableObjectError extends UnauthorizedError {
+  constructor (message: string) {
+    super(
+      message,
+      Errors.NotAuthorizedImmutableObject
     )
   }
 }

@@ -1,21 +1,31 @@
 import type { OrganizationRolesResultType, OrganizationRolesFiltersType } from '@panfactum/primary-api'
-import React from 'react'
+import React, { useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 import DataGrid from '@/components/datagrid/DataGrid'
 
-interface IAllOrgRoles {
+interface IOrgRoleListProps {
   orgId: string;
+  isAdminView: boolean;
 }
-export default function AllOrgRoles (props: IAllOrgRoles) {
+export default function OrgRoleList (props: IOrgRoleListProps) {
+  const { orgId } = props
+
+  const navigate = useNavigate()
+  const onRowClick = useCallback((record: OrganizationRolesResultType) => {
+    navigate(`${record.id}`)
+  }, [navigate])
+
   return (
     <DataGrid<OrganizationRolesResultType, OrganizationRolesFiltersType>
       listProps={{
         resource: 'organizationRoles',
-        filter: { organizationId_strEq: props.orgId },
+        filter: { organizationId_strEq: orgId },
         sort: { field: 'isCustom', order: 'DESC' }
       }}
       dataGridProps={{
         empty: <div>No roles</div>,
+        onRowClick,
         columns: [
           {
             field: 'id',

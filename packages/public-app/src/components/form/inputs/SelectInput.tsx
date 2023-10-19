@@ -7,6 +7,7 @@ import { useController } from 'react-hook-form'
 import type { Control, FieldPath, FieldValues, Path, PathValue } from 'react-hook-form'
 
 import { FormControlContext } from '@/components/form/FormControlContext'
+import { FormModeContext } from '@/components/form/FormModeContext'
 import InputHelpIcon from '@/components/form/inputs/InputHelpIcon'
 import type { Rules } from '@/components/form/inputs/validators'
 import GenericMemo from '@/components/util/GenericMemo'
@@ -25,6 +26,7 @@ interface ISelectInputProps<T extends FieldValues> {
 export default GenericMemo(function SelectInput<T extends FieldValues> (props: ISelectInputProps<T>) {
   const { formControlClassName, required = false, rules, choices, name, label, disabled = false, helpText } = props
   const control = useContext(FormControlContext)
+  const mode = useContext(FormModeContext)
 
   if (control === null) {
     throw new Error('Must provide a form control context to use SelectInput')
@@ -41,14 +43,17 @@ export default GenericMemo(function SelectInput<T extends FieldValues> (props: I
     defaultValue: '' as PathValue<T, Path<T>>
   })
 
+  const isDisabled = mode === 'show' || disabled
+
   return (
     <div className="flex flex-row gap-4 items-center">
       <FormControl
         className={formControlClassName}
-        disabled={disabled}
+        disabled={isDisabled}
+        error={(isTouched || isSubmitted) && invalid}
       >
         <InputLabel
-          disabled={disabled}
+          disabled={isDisabled}
           id={`${name}-select-label`}
           className="text-base xl:text-lg lg:pr-1 lg:bg-white -mt-[5px] lg:-mt-[7px]"
         >
@@ -56,8 +61,7 @@ export default GenericMemo(function SelectInput<T extends FieldValues> (props: I
         </InputLabel>
         <Select
           {...fieldProps}
-          disabled={disabled}
-          error={(isTouched || isSubmitted) && invalid}
+          disabled={isDisabled}
           variant="outlined"
           defaultValue={choices[0]?.value}
           inputProps={{

@@ -2,7 +2,7 @@ import type { FastifyRequest } from 'fastify'
 
 import { getAuthInfo } from './getAuthInfo'
 import { getDB } from '../db/db'
-import { InsufficientOrganizationPrivileges } from '../handlers/customErrors'
+import { InsufficientOrganizationPrivilegesError } from '../handlers/customErrors'
 
 export async function assertUserInOrg (req: FastifyRequest, orgId: string): Promise<void> {
   const { userId } = getAuthInfo(req)
@@ -17,6 +17,6 @@ export async function assertUserInOrg (req: FastifyRequest, orgId: string): Prom
     .executeTakeFirst()
 
   if (inOrg === undefined) {
-    throw new InsufficientOrganizationPrivileges(`User ${userId} is not in organization ${orgId} so it cannot access it's resources`)
+    throw new InsufficientOrganizationPrivilegesError(`User ${userId} is not in organization ${orgId} so it cannot access it's resources`)
   }
 }

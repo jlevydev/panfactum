@@ -1,25 +1,34 @@
 import type { Static } from '@sinclair/typebox'
 import { Type } from '@sinclair/typebox'
-import type { FastifyPluginAsync, FastifySchema, FastifyRequest } from 'fastify'
+import type { FastifyPluginAsync, FastifyRequest, FastifySchema } from 'fastify'
 import { sql } from 'kysely'
 
 import { getDB } from '../../db/db'
-import { getOrgIdsFromOrgRoleIds } from '../../db/queries/getOrgIdsFromOrgRoleIds'
+import type { OrganizationRolePermissionTable, Permission } from '../../db/models/OrganizationRolePermission'
 import { getOrgRoleInfoById } from '../../db/queries/getOrgRoleInfoById'
-import { Errors, InvalidRequestError, UnknownServerError } from '../../handlers/customErrors'
+import { getRoleInfoWithPermissionsByIds } from '../../db/queries/getRoleInfoWithPermissionsByIds'
+import { Errors, ImmutableObjectError, InvalidRequestError, UnknownServerError } from '../../handlers/customErrors'
 import { DEFAULT_SCHEMA_CODES } from '../../handlers/error'
 import type { OrgPermissionCheck } from '../../util/assertUserHasOrgPermissions'
 import { assertUserHasOrgPermissions } from '../../util/assertUserHasOrgPermissions'
 import { getJSONFromSettledPromises } from '../../util/getJSONFromSettledPromises'
 import { getPanfactumRoleFromSession } from '../../util/getPanfactumRoleFromSession'
-import { OrganizationRoleDescription, OrganizationRoleId, OrganizationRoleUpdatedAt } from '../models/organization'
+import {
+  OrganizationRoleDescription,
+  OrganizationRoleId,
+  OrganizationRoleName,
+  OrganizationRolePermissions,
+  OrganizationRoleUpdatedAt
+} from '../models/organization'
 
 /**********************************************************************
  * Typings
  **********************************************************************/
 
 const Delta = Type.Object({
-  description: Type.Optional(OrganizationRoleDescription)
+  name: Type.Optional(OrganizationRoleName),
+  description: Type.Optional(OrganizationRoleDescription),
+  permissions: Type.Optional(OrganizationRolePermissions)
 }, { additionalProperties: true })
 export type DeltaType = Static<typeof Delta>
 
@@ -45,34 +54,100 @@ export type UpdateReplyType = Static<typeof UpdateReply>
  * Query Helpers
  **********************************************************************/
 
+const restrictedRoleNames = new Set(['Administrator', 'User', 'Publisher', 'Billing Manager', 'Organization Manager'])
 const requiredPermissions = { allOf: ['write:membership'] } as OrgPermissionCheck
-async function assertHasPermission (req: FastifyRequest, roleIds: string[]) {
-  const role = await getPanfactumRoleFromSession(req)
-  if (role === null) {
-    const orgIds = await getOrgIdsFromOrgRoleIds(roleIds)
-    await Promise.all(orgIds.map(id => assertUserHasOrgPermissions(req, id, requiredPermissions)))
+const requiredPermissionsWithAdmin = { allOf: ['write:membership', 'admin'] } as OrgPermissionCheck
+async function assertHasPermission (req: FastifyRequest, roleIds: string[], delta: DeltaType) {
+  if (delta.name && restrictedRoleNames.has(delta.name)) {
+    throw new InvalidRequestError(`Role name ${delta.name} is restricted. Roles cannot be named any of the following: ${Array.from(restrictedRoleNames).join(', ')}`, Errors.RestrictedRoleName)
   }
-}
 
-function standardReturn () {
-  return [
-    'id',
-    'description',
-    'updatedAt'
-  ] as const
+  const currentRoleInfoArray = await getRoleInfoWithPermissionsByIds(roleIds)
+
+  // Verify that the user is not attempting to update an immutable global role
+  for (const { id, organizationId } of (currentRoleInfoArray)) {
+    if (organizationId === null) {
+      throw new ImmutableObjectError(`Cannot update global role ${id} via the API as it is immutable. `)
+    }
+  }
+
+  // Get the orgs for the non-global roles
+  const roles = currentRoleInfoArray
+    .filter((org): org is {id: string, name: string, permissions: Permission[], organizationId: string} => org.id !== null)
+
+  const userPanfactumRole = await getPanfactumRoleFromSession(req)
+  if (userPanfactumRole === null) {
+    // Check to see if the user is updating permissions; if so, we need to do some more extensive checks
+    const { permissions: newPermissions } = delta
+    if (newPermissions) {
+      // check if trying to add the admin permission and verify that the user has the admin permission in all the orgs
+      if (newPermissions.includes('admin')) {
+        await Promise.all(roles.map(({ organizationId }) => assertUserHasOrgPermissions(req, organizationId, requiredPermissionsWithAdmin)))
+
+      // check if role has the admin permission and verify that the delta is not removing the permission
+      } else {
+        await Promise.all(roles.map(async ({ organizationId, permissions }) => {
+          if (permissions.includes('admin')) {
+            await assertUserHasOrgPermissions(req, organizationId, requiredPermissionsWithAdmin)
+          }
+        }))
+      }
+    } else {
+      await Promise.all(roles.map(({ organizationId }) => assertUserHasOrgPermissions(req, organizationId, requiredPermissions)))
+    }
+  }
 }
 
 async function update (roleId: string, delta:DeltaType) {
   const db = await getDB()
-  return db
-    .updateTable('organizationRole')
-    .set({
-      updatedAt: sql`NOW()`,
-      description: delta.description
-    })
-    .where('id', '=', roleId)
-    .returning(standardReturn)
-    .executeTakeFirst()
+
+  const { permissions } = delta
+  // Ensure the update is transactional so we don't end up in a bad permissions state
+  return db.transaction().execute(async (trx) => {
+    // Indicates a permission update
+    if (permissions) {
+      // Step 1: Clear all the permissions from the role
+      await trx.deleteFrom('organizationRolePermission')
+        .where('organizationRolePermission.organizationRoleId', '=', roleId)
+        .execute()
+
+      // Step 2: Add the new permissions
+      await trx.insertInto('organizationRolePermission')
+        .values(permissions.map(permission => ({
+          organizationRoleId: roleId,
+          permission
+        })))
+        .execute()
+    }
+    return await trx.with(
+      'role',
+      qb => qb
+        .updateTable('organizationRole')
+        .set({
+          updatedAt: sql`NOW()`,
+          description: delta.description,
+          name: delta.name
+        })
+        .where('organizationRole.id', '=', roleId)
+        .returning([
+          'id',
+          'description',
+          'updatedAt',
+          'name'
+        ])
+
+    ).selectFrom('role')
+      .innerJoin('organizationRolePermission', 'role.id', 'organizationRolePermission.organizationRoleId')
+      .select(eb => [
+        'role.id as id',
+        'role.description as description',
+        'role.updatedAt as updatedAt',
+        'role.name as name',
+        eb.fn.agg<OrganizationRolePermissionTable['permission'][]>('array_agg', ['organizationRolePermission.permission']).as('permissions')
+      ])
+      .groupBy(['role.id', 'role.description', 'role.updatedAt', 'role.name'])
+      .executeTakeFirst()
+  })
 }
 
 /**********************************************************************
@@ -111,7 +186,7 @@ export const UpdateOrganizationRolesRoute:FastifyPluginAsync = async (fastify) =
     },
     async (req) => {
       const { ids, delta } = req.body
-      await assertHasPermission(req, ids)
+      await assertHasPermission(req, ids, delta)
       const results = await Promise.allSettled(ids.map(id => applyMutation(id, delta)))
       return getJSONFromSettledPromises(results)
     }

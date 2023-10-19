@@ -34,7 +34,7 @@ import {
 const Delta = Type.Object({
   roleId: Type.Optional(OrganizationRoleId),
   isDeleted: Type.Optional(OrganizationMembershipIsDeleted)
-}, { additionalProperties: true })
+}, { additionalProperties: false })
 export type DeltaType = Static<typeof Delta>
 
 const UpdateBody = Type.Object({
@@ -61,6 +61,7 @@ export type UpdateReplyType = Static<typeof UpdateReply>
  * Query Helpers
  **********************************************************************/
 
+// TODO: Only Administrators should be able to change the status of other administrators (changing their roles, kicking them, etc.)
 const requiredPermissions = { allOf: ['write:membership'] } as OrgPermissionCheck
 async function assertHasPermission (req: FastifyRequest, membershipIds: string[]) {
   const role = await getPanfactumRoleFromSession(req)

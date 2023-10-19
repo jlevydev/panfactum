@@ -10,6 +10,7 @@ import { useForm } from 'react-hook-form'
 import type { UseQueryOptions } from 'react-query'
 
 import { FormControlContext } from '@/components/form/FormControlContext'
+import { FormModeContext } from '@/components/form/FormModeContext'
 import useDistanceFromScreenBottom from '@/lib/hooks/effects/useDistanceFromScreenBottom'
 import type { createUseUpdateMany } from '@/lib/hooks/queries/helpers'
 
@@ -20,10 +21,11 @@ interface IBasicFormProps<T extends FieldValues & RaRecord<string>, U extends Pa
   getHook: (id: string, options?: UseQueryOptions<T>) => ReturnType<typeof useGetOne<T>>
   resourceId: string;
   transformer: (data: T) => U
+  mode?: 'edit' | 'show'
 }
 
 export default function BasicForm<T extends FieldValues & RaRecord<string>, U extends Partial<T>> (props: IBasicFormProps<T, U>) {
-  const { children, successMessage: _successMessage, updateHook, getHook, resourceId, transformer } = props
+  const { children, mode = 'edit', successMessage: _successMessage, updateHook, getHook, resourceId, transformer } = props
   const [distanceFromBottom, contentRef] = useDistanceFromScreenBottom<HTMLDivElement>()
   const { data } = getHook(resourceId)
   const {
@@ -73,67 +75,71 @@ export default function BasicForm<T extends FieldValues & RaRecord<string>, U ex
 
   return (
     <FormControlContext.Provider value={control as Control}>
-      <form
-        className="flex flex-col"
-        onSubmit={onSubmit}
-      >
-        <div
-          className="flex flex-col overflow-y-scroll p-4 pt-8"
-          ref={contentRef}
-          style={{
-            maxHeight: distanceFromBottom === 0 ? 'initial' : `calc(${distanceFromBottom}px - 4rem - 16px)`
-          }}
+      <FormModeContext.Provider value={mode}>
+        <form
+          className="flex flex-col"
+          onSubmit={onSubmit}
         >
-          {children}
-        </div>
-        <Collapse
-          in={Boolean(serverErrors)}
-          collapsedSize={0}
-        >
-          {serverErrors && serverErrors.map(error => (
-            <Alert
-              severity="error"
-              key={error}
-              className={'text-sm lg:text-base'}
-            >
-              {error}
+          <div
+            className="flex flex-col overflow-y-auto p-4 pt-8"
+            ref={contentRef}
+            style={{
+              maxHeight: distanceFromBottom === 0 ? 'initial' : `calc(${distanceFromBottom}px - 4rem - 16px)`
+            }}
+          >
+            {children}
+          </div>
+          <Collapse
+            in={Boolean(serverErrors)}
+            collapsedSize={0}
+          >
+            {serverErrors && serverErrors.map(error => (
+              <Alert
+                severity="error"
+                key={error}
+                className={'text-sm lg:text-base'}
+              >
+                {error}
+              </Alert>
+            ))}
+          </Collapse>
+          <Collapse
+            in={Boolean(successMessage)}
+            collapsedSize={0}
+          >
+            <Alert className="text-sm lg:text-base">
+              {successMessage}
             </Alert>
-          ))}
-        </Collapse>
-        <Collapse
-          in={Boolean(successMessage)}
-          collapsedSize={0}
-        >
-          <Alert className="text-sm lg:text-base">
-            {successMessage}
-          </Alert>
-        </Collapse>
-        <div
-          className="flex flex-row bottom-0 bg-base-300 p-4 gap-4 h-[4rem]"
-        >
-          <LoadingButton
-            type="submit"
-            disabled={!isDirty}
-            loading={isSubmitting}
-            loadingPosition="start"
-            startIcon={<SaveIcon />}
-            variant="contained"
-            className="text-base"
-          >
-            Save
-          </LoadingButton>
-          <Button
-            disabled={!isDirty}
-            onClick={onReset}
-            variant="contained"
-            className="text-base"
-            startIcon={<RestoreIcon />}
-            color="warning"
-          >
-            Reset
-          </Button>
-        </div>
-      </form>
+          </Collapse>
+          {mode === 'edit' && (
+            <div
+              className="flex flex-row bottom-0 bg-base-300 p-4 gap-4 h-[4rem]"
+            >
+              <LoadingButton
+                type="submit"
+                disabled={!isDirty}
+                loading={isSubmitting}
+                loadingPosition="start"
+                startIcon={<SaveIcon />}
+                variant="contained"
+                className="text-base"
+              >
+                Save
+              </LoadingButton>
+              <Button
+                disabled={!isDirty}
+                onClick={onReset}
+                variant="contained"
+                className="text-base"
+                startIcon={<RestoreIcon />}
+                color="warning"
+              >
+                Reset
+              </Button>
+            </div>
+          )}
+        </form>
+      </FormModeContext.Provider>
     </FormControlContext.Provider>
   )
 }

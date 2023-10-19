@@ -1,8 +1,8 @@
 import { useMemo } from 'react'
 import { useParams } from 'react-router-dom'
 
-import AllOrgRoles from '@/app/app/allOrgs/pages/AllOrgRoles'
 import OrgMemberList from '@/app/app/commonPages/orgs/OrgMemberList'
+import TeamRoles from '@/app/app/team/TeamRoles'
 import TabNavigation from '@/components/layout/TabNavigation'
 import { useHasPermissions } from '@/lib/hooks/queries/useHasPermissions'
 
@@ -24,7 +24,6 @@ export default function Team () {
   return (
     <div>
       <TabNavigation
-        nested
         defaultPath={'members'}
         tabs={[
           {
@@ -40,7 +39,7 @@ export default function Team () {
           {
             label: 'Roles',
             path: 'roles',
-            element: <AllOrgRoles orgId={orgId}/>
+            element: <TeamRoles orgId={orgId}/>
           }
         ]}
       />

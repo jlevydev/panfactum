@@ -29,7 +29,8 @@ export const NotAuthorizedSchema = Type.Object({
       Errors.NotAuthorizedOrganizationPermissions,
       Errors.NotAuthorized,
       Errors.NotAuthorizedPanfactumRole,
-      Errors.NotAuthorizedCrossUserAccess
+      Errors.NotAuthorizedCrossUserAccess,
+      Errors.NotAuthorizedImmutableObject
     ], 'The error code'),
     message: ErrorMessage,
     resourceId: ErrorResourceId
@@ -82,7 +83,10 @@ export function errorHandler (error: PanfactumError | PanfactumConsolidatedError
       reply.statusCode = 403
     } else if (errors.findIndex(error => error instanceof InvalidRequestError) !== -1) {
       reply.statusCode = 400
+    } else {
+      reply.statusCode = 500
     }
+
     void reply.send({
       errors: errors.map(error => {
         if (error instanceof PanfactumError) {
@@ -98,6 +102,7 @@ export function errorHandler (error: PanfactumError | PanfactumConsolidatedError
             message: error.message
           }
         } else {
+          console.error(error)
           return {
             type: Errors.UnknownServerError,
             message: 'Something unexpected happened when processing your request. Our engineers are on it!'
@@ -114,6 +119,8 @@ export function errorHandler (error: PanfactumError | PanfactumConsolidatedError
       reply.statusCode = 400
     } else if (!(error instanceof PanfactumError) && error.statusCode) {
       reply.statusCode = error.statusCode
+    } else {
+      reply.statusCode = 500
     }
 
     if (error instanceof PanfactumError) {
@@ -132,6 +139,7 @@ export function errorHandler (error: PanfactumError | PanfactumConsolidatedError
         }]
       })
     } else {
+      console.error(error)
       void reply.send({
         errors: [{
           type: Errors.UnknownServerError,

@@ -28,7 +28,7 @@ import {
 
 const Delta = Type.Object({
   isArchived: Type.Optional(Type.Boolean({ description: 'Whether to archive or restore this package version.' }))
-}, { additionalProperties: true })
+}, { additionalProperties: false })
 export type DeltaType = Static<typeof Delta>
 
 const UpdateBody = Type.Object({

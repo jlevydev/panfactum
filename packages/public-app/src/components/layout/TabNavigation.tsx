@@ -20,7 +20,7 @@ function TabPanel (props: ITabPanelProps) {
       hidden={currentTab !== tab}
       id={`nav-tabpanel-${tab}`}
       aria-labelledby={`nav-tab-${tab}`}
-      className="overflow-clip w-full"
+      className="w-full"
       {...other}
     >
       {currentTab === tab && children}
@@ -80,9 +80,7 @@ function TabNavigationController (props: ITabNavigationProps) {
           ))}
         </Tabs>
       </Box>
-      <div
-        className={'overflow-clip'}
-      >
+      <div>
         {tabs.map(({ path, element }) => (
           <TabPanel
             currentTab={actualTabParam}
@@ -104,7 +102,7 @@ export default function TabNavigation (props: ITabNavigationProps) {
     <>
       <Routes>
         <Route
-          path={props.nested ? ':nestedTab?' : ':tab?/*'}
+          path={props.nested ? ':nestedTab?/*' : ':tab?/*'}
           element={<TabNavigationController {...props}/>}
         />
       </Routes>

@@ -33,7 +33,7 @@ const Delta = Type.Object({
   lastName: Type.Optional(UserLastName),
   email: Type.Optional(UserEmail),
   isDeleted: Type.Optional(Type.Boolean({ description: 'Whether the user should be marked deleted.' }))
-}, { additionalProperties: true })
+}, { additionalProperties: false })
 export type DeltaType = Static<typeof Delta>
 
 const UpdateBody = Type.Object({

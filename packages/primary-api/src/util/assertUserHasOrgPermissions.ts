@@ -4,7 +4,7 @@ import { LRUCache } from 'lru-cache'
 import { getAuthInfo } from './getAuthInfo'
 import { getDB } from '../db/db'
 import type { OrganizationRolePermissionTable } from '../db/models/OrganizationRolePermission'
-import { InsufficientOrganizationPrivileges } from '../handlers/customErrors'
+import { InsufficientOrganizationPrivilegesError } from '../handlers/customErrors'
 
 const permissionsCache = new LRUCache<string, Set<OrganizationRolePermissionTable['permission']>>({
 
@@ -52,14 +52,14 @@ export async function assertUserHasOrgPermissions (req: FastifyRequest, orgId: s
   const { userId } = getAuthInfo(req)
 
   const permissions = await permissionsCache.fetch(`${userId}.${orgId}`)
-
+  console.log(permissions)
   if (!permissions || permissions.size === 0) {
-    throw new InsufficientOrganizationPrivileges(`User ${userId} has no privileges in organization ${orgId} but tried to access a resource belonging to it.`)
+    throw new InsufficientOrganizationPrivilegesError(`User ${userId} has no privileges in organization ${orgId} but tried to access a resource belonging to it.`)
   }
 
   for (const checkPermission of check.allOf ?? []) {
     if (!permissions.has(checkPermission)) {
-      throw new InsufficientOrganizationPrivileges(`User ${userId} attempted to access a resource in organization ${orgId} without this required permission: ${checkPermission}.`)
+      throw new InsufficientOrganizationPrivilegesError(`User ${userId} attempted to access a resource in organization ${orgId} without this required permission: ${checkPermission}.`)
     }
   }
 
@@ -69,6 +69,6 @@ export async function assertUserHasOrgPermissions (req: FastifyRequest, orgId: s
         return
       }
     }
-    throw new InsufficientOrganizationPrivileges(`User ${userId} attempted to access a resource in organization ${orgId} without at least one of the required permissions: ${check.oneOf.join(', ')}`)
+    throw new InsufficientOrganizationPrivilegesError(`User ${userId} attempted to access a resource in organization ${orgId} without at least one of the required permissions: ${check.oneOf.join(', ')}`)
   }
 }

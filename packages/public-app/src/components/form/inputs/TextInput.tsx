@@ -4,6 +4,7 @@ import type { Control, FieldPath, FieldValues, Path, PathValue } from 'react-hoo
 import { useController } from 'react-hook-form'
 
 import { FormControlContext } from '@/components/form/FormControlContext'
+import { FormModeContext } from '@/components/form/FormModeContext'
 import InputHelpIcon from '@/components/form/inputs/InputHelpIcon'
 import parseErrorMessage from '@/components/form/inputs/parseErrorMessage'
 import type { Rules } from '@/components/form/inputs/validators'
@@ -24,6 +25,7 @@ export default GenericMemo(function TextInput<T extends FieldValues> (props: ITe
   const { multiline = false, className, required = false, rules, name, label, disabled = false, helpText } = props
 
   const control = useContext(FormControlContext)
+  const mode = useContext(FormModeContext)
 
   if (control === null) {
     throw new Error('Must provide a form control context to use TextInput')
@@ -48,7 +50,7 @@ export default GenericMemo(function TextInput<T extends FieldValues> (props: ITe
         const newValue = e.target.value
         onChange(newValue === '' ? null : newValue)
       }}
-      disabled={disabled}
+      disabled={mode === 'show' || disabled}
       label={label}
       required={required}
       multiline={multiline}

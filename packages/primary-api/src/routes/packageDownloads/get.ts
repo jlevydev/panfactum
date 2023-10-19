@@ -9,7 +9,7 @@ import { applyGetSettings } from '../../db/queryBuilders/applyGetSettings'
 import { filterByDate } from '../../db/queryBuilders/filterByDate'
 import { filterBySearchName } from '../../db/queryBuilders/filterBySearchName'
 import { filterByString } from '../../db/queryBuilders/filterByString'
-import { InvalidQueryScope } from '../../handlers/customErrors'
+import { InvalidQueryScopeError } from '../../handlers/customErrors'
 import { DEFAULT_SCHEMA_CODES } from '../../handlers/error'
 import { assertUserHasOrgPermissions } from '../../util/assertUserHasOrgPermissions'
 import { createGetResult } from '../../util/createGetResult'
@@ -90,7 +90,7 @@ async function assertHasPermission (req: FastifyRequest, downloadIds?: string[],
       const orgIds = await getOrgIdsFromPackageDownloadIds(downloadIds)
       await Promise.all(orgIds.map(id => assertUserHasOrgPermissions(req, id, requiredPermissions)))
     } else {
-      throw new InvalidQueryScope('Query too broad. Must specify at least one of the following query params: ids, id_strEq, or organizationId_strEq')
+      throw new InvalidQueryScopeError('Query too broad. Must specify at least one of the following query params: ids, id_strEq, or organizationId_strEq')
     }
   }
 }

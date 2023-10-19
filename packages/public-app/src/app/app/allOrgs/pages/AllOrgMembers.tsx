@@ -1,5 +1,8 @@
-import AllOrgRoles from '@/app/app/allOrgs/pages/AllOrgRoles'
+import { Outlet, Route, Routes } from 'react-router-dom'
+
+import AllOrgRoleEdit from '@/app/app/allOrgs/pages/AllOrgRoleEdit'
 import OrgMemberList from '@/app/app/commonPages/orgs/OrgMemberList'
+import OrgRoleList from '@/app/app/commonPages/roles/OrgRoleList'
 import TabNavigation from '@/components/layout/TabNavigation'
 
 interface IAllOrgMembersProps {
@@ -25,7 +28,26 @@ export default function IAllOrgMembers (props: IAllOrgMembersProps) {
           {
             label: 'Roles',
             path: 'roles',
-            element: <AllOrgRoles orgId={props.orgId}/>
+            element: (
+              <>
+                <Routes>
+                  <Route
+                    index
+                    element={(
+                      <OrgRoleList
+                        orgId={props.orgId}
+                        isAdminView={true}
+                      />
+                    )}
+                  />
+                  <Route
+                    path=":roleId/*"
+                    element={<AllOrgRoleEdit/>}
+                  />
+                </Routes>
+                <Outlet/>
+              </>
+            )
           }
         ]}
       />

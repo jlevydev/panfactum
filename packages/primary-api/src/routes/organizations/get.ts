@@ -10,7 +10,7 @@ import { filterByHasTimeMarker } from '../../db/queryBuilders/filterByHasTimeMar
 import { filterByHavingNumber } from '../../db/queryBuilders/filterByHavingNumber'
 import { filterBySearchName } from '../../db/queryBuilders/filterBySearchName'
 import { filterByString } from '../../db/queryBuilders/filterByString'
-import { InvalidQueryScope } from '../../handlers/customErrors'
+import { InvalidQueryScopeError } from '../../handlers/customErrors'
 import { DEFAULT_SCHEMA_CODES } from '../../handlers/error'
 import { assertUserInOrg } from '../../util/assertUserInOrg'
 import { createGetResult } from '../../util/createGetResult'
@@ -88,7 +88,7 @@ async function assertHasPermission (req: FastifyRequest, id?: string, ids?: stri
     } else if (ids !== undefined) {
       await Promise.all(ids.map(id => assertUserInOrg(req, id)))
     } else {
-      throw new InvalidQueryScope('Query too broad. Must specify at least one of the following query params: ids, id_strEq')
+      throw new InvalidQueryScopeError('Query too broad. Must specify at least one of the following query params: ids, id_strEq')
     }
   }
 }

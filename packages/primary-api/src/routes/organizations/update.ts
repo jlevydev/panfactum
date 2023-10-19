@@ -29,7 +29,7 @@ import {
 const Delta = Type.Object({
   name: Type.Optional(OrganizationName),
   isDeleted: Type.Optional(Type.Boolean({ description: 'Whether to delete or restore this organization.' }))
-}, { additionalProperties: true })
+}, { additionalProperties: false })
 export type DeltaType = Static<typeof Delta>
 
 const UpdateBody = Type.Object({

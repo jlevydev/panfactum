@@ -7,7 +7,7 @@ import { getUserIdsFromLoginSessionIds } from '../../db/queries/getUserIdsFromLo
 import { applyGetSettings } from '../../db/queryBuilders/applyGetSettings'
 import { filterByDate } from '../../db/queryBuilders/filterByDate'
 import { filterByString } from '../../db/queryBuilders/filterByString'
-import { InvalidQueryScope } from '../../handlers/customErrors'
+import { InvalidQueryScopeError } from '../../handlers/customErrors'
 import { DEFAULT_SCHEMA_CODES } from '../../handlers/error'
 import { assertUserHasUserPermissions } from '../../util/assertUserHasUserPermissions'
 import { createGetResult } from '../../util/createGetResult'
@@ -79,7 +79,7 @@ async function assertHasPermission (req: FastifyRequest, sessionIds?: string[], 
       const userIds = await getUserIdsFromLoginSessionIds(sessionIds)
       await Promise.all(userIds.map(id => assertUserHasUserPermissions(req, id)))
     } else {
-      throw new InvalidQueryScope('Query too broad. Must specify at least one of the following query params: ids, id_strEq, userId_strEq')
+      throw new InvalidQueryScopeError('Query too broad. Must specify at least one of the following query params: ids, id_strEq, userId_strEq')
     }
   }
 }

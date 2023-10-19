@@ -6,7 +6,7 @@ import { getDB } from '../../db/db'
 import type { OrganizationRolePermissionTable, Permission } from '../../db/models/OrganizationRolePermission'
 import { getOrgIdsFromOrgRoleIds } from '../../db/queries/getOrgIdsFromOrgRoleIds'
 import { applyGetSettings, convertSortOrder } from '../../db/queryBuilders/applyGetSettings'
-import { InvalidQueryScope } from '../../handlers/customErrors'
+import { InvalidQueryScopeError } from '../../handlers/customErrors'
 import { DEFAULT_SCHEMA_CODES } from '../../handlers/error'
 import { assertUserHasOrgPermissions } from '../../util/assertUserHasOrgPermissions'
 import { createGetResult } from '../../util/createGetResult'
@@ -76,7 +76,7 @@ async function assertHasPermission (req: FastifyRequest, orgId?: string, roleIds
       const orgIds = await getOrgIdsFromOrgRoleIds(roleIds)
       await Promise.all(orgIds.map(id => assertUserHasOrgPermissions(req, id, requiredPermissions)))
     } else {
-      throw new InvalidQueryScope('Query too broad. Must specify at least one of the following query params: ids, organizationId_strEq')
+      throw new InvalidQueryScopeError('Query too broad. Must specify at least one of the following query params: ids, organizationId_strEq')
     }
   }
 }

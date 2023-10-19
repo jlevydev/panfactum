@@ -18,6 +18,7 @@ export type { FilterSet } from './routes/queryParams'
 export type { FilterOperation } from './routes/queryParams'
 export type LoginReturnType = Static<typeof LoginReply>
 export type { ReplyType } from './routes/users/get'
+export type { PermissionResources } from './db/models/OrganizationRolePermission'
 export type { ResultType as OrganizationResultType, FiltersType as OrganizationFiltersType } from './routes/organizations/get'
 export type { ResultType as PackageResultType, FiltersType as PackageFiltersType } from './routes/packages/get'
 export type { ResultType as UserResultType, FiltersType as UserFiltersType } from './routes/users/get'
