@@ -453,6 +453,10 @@ resource "kubernetes_manifest" "deployment" {
       "spec.template.spec.affinity.podAntiAffinity.requiredDuringSchedulingIgnoredDuringExecution"
     ]
   ))
+
+  field_manager {
+    force_conflicts = true
+  }
 }
 
 resource "kubernetes_manifest" "vpa_server" {

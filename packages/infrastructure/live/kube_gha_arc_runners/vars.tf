@@ -1,7 +1,7 @@
 variable "gha_runner_scale_set_version" {
   description = "The version of the arc scale set to deploy"
   type        = string
-  default     = "0.5.0"
+  default     = "0.6.1"
 }
 
 variable "vpa_enabled" {

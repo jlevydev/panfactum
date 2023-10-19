@@ -16,5 +16,5 @@ tf_state_profile: "development-superuser" # AWS profile to assume for working wi
 
 # AAD Default
 aad_sp_object_owners:
-  - "a320869e-f594-43c1-a69a-29942bd65be6"
+  - "b013747b-139e-493b-a3fd-c67a71b9c0b8"
 
