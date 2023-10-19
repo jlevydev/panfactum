@@ -85,40 +85,42 @@ export default GenericMemo(function PermissionInput (props: IPermissionInputProp
       error={(isTouched || isSubmitted) && invalid}
       disabled={isDisabled}
     >
-      <div className="flex flex-row gap-x-4 items-center">
-        <FormLabel
-          id={labelId}
-          disabled={isDisabled}
-          className="text-lg text-black"
+      <div className="flex flex-row flex-wrap gap-x-4 items-center">
+        <div className="flex flex-row gap-x-4 w-full lg:w-72">
+          <InputHelpIcon helpMessage={helpText}/>
+          <FormLabel
+            id={labelId}
+            disabled={isDisabled}
+            className="text-lg text-black"
+          >
+            {label}
+          </FormLabel>
+        </div>
+        <RadioGroup
+          aria-labelledby={labelId}
+          value={permissionStatus}
+          {...fieldProps}
+          className="flex flex-row"
+          onChange={handleChange}
         >
-          {label}
-        </FormLabel>
-        <InputHelpIcon helpMessage={helpText}/>
+          <FormControlLabel
+            value="write"
+            control={<Radio />}
+            label="Write"
+          />
+          <FormControlLabel
+            value="read"
+            control={<Radio />}
+            label="Read"
+          />
+          <FormControlLabel
+            value="none"
+            control={<Radio />}
+            label="None"
+          />
+        </RadioGroup>
       </div>
 
-      <RadioGroup
-        aria-labelledby={labelId}
-        value={permissionStatus}
-        {...fieldProps}
-        className="flex flex-row"
-        onChange={handleChange}
-      >
-        <FormControlLabel
-          value="write"
-          control={<Radio />}
-          label="Write"
-        />
-        <FormControlLabel
-          value="read"
-          control={<Radio />}
-          label="Read"
-        />
-        <FormControlLabel
-          value="none"
-          control={<Radio />}
-          label="None"
-        />
-      </RadioGroup>
     </FormControl>
   )
 })
