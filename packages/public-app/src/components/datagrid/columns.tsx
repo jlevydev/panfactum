@@ -1,12 +1,13 @@
 import type { GridValidRowModel, GridRenderCellParams, GridColDef } from '@mui/x-data-grid-pro'
-import type { RaRecord } from 'react-admin'
 
 import { getFilterOperatorsForFilterSet } from '@/components/datagrid/filters'
-import type { ColumnType, CustomColDef, Filters } from '@/components/datagrid/types'
+import type { ColumnType, CustomColDef } from '@/components/datagrid/types'
 import CheckboxField from '@/components/fields/boolean/CheckboxField'
 import ByteSizeField from '@/components/fields/numeric/ByteSizeField'
 import NumberField from '@/components/fields/numeric/NumberField'
 import TimeFromNowField from '@/components/fields/time/TimeFromNowField'
+import type { CRUDResultType } from '@/lib/hooks/queries/util/CRUDResultType'
+import type { FilterConfig } from '@/lib/hooks/queries/util/FilterTypes'
 
 import TextField from '../fields/text/TextField'
 
@@ -60,7 +61,7 @@ function getDefaultRenderCell (type: ColumnType): GridColDef['renderCell'] {
 
 // Utility function for simplifiying and standardizing the creation of the
 // the MUI DG column defs
-export function createColumnConfig<T extends RaRecord<string>, F extends Filters<T>> (
+export function createColumnConfig<T extends CRUDResultType, F extends FilterConfig<T>> (
   columns: CustomColDef<T, F>[]
 ) {
   return columns.map((col) => {

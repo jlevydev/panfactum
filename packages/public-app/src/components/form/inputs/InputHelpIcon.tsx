@@ -1,6 +1,7 @@
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline'
 import type { Theme } from '@mui/material'
-import { ClickAwayListener, useMediaQuery } from '@mui/material'
+import { useMediaQuery } from '@mui/material'
+import ClickAwayListener from '@mui/material/ClickAwayListener'
 import React, { memo, useCallback, useState } from 'react'
 
 import DefaultTooltip from '@/components/tooltip/DefaultTooltip'

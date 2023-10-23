@@ -1,9 +1,18 @@
+import Paper from '@mui/material/Paper'
+import Table from '@mui/material/Table'
+import TableBody from '@mui/material/TableBody'
+import TableCell from '@mui/material/TableCell'
+import TableContainer from '@mui/material/TableContainer'
+import TableHead from '@mui/material/TableHead'
+import TableRow from '@mui/material/TableRow'
 import React, { useState } from 'react'
-import { BooleanField, Datagrid, List, TextField } from 'react-admin'
 
+import CheckboxField from '@/components/fields/boolean/CheckboxField'
+import TextField from '@/components/fields/text/TextField'
 import BaseModal from '@/components/modals/BaseModal'
 import type { APIServerError } from '@/lib/clients/api/apiFetch'
-import { useUpdateManyOrganizationMemberships } from '@/lib/hooks/queries/useUpdateManyOrganizationMemberships'
+import { useUpdateManyOrganizationMembership } from '@/lib/hooks/queries/crud/organizationMemberships'
+import { useGetListOrganizationRole } from '@/lib/hooks/queries/crud/organizationRoles'
 
 interface Membership {
   id: string;
@@ -22,8 +31,6 @@ interface IProps {
   perspective: 'user' | 'organization'
 }
 export default function ChangeUserRolesModal (props: IProps) {
-  const [updateMemberships] = useUpdateManyOrganizationMemberships()
-  const [error, setError] = useState<null | APIServerError>(null)
   const {
     open,
     onClose,
@@ -34,13 +41,14 @@ export default function ChangeUserRolesModal (props: IProps) {
     onSuccess
   } = props
 
-  const postRowSx = (record: {id: string}) => {
-    return record.id === currentRoleId
-      ? {
-        backgroundColor: '#d3d3d3 !important'
-      }
-      : {}
-  }
+  const { mutate } = useUpdateManyOrganizationMembership()
+  const { data } = useGetListOrganizationRole({
+    filters: [{ field: 'organizationId', operator: 'strEq', value: orgId }],
+    sort: { field: 'isCustom', order: 'DESC' }
+  })
+
+  const rows = data?.pages.map(page => page.data).flat(1) ?? []
+  const [error, setError] = useState<null | APIServerError>(null)
 
   const errors = (error?.errors || [])
     .map(({ message, resourceId }) => {
@@ -63,53 +71,75 @@ export default function ChangeUserRolesModal (props: IProps) {
       description="Select a role from the list below"
       errors={errors}
     >
-      <List
-        resource="organizationRoles"
-        filter={{ organizationId_strEq: orgId }}
-        sort={{ field: 'isCustom', order: 'DESC' }}
-        actions={<div/>}
-        disableSyncWithLocation={true}
-        storeKey={'allUserOrgsChangeRole'}
-      >
-        <Datagrid
-          bulkActionButtons={false}
-          rowSx={postRowSx}
-          rowClick={async (_, __, roleRecord):Promise<false> => {
-            if (roleRecord.id !== currentRoleId) {
-              await updateMemberships(
-                memberships.map(({ id }) => id),
-                {
-                  roleId: roleRecord.id as string
-                }, {
-                  onSuccess: () => {
-                    setError(null)
-                    onClose()
-                    if (onSuccess) {
-                      onSuccess()
-                    }
-                  },
-                  onError: (error) => {
-                    setError(error)
+      <TableContainer component={Paper}>
+        <Table aria-label="roles">
+          <TableHead>
+            <TableRow>
+              <TableCell
+                align="left"
+                className="w-24"
+              >
+                Name
+              </TableCell>
+              <TableCell
+                align="left"
+                className="md:w-32"
+              >
+                Is Custom
+              </TableCell>
+              <TableCell align="left">Description</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {rows.map(({ id: roleId, name, description, isCustom }) => (
+              <TableRow
+                key={roleId}
+                sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                className="hover:bg-base-100 cursor-pointer"
+                onClick={() => {
+                  if (roleId !== currentRoleId) {
+                    mutate({
+                      ids: memberships.map(({ id }) => id),
+                      delta: {
+                        roleId
+                      }
+                    },
+                    {
+                      onSuccess: () => {
+                        setError(null)
+                        onClose()
+                        if (onSuccess) {
+                          onSuccess()
+                        }
+                      },
+                      onError: (error) => {
+                        setError(error)
+                      }
+                    })
                   }
-                })
-            }
-            return false
-          }}
-        >
-          <TextField
-            source="name"
-            label="Role"
-          />
-          <BooleanField
-            source="isCustom"
-            label="Custom"
-          />
-          <TextField
-            source="description"
-            label="Description"
-          />
-        </Datagrid>
-      </List>
+                  return false
+                }}
+              >
+                <TableCell
+                  component="th"
+                  id={roleId}
+                  scope="row"
+                  padding="none"
+                  align="left"
+                >
+                  <TextField value={name}/>
+                </TableCell>
+                <TableCell align="left">
+                  <CheckboxField value={isCustom}/>
+                </TableCell>
+                <TableCell align="left">
+                  <TextField value={description}/>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
     </BaseModal>
   )
 }

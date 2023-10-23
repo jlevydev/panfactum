@@ -1,33 +1,32 @@
 import RestoreIcon from '@mui/icons-material/Restore'
 import SaveIcon from '@mui/icons-material/Save'
 import LoadingButton from '@mui/lab/LoadingButton'
-import { Alert, Button, Collapse } from '@mui/material'
+import Alert from '@mui/material/Alert'
+import Button from '@mui/material/Button'
+import Collapse from '@mui/material/Collapse'
 import type { ReactNode } from 'react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import type { RaRecord, useGetOne } from 'react-admin'
+import { useCallback, useMemo, useState } from 'react'
 import type { Control, FieldValues } from 'react-hook-form'
 import { useForm } from 'react-hook-form'
-import type { UseQueryOptions } from 'react-query'
 
 import { FormControlContext } from '@/components/form/FormControlContext'
 import { FormModeContext } from '@/components/form/FormModeContext'
+import { APIServerError } from '@/lib/clients/api/apiFetch'
 import useDistanceFromScreenBottom from '@/lib/hooks/effects/useDistanceFromScreenBottom'
-import type { createUseUpdateMany } from '@/lib/hooks/queries/helpers'
 
-interface IBasicFormProps<T extends FieldValues & RaRecord<string>, U extends Partial<T>> {
+export type BasicFormUpdateFn<T> = (data: T) => Promise<void>
+
+interface IBasicFormProps<T> {
   children: ReactNode
   successMessage: string;
-  updateHook: ReturnType<typeof createUseUpdateMany<T, U>>
-  getHook: (id: string, options?: UseQueryOptions<T>) => ReturnType<typeof useGetOne<T>>
-  resourceId: string;
-  transformer: (data: T) => U
+  update: BasicFormUpdateFn<T>,
+  data: T | undefined
   mode?: 'edit' | 'show'
 }
 
-export default function BasicForm<T extends FieldValues & RaRecord<string>, U extends Partial<T>> (props: IBasicFormProps<T, U>) {
-  const { children, mode = 'edit', successMessage: _successMessage, updateHook, getHook, resourceId, transformer } = props
+export default function BasicForm<T extends FieldValues> (props: IBasicFormProps<T>) {
+  const { children, mode = 'edit', successMessage: _successMessage, data, update } = props
   const [distanceFromBottom, contentRef] = useDistanceFromScreenBottom<HTMLDivElement>()
-  const { data } = getHook(resourceId)
   const {
     control,
     handleSubmit,
@@ -35,43 +34,38 @@ export default function BasicForm<T extends FieldValues & RaRecord<string>, U ex
     formState: {
       isDirty
     }
-  } = useForm<T>()
+  } = useForm<T>({ values: data })
 
-  const [isInitialDataSet, setIsInitialDataSet] = useState(false)
   const [successMessage, setSuccessMessage] = useState<string | undefined>(undefined)
-
-  useEffect(() => {
-    if (data && !isInitialDataSet) {
-      reset(data)
-      setIsInitialDataSet(true)
-    }
-  }, [data, isInitialDataSet, setIsInitialDataSet, reset])
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const [serverErrors, setServerErrors] = useState<string[]>([])
-  const [update, { isLoading: isSubmitting }] = updateHook()
 
-  const submit = useCallback((newData: T) => {
-    const delta = transformer(newData)
-    void update([resourceId], delta, {
-      onSuccess: () => {
-        setServerErrors([])
-        setSuccessMessage(_successMessage)
-        setTimeout(() => setSuccessMessage(undefined), 2000)
-        reset(newData)
-      },
-      onError: (error) => {
+  const submit = useCallback(async (newData: T) => {
+    setIsSubmitting(true)
+    try {
+      await update(newData)
+      setServerErrors([])
+      setSuccessMessage(_successMessage)
+      setTimeout(() => setSuccessMessage(undefined), 2000)
+      reset(newData)
+      setIsSubmitting(false)
+    } catch (error) {
+      if (error instanceof APIServerError) {
         setServerErrors(error.errors.map(({ message }) => message))
+      } else {
+        setServerErrors(['An unknown error occurred when submitting that update.'])
       }
-    })
-  }, [update, resourceId, reset, _successMessage, transformer])
+    } finally {
+      setIsSubmitting(false)
+    }
+  }, [update, reset, _successMessage, setIsSubmitting])
 
   const onReset = useCallback(() => {
     reset(data)
   }, [reset, data])
 
   const onSubmit = useMemo(() => handleSubmit(submit), [handleSubmit, submit])
-
-  if (!isInitialDataSet) return null
 
   return (
     <FormControlContext.Provider value={control as Control}>

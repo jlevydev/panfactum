@@ -1,5 +1,5 @@
 import ChangeResourceStatusModal from '@/components/modals/ChangeResourceStatusModal'
-import { useUpdateManyUser } from '@/lib/hooks/queries/useUpdateManyUser'
+import { useUpdateManyUser } from '@/lib/hooks/queries/crud/users'
 
 interface User {
   id: string;
@@ -23,7 +23,7 @@ export default function ChangeUsersStatusModal (props: IReactivateUsersModalProp
     users,
     isRemoving
   } = props
-  const [update] = useUpdateManyUser()
+  const { mutate } = useUpdateManyUser()
   const warningText = isRemoving
     ? 'By deactivating these users, they will be removed from all organizations and their logins will be disabled.'
     : 'By reactivating these users, they will receive a notification and be able to login to their accounts again.'
@@ -34,7 +34,7 @@ export default function ChangeUsersStatusModal (props: IReactivateUsersModalProp
       onSuccess={onSuccess}
       records={users}
       isRemoving={isRemoving}
-      update={update}
+      update={mutate}
       resourceName="Users"
       warningText={warningText}
       renderRecord={({ firstName, lastName }) => `${firstName} ${lastName}`}

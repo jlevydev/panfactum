@@ -1,17 +1,16 @@
 import type {
   GridFilterInputValueProps,
-  GridFilterItem, GridFilterModel,
+  GridFilterItem,
   GridFilterOperator
 } from '@mui/x-data-grid-pro'
 import {
-  GridFilterInputBoolean, GridFilterInputValue, GridLogicOperator
+  GridFilterInputBoolean, GridFilterInputValue
 } from '@mui/x-data-grid-pro'
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker'
 import type { FilterSet } from '@panfactum/primary-api'
 import type { Dayjs } from 'dayjs'
 import dayjs from 'dayjs'
 import React from 'react'
-import type { FilterPayload } from 'react-admin'
 
 export enum ClientFilterOperation {
   BOOLEAN = 'boolean',
@@ -70,7 +69,6 @@ function GridFilterDateInput (
 /************************************************
  * Definitions
  * **********************************************/
-const FilterOperationSet: Set<string> = new Set(Object.values(ClientFilterOperation))
 
 // We do all of our filtering server-side so these can be noop functions
 const getApplyFilterFn = () => null
@@ -250,52 +248,5 @@ export function getFilterOperatorsForFilterSet (filterSet?: FilterSet) {
     return [FilterOperators[ClientFilterOperation.NAME_SEARCH], FilterOperators[ClientFilterOperation.STR_EQ]]
   } else {
     return []
-  }
-}
-
-/************************************************
- * Utilities used from converting between MUI Datagrid GridFilterModel and
- * the react-admin FilterPayload format
- * **********************************************/
-
-export function convertDGtoRAFilters (model: GridFilterModel): FilterPayload {
-  return Object.fromEntries(model.items.map(({ field, operator, value }) => {
-    if (value === undefined || value === null) {
-      return null
-    } else if (FilterOperationSet.has(operator as ClientFilterOperation)) {
-      // eslint-disable-next-line
-      return [`${field}_${operator}` as string, value] as const
-    } else {
-      return null
-    }
-  }).filter((item): item is [string, string | number] => item !== null))
-}
-
-export function convertRAtoDGFilters (filters: FilterPayload | undefined): GridFilterModel {
-  const items = filters === undefined
-    ? []
-    : Object.entries(filters).map(([filter, value]: [string, unknown], id) => {
-      if (value === null || value === undefined) {
-        return null
-      }
-
-      const splitIndex = filter.indexOf('_')
-      if (splitIndex === -1) {
-        return null
-      }
-      const field = filter.slice(0, splitIndex)
-      const operator = filter.slice(splitIndex + 1)
-      if (field === '') {
-        return null
-      } else if (!FilterOperationSet.has(operator)) {
-        return null
-      }
-      return { field, operator, value, id }
-    }).filter((item): item is {field: string, operator: string, value: NonNullable<unknown>, id: number} => item !== null)
-  return {
-    items,
-    logicOperator: GridLogicOperator.And,
-    quickFilterLogicOperator: GridLogicOperator.And,
-    quickFilterValues: []
   }
 }

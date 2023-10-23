@@ -7,6 +7,7 @@ locals {
   version_hash  = include.shared.locals.version_hash
   image_repo    = "487780594448.dkr.ecr.us-east-2.amazonaws.com/public-app"
   image_version = local.version_hash
+  license_keys  = yamldecode(sops_decrypt_file("${get_terragrunt_dir()}/license_keys.development.yaml"))
 }
 
 terraform {
@@ -34,5 +35,6 @@ inputs = {
   ingress_domains = ["dev.panfactum.com"]
 
   // App Config
-  primary_api_url = dependency.api.outputs.public_url
+  primary_api_url   = dependency.api.outputs.public_url
+  mui_x_license_key = local.license_keys.mui_x
 }

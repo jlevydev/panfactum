@@ -7,8 +7,9 @@ module.exports = {
         'plugin:@typescript-eslint/strict'
     ],
     parser: '@typescript-eslint/parser',
-    plugins: ['@typescript-eslint', 'react', "unused-imports"],
+    plugins: ['@typescript-eslint', 'react', "unused-imports", "mui-path-imports"],
     rules: {
+      "mui-path-imports/mui-path-imports": "error",
       indent: ["error", 2],
       "no-void": "off",
       "camelcase": "off",

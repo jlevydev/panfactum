@@ -1,4 +1,4 @@
-import { Alert } from '@mui/material'
+import Alert from '@mui/material/Alert'
 import type { ModalProps } from '@mui/material/Modal'
 import Modal from '@mui/material/Modal'
 
@@ -35,6 +35,7 @@ export default function BaseModal (props: IBaseModalProps) {
         >
           {description}
         </h2>
+        <div className="h-4"/>
         {children}
         <div className="flex flex-col gap-4 pt-4">
           {errors.map(error => (

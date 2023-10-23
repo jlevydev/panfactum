@@ -1,5 +1,5 @@
 import ChangeResourceStatusModal from '@/components/modals/ChangeResourceStatusModal'
-import { useUpdateManyOrganizationMemberships } from '@/lib/hooks/queries/useUpdateManyOrganizationMemberships'
+import { useUpdateManyOrganizationMembership } from '@/lib/hooks/queries/crud/organizationMemberships'
 
 interface Membership {
   id: string;
@@ -25,7 +25,7 @@ export default function ChangeOrganizationMembershipsStatusModal (props: IProps)
     perspective,
     isRemoving
   } = props
-  const [update] = useUpdateManyOrganizationMemberships()
+  const { mutate } = useUpdateManyOrganizationMembership()
   const warningText = isRemoving
     ? (
       perspective === 'user'
@@ -44,7 +44,7 @@ export default function ChangeOrganizationMembershipsStatusModal (props: IProps)
       onSuccess={onSuccess}
       records={memberships}
       isRemoving={isRemoving}
-      update={update}
+      update={mutate}
       resourceName="Organization Memberships"
       warningText={warningText}
       renderRecord={({ organizationName, userFirstName, userLastName }) => {

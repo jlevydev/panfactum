@@ -20,6 +20,9 @@ dependencies:
   eslint-plugin-import:
     specifier: 2.28.0
     version: 2.28.0(@typescript-eslint/parser@6.5.0)(eslint@8.47.0)
+  eslint-plugin-mui-path-imports:
+    specifier: 0.0.15
+    version: 0.0.15(eslint@8.47.0)
   eslint-plugin-n:
     specifier: 16.0.1
     version: 16.0.1(eslint@8.47.0)
@@ -707,6 +710,19 @@ packages:
       - eslint-import-resolver-typescript
       - eslint-import-resolver-webpack
       - supports-color
+    dev: false
+
+  /eslint-plugin-mui-path-imports@0.0.15(eslint@8.47.0):
+    resolution: {integrity: sha512-u61kgRBtUAG+zoApuf8oWuW6mf3SIfrpMq/gSQEM2h/3qzkqvWXB4RRmPzVryS6bpeXT0QsW8rFcdcMVnoz0hw==}
+    engines: {node: 12.x || 14.x || >= 16}
+    peerDependencies:
+      eslint: '>=6'
+    peerDependenciesMeta:
+      eslint:
+        optional: true
+    dependencies:
+      eslint: 8.47.0
+      requireindex: 1.2.0
     dev: false
 
   /eslint-plugin-n@16.0.1(eslint@8.47.0):
@@ -1519,6 +1535,11 @@ packages:
       call-bind: 1.0.2
       define-properties: 1.2.0
       functions-have-names: 1.2.3
+    dev: false
+
+  /requireindex@1.2.0:
+    resolution: {integrity: sha512-L9jEkOi3ASd9PYit2cwRfyppc9NoABujTP8/5gFcbERmo5jUoAKovIC3fsF17pkTnGsrByysqX+Kxd2OTNI1ww==}
+    engines: {node: '>=0.10.5'}
     dev: false
 
   /resolve-from@4.0.0:

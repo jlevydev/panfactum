@@ -21,9 +21,11 @@ export enum FilterOperation {
   LTE = 'lte'
 }
 
-export type FilterSet = 'string' | 'date' | 'number' | 'boolean' | 'name'
+export type FilterSet = 'string' | 'date' | 'number' | 'boolean' | 'name' | undefined
+export type FilterSetDefined = Exclude<FilterSet, undefined>
+export type FilterConfig = {[name: string]: FilterSetDefined}
 
-const FILTER_SETS: {[set in FilterSet]: FilterOperation[]} = {
+const FILTER_SETS: {[set in FilterSetDefined]: FilterOperation[]} = {
   name: [
     FilterOperation.NAME_SEARCH,
     FilterOperation.STR_EQ
@@ -135,7 +137,7 @@ export function createFilterSchema (prop: string, op: FilterOperation) {
   }
 }
 
-export function createFilterParams (filters: {[name: string]: FilterSet} = {}): {[prop: string]: TSchema} {
+export function createFilterParams (filters: FilterConfig = {}): {[prop: string]: TSchema} {
   return {
     ids: Type.Optional(Type.Array(Type.String({ format: 'uuid' }), { description: 'Return only objects with the indicated ids' })),
     ...(Object.fromEntries(Object.entries(filters).map(([k, v]) => {
@@ -144,7 +146,7 @@ export function createFilterParams (filters: {[name: string]: FilterSet} = {}): 
   }
 }
 
-export function createQueryString (filters: {[name: string]: FilterSet} = {}, sortFields: ReturnType<typeof StringEnum> = StringEnum([], 'The field to sort by')) {
+export function createQueryString (filters: FilterConfig = {}, sortFields: ReturnType<typeof StringEnum> = StringEnum([], 'The field to sort by')) {
   return Type.Object({
     ...createFilterParams(filters),
     ...createSortParam(sortFields),

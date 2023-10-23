@@ -6,7 +6,6 @@ import { useController } from 'react-hook-form'
 import { FormControlContext } from '@/components/form/FormControlContext'
 import { FormModeContext } from '@/components/form/FormModeContext'
 import InputHelpIcon from '@/components/form/inputs/InputHelpIcon'
-import parseErrorMessage from '@/components/form/inputs/parseErrorMessage'
 import type { Rules } from '@/components/form/inputs/validators'
 import GenericMemo from '@/components/util/GenericMemo'
 
@@ -55,7 +54,7 @@ export default GenericMemo(function TextInput<T extends FieldValues> (props: ITe
       required={required}
       multiline={multiline}
       error={(isTouched || isSubmitted) && invalid}
-      helperText={(isTouched || isSubmitted) && invalid ? `${parseErrorMessage(error?.message || 'Error in input')}` : ''}
+      helperText={(isTouched || isSubmitted) && invalid ? `${error?.message ?? 'Error in input'}` : ''}
       variant="outlined"
       className={className}
       InputLabelProps={{

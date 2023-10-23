@@ -47,6 +47,7 @@ export type ResultType = Static<typeof Result>
 const sortFields = StringEnum(
   Object.keys(ResultProperties) as (keyof typeof ResultProperties)[]
   , 'The field to sort by', 'lastApiCallAt')
+export type SortType = Static<typeof sortFields>
 
 const filters = {
   id: 'string' as const,

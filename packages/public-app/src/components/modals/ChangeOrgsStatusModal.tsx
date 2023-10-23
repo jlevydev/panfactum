@@ -1,5 +1,5 @@
 import ChangeResourceStatusModal from '@/components/modals/ChangeResourceStatusModal'
-import { useUpdateManyOrganizations } from '@/lib/hooks/queries/useUpdateManyOrganizations'
+import { useUpdateManyOrganization } from '@/lib/hooks/queries/crud/organizations'
 
 interface Org {
   id: string;
@@ -22,7 +22,7 @@ export default function ChangeOrgsStatusModal (props: IProps) {
     organizations,
     isRemoving
   } = props
-  const [update] = useUpdateManyOrganizations()
+  const { mutate } = useUpdateManyOrganization()
   const warningText = isRemoving
     ? 'By deactivating these organizations, all members except for Administrators will be removed, all organization resources will be archived, and organization resources can no longer be created. This CANNOT be undone.'
     : 'By reactivating these organizations, organization resources can be created again.'
@@ -33,7 +33,7 @@ export default function ChangeOrgsStatusModal (props: IProps) {
       onSuccess={onSuccess}
       records={organizations}
       isRemoving={isRemoving}
-      update={update}
+      update={mutate}
       resourceName="Organizations"
       warningText={warningText}
       renderRecord={({ name }) => name}

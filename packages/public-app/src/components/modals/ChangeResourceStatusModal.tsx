@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import type { RaRecord } from 'react-admin'
 
 import BaseModal from '@/components/modals/BaseModal'
 import ConfirmForm from '@/components/modals/ConfirmForm'
 import type { APIServerError } from '@/lib/clients/api/apiFetch'
+import type { CRUDResultType } from '@/lib/hooks/queries/util/CRUDResultType'
 
-interface IBaseProps<T extends RaRecord<string>> {
+interface IBaseProps<T extends CRUDResultType> {
   open: boolean
   onClose: () => void
   onSuccess?: () => void
@@ -18,15 +18,15 @@ interface IBaseProps<T extends RaRecord<string>> {
 
 interface IArchiveProps{
   type: 'archive',
-  update: (id: string[], delta: {isArchived: boolean}, options: {onSuccess?: () => void, onError?: (error: APIServerError) => void}) => void,
+  update: (args: {ids: string[], delta: {isArchived: boolean}}, options: {onSuccess?: () => void, onError?: (error: APIServerError) => void}) => void,
 }
 
 interface IDeleteProps {
   type: 'delete',
-  update: (id: string[], delta: {isDeleted: boolean}, options: {onSuccess?: () => void, onError?: (error: APIServerError) => void}) => void,
+  update: (args: {ids: string[], delta: {isDeleted: boolean}}, options: {onSuccess?: () => void, onError?: (error: APIServerError) => void}) => void,
 }
 
-export default function ChangeResourceStatusModal<T extends RaRecord<string>> (props: (IBaseProps<T> & (IArchiveProps | IDeleteProps))) {
+export default function ChangeResourceStatusModal<T extends CRUDResultType> (props: (IBaseProps<T> & (IArchiveProps | IDeleteProps))) {
   const [error, setError] = useState<null | APIServerError>(null)
   const {
     open,
@@ -63,9 +63,9 @@ export default function ChangeResourceStatusModal<T extends RaRecord<string>> (p
       }
     }
     if (type === 'delete') {
-      void update(ids, { isDeleted: isRemoving }, options)
+      void update({ ids, delta: { isDeleted: isRemoving } }, options)
     } else {
-      void update(ids, { isArchived: isRemoving }, options)
+      void update({ ids, delta: { isArchived: isRemoving } }, options)
     }
   }
   const errors = (error?.errors || [])
