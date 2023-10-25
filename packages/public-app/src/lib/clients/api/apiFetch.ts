@@ -90,7 +90,7 @@ export function apiPut<ReturnType, BodyType = object | Array<object>> (path:stri
   }).then(handleResponse<ReturnType>)
 }
 
-export function apiDelete<ReturnType> (path:string, options: RequestInit = {}):Promise<ReturnType> {
+export function apiDelete<ReturnType> (path:string, options: RequestInit = {}): Promise<ReturnType> {
   return fetch(`${API_URL}${path}`, {
     method: 'DELETE',
     ...options

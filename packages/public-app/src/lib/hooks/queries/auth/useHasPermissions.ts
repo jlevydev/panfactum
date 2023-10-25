@@ -1,9 +1,11 @@
+import type { Permission } from '@panfactum/primary-api/src/db/models/OrganizationRolePermission'
 import { useMemo } from 'react'
 
 import useUrlOrgId from '@/lib/hooks/navigation/useUrlOrgId'
 import { useIdentity } from '@/lib/hooks/queries/auth/useIdentity'
 
-export function useHasPermissions (check: {hasOneOf?: string[], hasAllOf?: string[]}): boolean {
+export type AuthCheck = {hasOneOf?: Permission[], hasAllOf?: Permission[]}
+export function useHasPermissions (check: AuthCheck): boolean {
   const { data: identity } = useIdentity()
   const orgId = useUrlOrgId()
 
@@ -22,7 +24,7 @@ export function useHasPermissions (check: {hasOneOf?: string[], hasAllOf?: strin
 
     const { permissions } = currentOrg
 
-    const permissionsSet = new Set<string>(permissions)
+    const permissionsSet = new Set<Permission>(permissions)
 
     if (!check.hasOneOf && !check.hasAllOf) {
       console.warn('Used useHasPermissions hook without any check parameters. Defaulting to false.')

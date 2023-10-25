@@ -1,14 +1,15 @@
 import Alert from '@mui/material/Alert'
 import type { ModalProps } from '@mui/material/Modal'
 import Modal from '@mui/material/Modal'
+import { memo } from 'react'
 
-interface IBaseModalProps extends ModalProps{
+export interface IBaseModalProps extends ModalProps{
   name: string;
   title: string;
   description: string;
   errors: string[]
 }
-export default function BaseModal (props: IBaseModalProps) {
+export default memo(function BaseModal (props: IBaseModalProps) {
   const { errors, name, title, description, children } = props
   return (
     <Modal
@@ -52,4 +53,4 @@ export default function BaseModal (props: IBaseModalProps) {
       </div>
     </Modal>
   )
-}
+})

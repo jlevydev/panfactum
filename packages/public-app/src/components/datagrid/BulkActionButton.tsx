@@ -1,8 +1,9 @@
 import type { ButtonProps } from '@mui/material/Button'
 import Button from '@mui/material/Button'
-import Tooltip from '@mui/material/Tooltip'
 import type { ReactElement } from 'react'
 import React, { memo } from 'react'
+
+import DefaultTooltipLazy from '@/components/tooltip/DefaultTooltipLazy'
 
 interface BulkActionsButtonProps extends ButtonProps {
   tooltipText: string;
@@ -21,7 +22,7 @@ export default memo(function BulkActionButton (props: BulkActionsButtonProps) {
   const background = props.disabled ? 'bg-base-300' : actionType === 'danger' ? 'bg-red' : 'bg-primary'
   const text = props.disabled ? 'text-secondary' : 'text-white'
   return (
-    <Tooltip title={tooltipText}>
+    <DefaultTooltipLazy title={tooltipText}>
       <span>
         <Button
           variant="contained"
@@ -35,6 +36,6 @@ export default memo(function BulkActionButton (props: BulkActionsButtonProps) {
           </span>
         </Button>
       </span>
-    </Tooltip>
+    </DefaultTooltipLazy>
   )
 })

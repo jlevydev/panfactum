@@ -4,8 +4,7 @@ import type { FastifyPluginAsync, FastifyRequest, FastifySchema } from 'fastify'
 import { sql } from 'kysely'
 
 import { getDB } from '../../db/db'
-import type { OrganizationRolePermissionTable, Permission } from '../../db/models/OrganizationRolePermission'
-import { getOrgRoleInfoById } from '../../db/queries/getOrgRoleInfoById'
+import type { OrganizationRolePermissionTable } from '../../db/models/OrganizationRolePermission'
 import { getRoleInfoWithPermissionsByIds } from '../../db/queries/getRoleInfoWithPermissionsByIds'
 import { Errors, ImmutableObjectError, InvalidRequestError, UnknownServerError } from '../../handlers/customErrors'
 import { DEFAULT_SCHEMA_CODES } from '../../handlers/error'
@@ -64,38 +63,31 @@ async function assertHasPermission (req: FastifyRequest, roleIds: string[], delt
 
   const currentRoleInfoArray = await getRoleInfoWithPermissionsByIds(roleIds)
 
-  // Verify that the user is not attempting to update an immutable global role
-  for (const { id, organizationId } of (currentRoleInfoArray)) {
-    if (organizationId === null) {
-      throw new ImmutableObjectError(`Cannot update global role ${id} via the API as it is immutable. `)
+  // Verify the role exists
+  for (const id of roleIds) {
+    if (currentRoleInfoArray.findIndex(info => info.id === id) === -1) {
+      throw new InvalidRequestError('This role does not exist.', Errors.RoleDoesNotExist, id)
     }
   }
-
-  // Get the orgs for the non-global roles
-  const roles = currentRoleInfoArray
-    .filter((org): org is {id: string, name: string, permissions: Permission[], organizationId: string} => org.id !== null)
-
   const userPanfactumRole = await getPanfactumRoleFromSession(req)
-  if (userPanfactumRole === null) {
-    // Check to see if the user is updating permissions; if so, we need to do some more extensive checks
-    const { permissions: newPermissions } = delta
-    if (newPermissions) {
-      // check if trying to add the admin permission and verify that the user has the admin permission in all the orgs
-      if (newPermissions.includes('admin')) {
-        await Promise.all(roles.map(({ organizationId }) => assertUserHasOrgPermissions(req, organizationId, requiredPermissionsWithAdmin)))
-
-      // check if role has the admin permission and verify that the delta is not removing the permission
-      } else {
-        await Promise.all(roles.map(async ({ organizationId, permissions }) => {
-          if (permissions.includes('admin')) {
-            await assertUserHasOrgPermissions(req, organizationId, requiredPermissionsWithAdmin)
-          }
-        }))
-      }
+  const { permissions: newPermissions } = delta
+  await Promise.all(currentRoleInfoArray.map(async ({ organizationId, permissions, id }) => {
+    if (!permissions) {
+      throw new UnknownServerError('A problem occurred when fetching permission set for this role.', id)
+    } else if (organizationId === null) {
+      throw new ImmutableObjectError(`Cannot update global role ${id} via the API as it is immutable.`)
     } else {
-      await Promise.all(roles.map(({ organizationId }) => assertUserHasOrgPermissions(req, organizationId, requiredPermissions)))
+      // Panfactum admins already implicitly have admin privileges
+      if (userPanfactumRole === null) {
+        // check if trying to remove or add the admin permission
+        if (newPermissions && ((newPermissions.includes('admin') && !permissions.includes('admin')) || (!newPermissions.includes('admin') && permissions.includes('admin')))) {
+          await assertUserHasOrgPermissions(req, organizationId, requiredPermissionsWithAdmin)
+        } else {
+          await assertUserHasOrgPermissions(req, organizationId, requiredPermissions)
+        }
+      }
     }
-  }
+  }))
 }
 
 async function update (roleId: string, delta:DeltaType) {
@@ -154,11 +146,6 @@ async function update (roleId: string, delta:DeltaType) {
  * Single Mutation
  **********************************************************************/
 async function applyMutation (id: string, delta: DeltaType) {
-  const currentInfo = await getOrgRoleInfoById(id)
-  if (currentInfo === undefined) {
-    throw new InvalidRequestError('This role does not exist.', Errors.RoleDoesNotExist, id)
-  }
-
   const result = await update(id, delta)
   if (result === undefined) {
     throw new UnknownServerError('Unknown error occurred when attempting to update the role.', id)

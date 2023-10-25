@@ -5,7 +5,7 @@ import type { ColumnType, CustomColDef } from '@/components/datagrid/types'
 import CheckboxField from '@/components/fields/boolean/CheckboxField'
 import ByteSizeField from '@/components/fields/numeric/ByteSizeField'
 import NumberField from '@/components/fields/numeric/NumberField'
-import TimeFromNowField from '@/components/fields/time/TimeFromNowField'
+import TimeFromNowFieldLazy from '@/components/fields/time/TimeFromNowFieldLazy'
 import type { CRUDResultType } from '@/lib/hooks/queries/util/CRUDResultType'
 import type { FilterConfig } from '@/lib/hooks/queries/util/FilterTypes'
 
@@ -15,7 +15,7 @@ function getDefaultRenderCell (type: ColumnType): GridColDef['renderCell'] {
   if (type === 'dateTime') {
     return (params: GridRenderCellParams<GridValidRowModel, number>) => {
       return (
-        <TimeFromNowField unixSeconds={params.value}/>
+        <TimeFromNowFieldLazy unixSeconds={params.value}/>
       )
     }
   } else if (type === 'string') {

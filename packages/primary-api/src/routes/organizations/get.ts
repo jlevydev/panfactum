@@ -16,6 +16,11 @@ import { assertUserInOrg } from '../../util/assertUserInOrg'
 import { createGetResult } from '../../util/createGetResult'
 import { StringEnum } from '../../util/customTypes'
 import { getPanfactumRoleFromSession } from '../../util/getPanfactumRoleFromSession'
+import type { GetQueryString } from '../GetQueryString'
+import {
+  createQueryString
+} from '../GetQueryString'
+import { getReplyType } from '../GetReplyType'
 import {
   OrganizationActiveMemberCount, OrganizationActivePackageCount,
   OrganizationCreatedAt,
@@ -25,11 +30,6 @@ import {
   OrganizationName,
   OrganizationUpdatedAt
 } from '../models/organization'
-import type { GetQueryString } from '../queryParams'
-import {
-  createGetReplyType,
-  createQueryString
-} from '../queryParams'
 
 /**********************************************************************
  * Typings
@@ -75,7 +75,7 @@ const QueryString = createQueryString(
 )
 type QueryStringType = GetQueryString<typeof sortFields, typeof filters>
 
-const Reply = createGetReplyType(Result)
+const Reply = getReplyType(Result)
 type ReplyType = Static<typeof Reply>
 
 /**********************************************************************

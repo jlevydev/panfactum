@@ -8,7 +8,7 @@ import React, { memo, useMemo } from 'react'
 
 import DataGrid from '@/components/datagrid/DataGrid'
 import type { CustomColDef } from '@/components/datagrid/types'
-import DurationField from '@/components/fields/time/DurationField'
+import DurationFieldLazy from '@/components/fields/time/DurationFieldLazy'
 import { useGetListLoginSession } from '@/lib/hooks/queries/crud/loginSessions'
 
 /************************************************
@@ -48,7 +48,7 @@ const columns: CustomColDef<LoginSessionResultType, LoginSessionFiltersType>[] =
     type: 'computed',
     render: ({ createdAt, lastApiCallAt }) => {
       return (
-        <DurationField
+        <DurationFieldLazy
           fromUnixSeconds={createdAt}
           toUnixSeconds={lastApiCallAt}
         />

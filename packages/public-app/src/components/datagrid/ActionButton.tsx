@@ -1,8 +1,9 @@
 import type { ButtonProps } from '@mui/material/Button'
 import Button from '@mui/material/Button'
-import Tooltip from '@mui/material/Tooltip'
 import type { ReactElement } from 'react'
 import React, { forwardRef, memo } from 'react'
+
+import DefaultTooltipLazy from '@/components/tooltip/DefaultTooltipLazy'
 
 interface BulkActionsButtonProps extends ButtonProps {
   tooltipText: string;
@@ -22,7 +23,7 @@ const ActionButton = forwardRef<HTMLButtonElement, BulkActionsButtonProps>(
     const background = active ? 'bg-primary' : ''
     const text = active ? 'text-white' : 'text-primary'
     return (
-      <Tooltip title={tooltipText}>
+      <DefaultTooltipLazy title={tooltipText}>
         <span>
           <Button
             ref={ref}
@@ -39,7 +40,7 @@ const ActionButton = forwardRef<HTMLButtonElement, BulkActionsButtonProps>(
             </span>
           </Button>
         </span>
-      </Tooltip>
+      </DefaultTooltipLazy>
     )
   }
 )

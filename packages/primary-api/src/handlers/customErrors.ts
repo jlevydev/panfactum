@@ -130,10 +130,11 @@ export class CrossUserAccessError extends UnauthorizedError {
 }
 
 export class ImmutableObjectError extends UnauthorizedError {
-  constructor (message: string) {
+  constructor (message: string, resourceId?: string) {
     super(
       message,
-      Errors.NotAuthorizedImmutableObject
+      Errors.NotAuthorizedImmutableObject,
+      resourceId
     )
   }
 }

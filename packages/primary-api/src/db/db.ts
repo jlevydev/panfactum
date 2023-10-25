@@ -1,9 +1,17 @@
 import { CamelCasePlugin, Kysely, PostgresDialect } from 'kysely'
-import { Pool } from 'pg'
+import { Pool, types } from 'pg'
 
 import type { Database } from './models/Database'
 import { NODE_ENV, PG_CREDS_PATH, PG_DATABASE, PG_HOSTNAME, PG_PORT } from '../environment'
 import { readFile, watch } from 'fs/promises'
+
+/*************************************
+ * Public function for getting the db instance
+ * ***********************************/
+
+// Allows the result of COUNT to be a number rather than a string.
+// See https://github.com/kysely-org/kysely/issues/610
+types.setTypeParser(20, (val) => (val === null ? null : parseInt(val, 10)))
 
 /*************************************
  * Public function for getting the db instance

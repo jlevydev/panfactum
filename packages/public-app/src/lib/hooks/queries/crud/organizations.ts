@@ -5,7 +5,8 @@ import type {
   OrganizationUpdateDeltaType
 } from '@panfactum/primary-api'
 
-import { RQGetResourceHookFactory, RQUpdateResourceHookFactory } from '@/lib/hooks/queries/util/RQGetResourceHookFactory'
+import { RQGetResourceHookFactory } from '@/lib/hooks/queries/util/RQGetResourceHookFactory'
+import { RQUpdateResourceHookFactory } from '@/lib/hooks/queries/util/RQUpdateResourceHookFactory'
 
 const resource = 'organization'
 const apiPath = '/v1/organizations'

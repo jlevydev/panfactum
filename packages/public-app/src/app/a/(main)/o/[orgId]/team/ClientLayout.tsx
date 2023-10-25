@@ -5,9 +5,10 @@ import React, { memo } from 'react'
 
 import SingleItemLayout from '@/components/layout/secondary/SingleItemLayout'
 import TabNavigation from '@/components/layout/tabs/TabNavigation'
+import type { AuthCheck } from '@/lib/hooks/queries/auth/useHasPermissions'
 import { useHasPermissions } from '@/lib/hooks/queries/auth/useHasPermissions'
 
-const AUTH_CHECK = { hasOneOf: ['write:membership', 'read:membership'] }
+const AUTH_CHECK: AuthCheck = { hasOneOf: ['write:membership', 'read:membership'] }
 const TABS = [
   {
     label: 'Members',

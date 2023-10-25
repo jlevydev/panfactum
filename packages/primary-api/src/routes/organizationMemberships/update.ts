@@ -10,7 +10,7 @@ import { getActiveSiblingMembershipsWithRole } from '../../db/queries/getActiveS
 import { getMembershipInfoById } from '../../db/queries/getMembershipInfoById'
 import { getOrgIdsFromOrgMembershipIds } from '../../db/queries/getOrgIdsFromOrgMembershipIds'
 import { getOrgInfoById } from '../../db/queries/getOrgInfoById'
-import { getRoleInfoById } from '../../db/queries/getRoleInfoById'
+import { getRoleInfoByIds } from '../../db/queries/getRoleInfoByIds'
 import { getSimpleUserInfoById } from '../../db/queries/getSimpleUserInfoById'
 import { Errors, InvalidRequestError, UnknownServerError } from '../../handlers/customErrors'
 import { DEFAULT_SCHEMA_CODES } from '../../handlers/error'
@@ -150,8 +150,8 @@ async function applyMutation (id: string, delta: DeltaType) {
   if (currentInfo.isDeleted) {
     if (delta.isDeleted === false) {
       const roleId = delta.roleId ?? currentInfo.roleId // If newInfo does not specify a role, fallback on the original role
-      const [role, org, user] = await Promise.all([
-        getRoleInfoById(roleId),
+      const [[role], org, user] = await Promise.all([
+        getRoleInfoByIds([roleId]),
         getOrgInfoById(currentInfo.orgId),
         getSimpleUserInfoById(currentInfo.userId)
       ])
@@ -200,7 +200,7 @@ async function applyMutation (id: string, delta: DeltaType) {
       }
       return result
     } else if (delta.roleId !== undefined) {
-      const role = await getRoleInfoById(delta.roleId)
+      const [role] = await getRoleInfoByIds([delta.roleId])
       if (role === undefined) {
         throw new InvalidRequestError('Cannot update membership with given role as the role does not exist.', Errors.RoleDoesNotExist, id)
       } else if (role.organizationId !== null && role.organizationId !== currentInfo.orgId) {

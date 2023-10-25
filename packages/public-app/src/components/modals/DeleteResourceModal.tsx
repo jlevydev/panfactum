@@ -3,50 +3,33 @@ import { useCallback, useMemo, useState } from 'react'
 import BaseModalLazy from '@/components/modals/BaseModalLazy'
 import ConfirmForm from '@/components/modals/ConfirmForm'
 import type { APIServerError } from '@/lib/clients/api/apiFetch'
-import type { CRUDResultType } from '@/lib/hooks/queries/util/CRUDResultType'
 
-interface IBaseProps<T extends CRUDResultType> {
+interface IBaseProps<T> {
   open: boolean
   onClose: () => void
   onSuccess?: () => void
   records: T[],
-  isRemoving: boolean,
   warningText: string;
   renderRecord: (record: T) => string
   resourceName: string;
+  deleteFn: (args: {ids: string[]}, options: {onSuccess?: () => void, onError?: (error: APIServerError) => void}) => void,
 }
 
-interface IArchiveProps{
-  type: 'archive',
-  update: (args: {ids: string[], delta: {isArchived: boolean}}, options: {onSuccess?: () => void, onError?: (error: APIServerError) => void}) => void,
-}
-
-interface IDeleteProps {
-  type: 'delete',
-  update: (args: {ids: string[], delta: {isDeleted: boolean}}, options: {onSuccess?: () => void, onError?: (error: APIServerError) => void}) => void,
-}
-
-export default function ChangeResourceStatusModal<T extends CRUDResultType> (props: (IBaseProps<T> & (IArchiveProps | IDeleteProps))) {
+export default function DeleteResourceModal<T extends {id: string}> (props: (IBaseProps<T>)) {
   const [error, setError] = useState<null | APIServerError>(null)
   const {
     open,
     onClose,
     records,
     onSuccess,
-    isRemoving,
     renderRecord,
     warningText,
-    update,
-    type,
+    deleteFn,
     resourceName
   } = props
 
-  const action = type === 'delete'
-    ? (isRemoving ? 'Deactivate' : 'Reactivate')
-    : (isRemoving ? 'Archive' : 'Restore')
-
-  const title = `${action} ${resourceName}`
-  const description = `${action} the following ${resourceName.toLowerCase()}`
+  const title = `Delete ${resourceName}`
+  const description = `Delete the following ${resourceName.toLowerCase()}`
 
   const onConfirm = useCallback(() => {
     const ids = records.map(({ id }) => id)
@@ -62,20 +45,15 @@ export default function ChangeResourceStatusModal<T extends CRUDResultType> (pro
         setError(error)
       }
     }
-    if (type === 'delete') {
-      void update({ ids, delta: { isDeleted: isRemoving } }, options)
-    } else {
-      void update({ ids, delta: { isArchived: isRemoving } }, options)
-    }
-  }, [records, update, type, onClose, onSuccess, setError, isRemoving])
+    deleteFn({ ids }, options)
+  }, [deleteFn, records, onClose, setError, onSuccess])
 
   const errors = useMemo(() => (error?.errors || [])
     .map(({ message, resourceId }) => {
       const record = records.find(record => record.id === resourceId)
       const prefix = record === undefined ? 'Unknown resource' : renderRecord(record)
-      return `${prefix}: Unable to ${isRemoving ? 'deactivate' : 'reactivate'}. ${message}`
-    })
-  , [records, error, isRemoving, renderRecord])
+      return `${prefix}: Unable to delete. ${message}`
+    }), [renderRecord, records, error])
 
   return (
     <BaseModalLazy
@@ -100,7 +78,7 @@ export default function ChangeResourceStatusModal<T extends CRUDResultType> (pro
         <ConfirmForm
           warningText={warningText}
           onConfirm={onConfirm}
-          confirmationText={action}
+          confirmationText="Delete"
         />
       </div>
     </BaseModalLazy>

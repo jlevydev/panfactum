@@ -13,7 +13,7 @@ export default function Page () {
   const [loginStatus, setLoginStatus] = useState<'unsubmitted' | 'failed' | 'success'>('unsubmitted')
   const { mutate: login } = useLogin()
   const router = useRouter()
-  const nextPage = '/app'
+  const nextPage = '/a'
   const handleSubmit = useCallback((e: FormEvent) => {
     e.preventDefault()
     login(

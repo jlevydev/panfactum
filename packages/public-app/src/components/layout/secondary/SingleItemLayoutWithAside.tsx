@@ -9,7 +9,7 @@ import Paper from '@mui/material/Paper'
 import type { ReactNode } from 'react'
 import { memo, useContext, useEffect, useState } from 'react'
 
-import DefaultTooltip from '@/components/tooltip/DefaultTooltip'
+import DefaultTooltipLazy from '@/components/tooltip/DefaultTooltipLazy'
 import { SidebarOpenContext } from '@/lib/contexts/app/SidebarOpen'
 import useDistanceFromScreenBottom from '@/lib/hooks/effects/useDistanceFromScreenBottom'
 import { useLocalStorage } from '@/lib/hooks/state/useLocalStorage'
@@ -72,14 +72,14 @@ export default memo(function SingleItemLayoutWithAside (props: ISingleItemLayout
         >
           {!isXSmall
             ? (
-              <DefaultTooltip title={isAsideOpen ? 'Expand main content' : 'Show side panel'}>
+              <DefaultTooltipLazy title={isAsideOpen ? 'Expand main content' : 'Show side panel'}>
                 <Button
                   className="bg-primary min-h-0 min-w-0 py-[4px] px-[4px] text-white absolute -top-[10px] -right-[7px] rounded-[10px]"
                   onClick={() => setIsAsideOpen(!isAsideOpen)}
                 >
                   {isAsideOpen ? <OpenInFullIcon className="text-[12px]"/> : <CloseFullscreenIcon className="text-[12px]" />}
                 </Button>
-              </DefaultTooltip>
+              </DefaultTooltipLazy>
             )
             : (
               <Fab

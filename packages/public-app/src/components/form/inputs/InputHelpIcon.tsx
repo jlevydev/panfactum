@@ -4,7 +4,7 @@ import { useMediaQuery } from '@mui/material'
 import ClickAwayListener from '@mui/material/ClickAwayListener'
 import React, { memo, useCallback, useState } from 'react'
 
-import DefaultTooltip from '@/components/tooltip/DefaultTooltip'
+import DefaultTooltipLazy from '@/components/tooltip/DefaultTooltipLazy'
 
 const InputHelpIconMobile = memo(function InputHelpIconMobile (props: {helpMessage: string}) {
   const { helpMessage } = props
@@ -20,7 +20,7 @@ const InputHelpIconMobile = memo(function InputHelpIconMobile (props: {helpMessa
   return (
     <ClickAwayListener onClickAway={handleTooltipClose}>
       <div>
-        <DefaultTooltip
+        <DefaultTooltipLazy
           title={helpMessage}
           onClose={handleTooltipClose}
           open={open}
@@ -32,7 +32,7 @@ const InputHelpIconMobile = memo(function InputHelpIconMobile (props: {helpMessa
             onClick={handleTooltipOpen}
             className="!text-black"
           />
-        </DefaultTooltip>
+        </DefaultTooltipLazy>
       </div>
     </ClickAwayListener>
   )
@@ -46,10 +46,10 @@ export default memo(function InputHelpIcon (props: {helpMessage: string}) {
   return isXSmall
     ? <InputHelpIconMobile helpMessage={helpMessage}/>
     : (
-      <DefaultTooltip
+      <DefaultTooltipLazy
         title={helpMessage}
       >
         <HelpOutlineIcon/>
-      </DefaultTooltip>
+      </DefaultTooltipLazy>
     )
 })

@@ -188,13 +188,3 @@ export type GetQueryString<S extends ReturnType<typeof StringEnum>, F extends {[
   sortField?: Static<S>
   ids?: string[],
 } & GetFilters<F>
-
-export function createGetReplyType<T extends TSchema> (record: T) {
-  return Type.Object({
-    data: Type.Array(record),
-    pageInfo: Type.Object({
-      hasNextPage: Type.Boolean(),
-      hasPreviousPage: Type.Boolean()
-    })
-  })
-}

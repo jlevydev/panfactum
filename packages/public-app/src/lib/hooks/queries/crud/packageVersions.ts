@@ -3,7 +3,8 @@ import type {
   PackageVersionResultType, PackageVersionSortType, PackageVersionsUpdateDeltaType
 } from '@panfactum/primary-api'
 
-import { RQGetResourceHookFactory, RQUpdateResourceHookFactory } from '@/lib/hooks/queries/util/RQGetResourceHookFactory'
+import { RQGetResourceHookFactory } from '@/lib/hooks/queries/util/RQGetResourceHookFactory'
+import { RQUpdateResourceHookFactory } from '@/lib/hooks/queries/util/RQUpdateResourceHookFactory'
 
 const resource = 'package-version'
 const apiPath = '/v1/package-versions'

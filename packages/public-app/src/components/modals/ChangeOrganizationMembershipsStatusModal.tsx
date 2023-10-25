@@ -1,3 +1,5 @@
+import { memo, useCallback } from 'react'
+
 import ChangeResourceStatusModal from '@/components/modals/ChangeResourceStatusModal'
 import { useUpdateManyOrganizationMembership } from '@/lib/hooks/queries/crud/organizationMemberships'
 
@@ -16,7 +18,8 @@ interface IProps {
   perspective: 'user' | 'organization'
   isRemoving: boolean
 }
-export default function ChangeOrganizationMembershipsStatusModal (props: IProps) {
+
+export default memo(function ChangeOrganizationMembershipsStatusModal (props: IProps) {
   const {
     open,
     onClose,
@@ -37,6 +40,11 @@ export default function ChangeOrganizationMembershipsStatusModal (props: IProps)
         ? 'By reactivating these memberships, this user will regain access to these organizations with their original role.'
         : 'By reactivating these memberships, these users will regain access to these organizations with their original roles.'
     )
+
+  const renderRecord = useCallback(({ organizationName, userFirstName, userLastName }: Membership) => {
+    return perspective === 'user' ? organizationName : `${userFirstName} ${userLastName}`
+  }, [perspective])
+
   return (
     <ChangeResourceStatusModal
       open={open}
@@ -47,10 +55,8 @@ export default function ChangeOrganizationMembershipsStatusModal (props: IProps)
       update={mutate}
       resourceName="Organization Memberships"
       warningText={warningText}
-      renderRecord={({ organizationName, userFirstName, userLastName }) => {
-        return perspective === 'user' ? organizationName : `${userFirstName} ${userLastName}`
-      }}
+      renderRecord={renderRecord}
       type="delete"
     />
   )
-}
+})

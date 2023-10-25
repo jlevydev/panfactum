@@ -1,10 +1,10 @@
 import SupervisedUserCircleIcon from '@mui/icons-material/SupervisedUserCircle'
 import Button from '@mui/material/Button'
-import Tooltip from '@mui/material/Tooltip'
 import { useRouter } from 'next/navigation'
 import type { MouseEvent } from 'react'
 import React, { memo, useCallback } from 'react'
 
+import DefaultTooltipLazy from '@/components/tooltip/DefaultTooltipLazy'
 import { useIdentity } from '@/lib/hooks/queries/auth/useIdentity'
 import { useLogin } from '@/lib/hooks/queries/auth/useLogin'
 
@@ -30,7 +30,7 @@ export default memo(function MasqueradeNotice () {
   const { firstName, lastName, email } = identity
 
   return (
-    <Tooltip
+    <DefaultTooltipLazy
       title={`You are masquerading as ${firstName} ${lastName} (${email}). Click to undo.`}
     >
       <Button
@@ -40,6 +40,6 @@ export default memo(function MasqueradeNotice () {
       >
         <SupervisedUserCircleIcon/>
       </Button>
-    </Tooltip>
+    </DefaultTooltipLazy>
   )
 })

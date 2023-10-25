@@ -14,8 +14,8 @@ if (FUNCTION === 'http-server') {
 /********************************************************************
  * Type Exports
  *******************************************************************/
-export type { FilterSet } from './routes/queryParams'
-export type { FilterOperation } from './routes/queryParams'
+export type { FilterSet } from './routes/GetQueryString'
+export type { FilterOperation } from './routes/GetQueryString'
 export type LoginReturnType = Static<typeof LoginReply>
 export type { ReplyType } from './routes/users/get'
 export type { PermissionResources } from './db/models/OrganizationRolePermission'

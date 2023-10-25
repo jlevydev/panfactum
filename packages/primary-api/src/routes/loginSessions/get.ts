@@ -13,6 +13,11 @@ import { assertUserHasUserPermissions } from '../../util/assertUserHasUserPermis
 import { createGetResult } from '../../util/createGetResult'
 import { StringEnum } from '../../util/customTypes'
 import { getPanfactumRoleFromSession } from '../../util/getPanfactumRoleFromSession'
+import type { GetQueryString } from '../GetQueryString'
+import {
+  createQueryString
+} from '../GetQueryString'
+import { getReplyType } from '../GetReplyType'
 import {
   AuthLoginSessionCreatedAt,
   AuthLoginSessionId,
@@ -22,11 +27,6 @@ import {
 import {
   UserId
 } from '../models/user'
-import type { GetQueryString } from '../queryParams'
-import {
-  createGetReplyType,
-  createQueryString
-} from '../queryParams'
 
 /**********************************************************************
  * Typings
@@ -65,7 +65,7 @@ const QueryString = createQueryString(
 )
 type QueryStringType = GetQueryString<typeof sortFields, typeof filters>
 
-const Reply = createGetReplyType(Result)
+const Reply = getReplyType(Result)
 type ReplyType = Static<typeof Reply>
 
 /**********************************************************************

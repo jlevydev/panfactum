@@ -5,7 +5,8 @@ import type {
   PackagesUpdateDeltaType
 } from '@panfactum/primary-api'
 
-import { RQGetResourceHookFactory, RQUpdateResourceHookFactory } from '@/lib/hooks/queries/util/RQGetResourceHookFactory'
+import { RQGetResourceHookFactory } from '@/lib/hooks/queries/util/RQGetResourceHookFactory'
+import { RQUpdateResourceHookFactory } from '@/lib/hooks/queries/util/RQUpdateResourceHookFactory'
 
 const resource = 'package'
 const apiPath = '/v1/packages'

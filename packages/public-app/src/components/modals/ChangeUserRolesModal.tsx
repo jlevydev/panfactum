@@ -9,7 +9,7 @@ import React, { useState } from 'react'
 
 import CheckboxField from '@/components/fields/boolean/CheckboxField'
 import TextField from '@/components/fields/text/TextField'
-import BaseModal from '@/components/modals/BaseModal'
+import BaseModalLazy from '@/components/modals/BaseModalLazy'
 import type { APIServerError } from '@/lib/clients/api/apiFetch'
 import { useUpdateManyOrganizationMembership } from '@/lib/hooks/queries/crud/organizationMemberships'
 import { useGetListOrganizationRole } from '@/lib/hooks/queries/crud/organizationRoles'
@@ -60,7 +60,7 @@ export default function ChangeUserRolesModal (props: IProps) {
     })
 
   return (
-    <BaseModal
+    <BaseModalLazy
       open={open}
       onClose={() => {
         onClose()
@@ -140,6 +140,6 @@ export default function ChangeUserRolesModal (props: IProps) {
           </TableBody>
         </Table>
       </TableContainer>
-    </BaseModal>
+    </BaseModalLazy>
   )
 }

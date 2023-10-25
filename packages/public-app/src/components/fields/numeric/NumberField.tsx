@@ -1,6 +1,6 @@
 import { memo } from 'react'
 
-import DefaultTooltip from '@/components/tooltip/DefaultTooltip'
+import DefaultTooltipLazy from '@/components/tooltip/DefaultTooltipLazy'
 
 interface INumberFieldProps {
   value?: number;
@@ -8,7 +8,7 @@ interface INumberFieldProps {
 export default memo(function NumberField (props: INumberFieldProps) {
   const { value } = props
   return (
-    <DefaultTooltip title={`${value}`}>
+    <DefaultTooltipLazy title={`${value}`}>
       <div>
         { value
           ? Intl.NumberFormat('en-US', {
@@ -17,6 +17,6 @@ export default memo(function NumberField (props: INumberFieldProps) {
           }).format(value)
           : '-'}
       </div>
-    </DefaultTooltip>
+    </DefaultTooltipLazy>
   )
 })

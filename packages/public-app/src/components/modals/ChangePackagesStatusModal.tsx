@@ -1,3 +1,5 @@
+import { memo } from 'react'
+
 import ChangeResourceStatusModal from '@/components/modals/ChangeResourceStatusModal'
 import { useUpdateManyPackage } from '@/lib/hooks/queries/crud/packages'
 
@@ -14,7 +16,8 @@ interface IProps {
   isRemoving: boolean;
 }
 
-export default function ChangePackagesStatusModal (props: IProps) {
+const renderRecord = ({ name }: Package) => name
+export default memo(function ChangePackagesStatusModal (props: IProps) {
   const {
     open,
     onClose,
@@ -36,8 +39,8 @@ export default function ChangePackagesStatusModal (props: IProps) {
       update={mutate}
       resourceName="Packages"
       warningText={warningText}
-      renderRecord={({ name }) => name}
+      renderRecord={renderRecord}
       type="archive"
     />
   )
-}
+})

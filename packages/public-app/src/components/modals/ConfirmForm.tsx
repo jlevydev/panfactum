@@ -1,8 +1,12 @@
 import WarningIcon from '@mui/icons-material/Warning'
 import Button from '@mui/material/Button'
 import TextField from '@mui/material/TextField'
-import type { ChangeEvent } from 'react'
-import React, { useState } from 'react'
+import type { ChangeEvent, KeyboardEvent } from 'react'
+import React, { memo, useCallback, useState } from 'react'
+
+const InputLabelProps = {
+  shrink: true
+}
 
 interface IConfirmFormProps {
   warningText: string;
@@ -10,11 +14,33 @@ interface IConfirmFormProps {
   onConfirm: () => void
 }
 
-export default function ConfirmForm (props: IConfirmFormProps) {
+export default memo(function ConfirmForm (props: IConfirmFormProps) {
   const [confirmValue, setConfirmValue] = useState<string>('')
   const [error, setError] = useState<string | null>(null)
   const { confirmationText, onConfirm, warningText } = props
   const isConfirmValueCorrect = confirmValue === confirmationText
+
+  const handleChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
+    setConfirmValue(event.target.value)
+  }, [setConfirmValue])
+
+  const handleKeyUp = useCallback((event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      if (isConfirmValueCorrect) {
+        setError(null)
+        onConfirm()
+      } else {
+        setError('Incorrect confirmation value entered')
+      }
+    }
+  }, [isConfirmValueCorrect, setError, onConfirm])
+
+  const handleClick = useCallback(() => {
+    if (isConfirmValueCorrect) {
+      onConfirm()
+    }
+  }, [isConfirmValueCorrect, onConfirm])
+
   return (
     <div className="flex flex-col gap-4">
       <div
@@ -33,35 +59,18 @@ export default function ConfirmForm (props: IConfirmFormProps) {
         value={confirmValue}
         variant="outlined"
         placeholder={confirmationText}
-        InputLabelProps={{
-          shrink: true
-        }}
-        onChange={(event: ChangeEvent<HTMLInputElement>) => {
-          setConfirmValue(event.target.value)
-        }}
-        onKeyUp={(event) => {
-          if (event.key === 'Enter') {
-            if (isConfirmValueCorrect) {
-              setError(null)
-              onConfirm()
-            } else {
-              setError('Incorrect confirmation value entered')
-            }
-          }
-        }}
+        InputLabelProps={InputLabelProps}
+        onChange={handleChange}
+        onKeyUp={handleKeyUp}
       />
       <Button
         disabled={!isConfirmValueCorrect}
         className={`${isConfirmValueCorrect ? 'bg-primary' : 'bg-base-300'}`}
         variant="contained"
-        onClick={() => {
-          if (isConfirmValueCorrect) {
-            onConfirm()
-          }
-        }}
+        onClick={handleClick}
       >
         Confirm
       </Button>
     </div>
   )
-}
+})

@@ -1,6 +1,6 @@
 import { memo } from 'react'
 
-import DefaultTooltip from '@/components/tooltip/DefaultTooltip'
+import DefaultTooltipLazy from '@/components/tooltip/DefaultTooltipLazy'
 
 function humanFileSize (size: number) {
   const i = size === 0 ? 0 : Math.floor(Math.log(size) / Math.log(1024))
@@ -13,10 +13,10 @@ interface IByteSizeField {
 export default memo(function ByteSizeField (props: IByteSizeField) {
   const { bytes = 0 } = props
   return (
-    <DefaultTooltip title={`${bytes} bytes`}>
+    <DefaultTooltipLazy title={`${bytes} bytes`}>
       <div>
         {humanFileSize(bytes)}
       </div>
-    </DefaultTooltip>
+    </DefaultTooltipLazy>
   )
 })

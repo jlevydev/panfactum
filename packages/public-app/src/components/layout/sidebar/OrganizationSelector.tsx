@@ -4,12 +4,12 @@ import Button from '@mui/material/Button'
 import Fade from '@mui/material/Fade'
 import Menu from '@mui/material/Menu'
 import MenuItem from '@mui/material/MenuItem'
-import Tooltip from '@mui/material/Tooltip'
 import type { LoginReturnType } from '@panfactum/primary-api'
 import { useRouter } from 'next/navigation'
 import type { MouseEvent } from 'react'
 import { memo, useState, useCallback } from 'react'
 
+import DefaultTooltipLazy from '@/components/tooltip/DefaultTooltipLazy'
 import { useIdentity } from '@/lib/hooks/queries/auth/useIdentity'
 import type { ArrayElement } from '@/lib/util/ArrayElement'
 
@@ -65,7 +65,7 @@ export default memo(function OrganizationSelector (props: IOrganizationSelectorP
 
   return (
     <div>
-      <Tooltip
+      <DefaultTooltipLazy
         title="Organization Selector"
         disableHoverListener={!collapsed}
         disableFocusListener={!collapsed}
@@ -86,7 +86,7 @@ export default memo(function OrganizationSelector (props: IOrganizationSelectorP
           )}
           <ArrowDropDownIcon/>
         </Button>
-      </Tooltip>
+      </DefaultTooltipLazy>
       <Menu
         id="organization-selector"
         MenuListProps={{

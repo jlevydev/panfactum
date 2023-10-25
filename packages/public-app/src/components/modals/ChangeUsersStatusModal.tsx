@@ -1,3 +1,5 @@
+import { memo } from 'react'
+
 import ChangeResourceStatusModal from '@/components/modals/ChangeResourceStatusModal'
 import { useUpdateManyUser } from '@/lib/hooks/queries/crud/users'
 
@@ -15,7 +17,8 @@ interface IReactivateUsersModalProps {
   isRemoving: boolean;
 }
 
-export default function ChangeUsersStatusModal (props: IReactivateUsersModalProps) {
+const renderRecord = ({ firstName, lastName }: User) => `${firstName} ${lastName}`
+export default memo(function ChangeUsersStatusModal (props: IReactivateUsersModalProps) {
   const {
     open,
     onClose,
@@ -37,8 +40,8 @@ export default function ChangeUsersStatusModal (props: IReactivateUsersModalProp
       update={mutate}
       resourceName="Users"
       warningText={warningText}
-      renderRecord={({ firstName, lastName }) => `${firstName} ${lastName}`}
+      renderRecord={renderRecord}
       type="delete"
     />
   )
-}
+})

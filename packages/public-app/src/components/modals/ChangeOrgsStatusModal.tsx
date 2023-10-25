@@ -1,3 +1,5 @@
+import { memo } from 'react'
+
 import ChangeResourceStatusModal from '@/components/modals/ChangeResourceStatusModal'
 import { useUpdateManyOrganization } from '@/lib/hooks/queries/crud/organizations'
 
@@ -13,8 +15,8 @@ interface IProps {
   organizations: Org[]
   isRemoving: boolean;
 }
-
-export default function ChangeOrgsStatusModal (props: IProps) {
+const renderRecord = ({ name }: Org) => name
+export default memo(function ChangeOrgsStatusModal (props: IProps) {
   const {
     open,
     onClose,
@@ -36,8 +38,8 @@ export default function ChangeOrgsStatusModal (props: IProps) {
       update={mutate}
       resourceName="Organizations"
       warningText={warningText}
-      renderRecord={({ name }) => name}
+      renderRecord={renderRecord}
       type="delete"
     />
   )
-}
+})

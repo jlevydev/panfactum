@@ -3,7 +3,7 @@ import Link from 'next/link'
 import type { ReactElement } from 'react'
 import { memo, useContext } from 'react'
 
-import DefaultTooltip from '@/components/tooltip/DefaultTooltip'
+import DefaultTooltipLazy from '@/components/tooltip/DefaultTooltipLazy'
 import { SidebarOpenContext } from '@/lib/contexts/app/SidebarOpen'
 
 interface SidebarLinkProps {
@@ -16,7 +16,7 @@ export default memo(function SidebarLink ({ path, text, Icon }: SidebarLinkProps
   const matches = null // TODO: FIX
   const { open } = useContext(SidebarOpenContext)
   return (
-    <DefaultTooltip
+    <DefaultTooltipLazy
       title={text}
       disableFocusListener={open}
       disableHoverListener={open}
@@ -37,6 +37,6 @@ export default memo(function SidebarLink ({ path, text, Icon }: SidebarLinkProps
           )}
         </MenuItem>
       </Link>
-    </DefaultTooltip>
+    </DefaultTooltipLazy>
   )
 })

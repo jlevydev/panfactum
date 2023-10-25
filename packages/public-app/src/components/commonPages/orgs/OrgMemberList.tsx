@@ -13,6 +13,7 @@ import DataGrid from '@/components/datagrid/DataGrid'
 import type { CustomColDef } from '@/components/datagrid/types'
 import ChangeOrganizationMembershipsStatusModal from '@/components/modals/ChangeOrganizationMembershipsStatusModal'
 import ChangeUserRolesModal from '@/components/modals/ChangeUserRolesModal'
+import type { AuthCheck } from '@/lib/hooks/queries/auth/useHasPermissions'
 import { useHasPermissions } from '@/lib/hooks/queries/auth/useHasPermissions'
 import { useHasPanfactumRole } from '@/lib/hooks/queries/auth/usePanfactumRole'
 import { useGetListOrganizationMembership } from '@/lib/hooks/queries/crud/organizationMemberships'
@@ -165,13 +166,13 @@ interface IOrgMemberListProps {
   isAdminView: boolean;
 }
 
+const AUTH_CHECK:AuthCheck = { hasOneOf: ['write:membership'] }
 export default function OrgMemberList (props: IOrgMemberListProps) {
   const { orgId, isAdminView } = props
 
   const router = useRouter()
   const hasAdmin = useHasPanfactumRole(['admin'])
-  const check = useMemo(() => ({ hasOneOf: ['write:membership'] }), [])
-  const hasWrite = useHasPermissions(check)
+  const hasWrite = useHasPermissions(AUTH_CHECK)
   const canUpdate = hasAdmin || hasWrite
 
   const handleRowClick = useCallback((record: OrganizationMembershipsResultType) => {
