@@ -3,12 +3,12 @@ import { Type } from '@sinclair/typebox'
 import type { FastifyPluginAsync, FastifyRequest, FastifySchema } from 'fastify'
 import { sql } from 'kysely'
 
+import { requiredPermissions, requiredPermissionsWithAdmin, restrictedRoleNames } from './util'
 import { getDB } from '../../db/db'
 import type { OrganizationRolePermissionTable } from '../../db/models/OrganizationRolePermission'
 import { getRoleInfoWithPermissionsByIds } from '../../db/queries/getRoleInfoWithPermissionsByIds'
 import { Errors, ImmutableObjectError, InvalidRequestError, UnknownServerError } from '../../handlers/customErrors'
 import { DEFAULT_SCHEMA_CODES } from '../../handlers/error'
-import type { OrgPermissionCheck } from '../../util/assertUserHasOrgPermissions'
 import { assertUserHasOrgPermissions } from '../../util/assertUserHasOrgPermissions'
 import { getJSONFromSettledPromises } from '../../util/getJSONFromSettledPromises'
 import { getPanfactumRoleFromSession } from '../../util/getPanfactumRoleFromSession'
@@ -53,9 +53,6 @@ export type UpdateReplyType = Static<typeof UpdateReply>
  * Query Helpers
  **********************************************************************/
 
-const restrictedRoleNames = new Set(['Administrator', 'User', 'Publisher', 'Billing Manager', 'Organization Manager'])
-const requiredPermissions = { allOf: ['write:membership'] } as OrgPermissionCheck
-const requiredPermissionsWithAdmin = { allOf: ['write:membership', 'admin'] } as OrgPermissionCheck
 async function assertHasPermission (req: FastifyRequest, roleIds: string[], delta: DeltaType) {
   if (delta.name && restrictedRoleNames.has(delta.name)) {
     throw new InvalidRequestError(`Role name ${delta.name} is restricted. Roles cannot be named any of the following: ${Array.from(restrictedRoleNames).join(', ')}`, Errors.RestrictedRoleName)

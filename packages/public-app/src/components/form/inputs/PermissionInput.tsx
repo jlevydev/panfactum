@@ -74,7 +74,7 @@ export default GenericMemo(function PermissionInput (props: IPermissionInputProp
   const handleChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     const newPermissionStatus = event.target.value as PermissionStatus
     const newPermissionList = permissionList
-      .filter(permission => !permission.includes(name))
+      .filter(permission => !permission.endsWith(name))
     if (newPermissionStatus !== 'none') {
       onChange(newPermissionList.concat([`${newPermissionStatus}:${name}`]))
     } else {

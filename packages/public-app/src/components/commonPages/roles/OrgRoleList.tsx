@@ -104,6 +104,14 @@ export default function OrgRoleList (props: IOrgRoleListProps) {
     }
   }, [router, isAdminView, orgId])
 
+  const onCreate = useCallback(() => {
+    if (isAdminView) {
+      router.push(`/a/admin/orgs/${orgId}/members/roles/create`)
+    } else {
+      router.push(`/a/o/${orgId}/roles/create`)
+    }
+  }, [router, orgId, isAdminView])
+
   const permanentFilters = useMemo(() => ([
     { field: 'organizationId' as const, operator: 'strEq' as const, value: orgId }
   ]), [orgId])
@@ -116,6 +124,7 @@ export default function OrgRoleList (props: IOrgRoleListProps) {
       columns={columns}
       permanentFilters={permanentFilters}
       BulkActions={canEdit ? BulkActions : undefined}
+      onCreate={canEdit ? onCreate : undefined}
     />
   )
 }

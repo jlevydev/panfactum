@@ -23,6 +23,7 @@ export enum Errors {
   OrganizationDeleted = 'ORGANIZATION_DELETED',
   RoleDoesNotExist = 'ROLE_DOES_NOT_EXIST',
   RoleNotAvailable = 'ROLE_NOT_AVAILABLE',
+  RoleExists = 'ROLE_EXISTS',
   RestrictedRoleName = 'RESTRICTED_ROLE_NAME',
   MembershipDoesNotExist = 'MEMBERSHIP_DOES_NOT_EXIST',
   MembershipDeleted = 'MEMBERSHIP_DELETED',

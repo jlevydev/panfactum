@@ -1,3 +1,4 @@
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline'
 import CloseIcon from '@mui/icons-material/Close'
 import type { Theme } from '@mui/material'
 import { useMediaQuery } from '@mui/material'
@@ -22,6 +23,27 @@ import ActionButton from '@/components/datagrid/ActionButton'
 import BulkActionButton from '@/components/datagrid/BulkActionButton'
 import GenericMemo from '@/components/util/GenericMemo'
 import type { CRUDResultType } from '@/lib/hooks/queries/util/CRUDResultType'
+
+/************************************************
+ * Create Button
+ * **********************************************/
+interface GridToolbarCreateButtonProps {onCreate:() => void}
+export const GridToolbarCreateButton = memo(forwardRef<HTMLButtonElement, GridToolbarCreateButtonProps>(
+  function GridToolbarColumnsButton ({ onCreate }, ref) {
+    return (
+      <ActionButton
+        ref={ref}
+        aria-label={'Create new item'}
+        onClick={onCreate}
+        tooltipText={'Create new item'}
+        Icon={<AddCircleOutlineIcon className="text-[1.1rem] xl:text-[1.7rem]"/>}
+        active={true}
+      >
+        Create
+      </ActionButton>
+    )
+  }
+))
 
 /************************************************
  * Columns Button
@@ -208,20 +230,22 @@ export interface IActionToolbarProps<ResultType extends CRUDResultType> {
   BulkActions?: BulkActionComponent<ResultType>
   selectedIds: string[]
   data: ResultType[]
-  onUnselectItems: () => void
+  onUnselectItems: () => void,
+  onCreate?: () => void
 }
 
 export default GenericMemo(function ActionToolbar<ResultType extends CRUDResultType> (props: IActionToolbarProps<ResultType>) {
-  const { selectedIds, BulkActions, data, onUnselectItems } = props
+  const { selectedIds, BulkActions, data, onUnselectItems, onCreate } = props
   const isXL = useMediaQuery<Theme>(theme =>
     theme.breakpoints.up('xl')
   )
   return (
-    <GridToolbarContainer className="h-[2.25rem] min-h-[2.25rem] xl:h-[4rem] xl:min-h-[4rem] xl:pb-1 relative m-0 w-full">
-      <div className="w-full flex justify-end">
+    <GridToolbarContainer className="h-[2.25rem] min-h-[2.25rem] md:h-[2.75rem] md:min-h-[2.75rem] xl:h-[4rem] xl:min-h-[4rem] xl:pb-1 relative m-0 w-full">
+      <div className="w-full flex justify-end items-end h-full">
         <GridToolbarColumnsButton />
         <GridToolbarFilterButton />
         <GridToolbarExportButton />
+        {onCreate && <GridToolbarCreateButton onCreate={onCreate}/> }
       </div>
       <div
         className="absolute bottom-0 w-full z-10 bg-base-100 ease-in-out transition-all flex justify-between overflow-hidden items-center"

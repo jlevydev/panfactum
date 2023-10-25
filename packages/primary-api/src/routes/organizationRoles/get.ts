@@ -40,7 +40,7 @@ const ResultProperties = {
   isCustom: Type.Boolean({ description: 'Iff true, the role is available only to this organization. Derived from `organizationId`.' }),
   activeAssigneeCount: OrganizationRoleAssigneeCount
 }
-const Result = Type.Object({
+export const Result = Type.Object({
   ...ResultProperties,
   permissions: OrganizationRolePermissions
 })
@@ -154,7 +154,7 @@ export const GetOrganizationRolesRoute:FastifyPluginAsync = async (fastify) => {
           .offset(page * perPage)
 
       ).selectFrom('role')
-        .innerJoin('organizationRolePermission', 'role.id', 'organizationRolePermission.organizationRoleId')
+        .leftJoin('organizationRolePermission', 'role.id', 'organizationRolePermission.organizationRoleId')
         .select(eb => [
           'role.id as id',
           'role.name as name',

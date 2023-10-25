@@ -7,6 +7,7 @@ import { memo, useContext } from 'react'
 
 import MainAppBar, { APP_BAR_HEIGHT } from '@/components/layout/appbar/MainAppBar'
 import SidebarRoot, { SIDEBAR_CLOSED_WIDTH, SIDEBAR_OPEN_WIDTH } from '@/components/layout/sidebar/SidebarRoot'
+import SnackbarLazy from '@/components/layout/snackbar/SnackbarLazy'
 import { SidebarOpenContext } from '@/lib/contexts/app/SidebarOpen'
 import useUrlOrgId from '@/lib/hooks/navigation/useUrlOrgId'
 import { useIdentity } from '@/lib/hooks/queries/auth/useIdentity'
@@ -60,6 +61,7 @@ export default memo(function AppLayout ({ children }: {children: ReactNode}) {
   return (
     <div className="">
       <MainAppBar/>
+      <SnackbarLazy/>
       <main className="flex">
         <SidebarRoot
           organization={currentOrg}

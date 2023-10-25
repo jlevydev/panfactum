@@ -12,7 +12,7 @@ export async function getRoleInfoByIds (ids: string[], config: {
     .selectFrom('organizationRole')
     .select(['organizationRole.id', 'organizationRole.name', 'organizationRole.organizationId'])
     .$if(withPermissions, qb => qb
-      .leftJoin('organizationRolePermission', 'organizationRole.id', 'organizationRolePermission.organizationRoleId')
+      .innerJoin('organizationRolePermission', 'organizationRole.id', 'organizationRolePermission.organizationRoleId')
       .select(eb => [
         eb.fn.agg<OrganizationRolePermissionTable['permission'][]>('array_agg', ['organizationRolePermission.permission']).as('permissions')
       ])

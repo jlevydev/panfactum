@@ -5,11 +5,11 @@ import type { Static } from '@sinclair/typebox'
 import { Type } from '@sinclair/typebox'
 import type { FastifyPluginAsync, FastifyRequest, FastifySchema } from 'fastify'
 
+import { requiredPermissions, requiredPermissionsWithAdmin } from './util'
 import { getDB } from '../../db/db'
 import { getRoleInfoByIds } from '../../db/queries/getRoleInfoByIds'
 import { Errors, ImmutableObjectError, InvalidRequestError, UnknownServerError } from '../../handlers/customErrors'
 import { DEFAULT_SCHEMA_CODES } from '../../handlers/error'
-import type { OrgPermissionCheck } from '../../util/assertUserHasOrgPermissions'
 import { assertUserHasOrgPermissions } from '../../util/assertUserHasOrgPermissions'
 import { getPanfactumRoleFromSession } from '../../util/getPanfactumRoleFromSession'
 import { deleteQueryString } from '../DeleteQueryString'
@@ -25,8 +25,6 @@ export type QueryStringType = Static<typeof QueryString>
  * Query Helpers
  **********************************************************************/
 
-const requiredPermissions = { allOf: ['write:membership'] } as OrgPermissionCheck
-const requiredPermissionsWithAdmin = { allOf: ['write:membership', 'admin'] } as OrgPermissionCheck
 async function assertHasPermission (req: FastifyRequest, roleIds: string[]) {
   const currentRoleInfoArray = await getRoleInfoByIds(roleIds, { withPermissions: true, withActiveAssigneeCount: true })
 

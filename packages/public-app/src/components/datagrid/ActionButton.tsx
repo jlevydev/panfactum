@@ -24,13 +24,13 @@ const ActionButton = forwardRef<HTMLButtonElement, BulkActionsButtonProps>(
     const text = active ? 'text-white' : 'text-primary'
     return (
       <DefaultTooltipLazy title={tooltipText}>
-        <span>
+        <span className="h-full">
           <Button
             ref={ref}
             size="small"
             {...buttonProps}
             variant={active ? 'contained' : 'text'}
-            className={`pointer-events-auto py-0 px-2 md:pb-1 flex flex-col items-center normal-case min-w-0 ${background} ${text} ${props.className ?? ''}`}
+            className={`pointer-events-auto py-0 px-2 md:pb-1.5 h-full flex flex-col justify-center md:justify-end gap-y-1 items-center normal-case min-w-0 ${background} ${text} ${props.className ?? ''}`}
           >
             {Icon}
             <span

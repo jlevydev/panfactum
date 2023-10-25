@@ -89,6 +89,7 @@ interface IDataGridProps<ResultType extends CRUDResultType, SortType extends str
   useGetList: ReturnType<typeof RQGetResourceHookFactory<ResultType, SortType, FilterType>>['useGetList']
   BulkActions?: BulkActionComponent<ResultType>
   permanentFilters?: FilterParamList<ResultType, FilterType>
+  onCreate?: () => void
 }
 
 export default GenericMemo(function DataGrid<ResultType extends CRUDResultType, SortType extends string, FilterType extends FilterConfig<ResultType>> (
@@ -101,7 +102,8 @@ export default GenericMemo(function DataGrid<ResultType extends CRUDResultType, 
     BulkActions,
     onRowClick,
     empty,
-    permanentFilters
+    permanentFilters,
+    onCreate
   } = props
 
   const [tempFilterModel, setTempFilterModel] = useState<TypedFilterModel<ResultType, FilterType>>({ items: [] })
@@ -248,10 +250,11 @@ export default GenericMemo(function DataGrid<ResultType extends CRUDResultType, 
           data={data}
           selectedIds={selectedIds}
           onUnselectItems={handleUnselectItems}
+          onCreate={onCreate}
         />
       )
     }
-  }, [BulkActions, handleUnselectItems, data, selectedIds])
+  }, [BulkActions, handleUnselectItems, data, selectedIds, onCreate])
 
   const columnVisibilityModel = useMemo<{[colName: string]: boolean}>(() => {
     return Object.fromEntries(columns.map(col => [col.field, col.hidden !== undefined ? !col.hidden : true] as const))

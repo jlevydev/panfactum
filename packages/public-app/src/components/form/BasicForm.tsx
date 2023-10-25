@@ -5,27 +5,38 @@ import Alert from '@mui/material/Alert'
 import Button from '@mui/material/Button'
 import Collapse from '@mui/material/Collapse'
 import type { ReactNode } from 'react'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useContext, useMemo, useState } from 'react'
 import type { Control, FieldValues } from 'react-hook-form'
 import { useForm } from 'react-hook-form'
 
 import { FormControlContext } from '@/components/form/FormControlContext'
 import { FormModeContext } from '@/components/form/FormModeContext'
 import { APIServerError } from '@/lib/clients/api/apiFetch'
+import { SnackbarContext } from '@/lib/contexts/app/Snackbar'
 import useDistanceFromScreenBottom from '@/lib/hooks/effects/useDistanceFromScreenBottom'
 
 export type BasicFormUpdateFn<T> = (data: T) => Promise<void>
 
-interface IBasicFormProps<T> {
+export interface IBasicFormProps<T> {
   children: ReactNode
+  onSuccess?: () => void;
   successMessage: string;
   update: BasicFormUpdateFn<T>,
   data: T | undefined
-  mode?: 'edit' | 'show'
+  mode?: 'edit' | 'show' | 'create'
+  successMessageMode?: 'inline' | 'snackbar'
 }
 
 export default function BasicForm<T extends FieldValues> (props: IBasicFormProps<T>) {
-  const { children, mode = 'edit', successMessage: _successMessage, data, update } = props
+  const {
+    children,
+    mode = 'edit',
+    onSuccess,
+    successMessage: _successMessage,
+    data,
+    update,
+    successMessageMode = 'inline'
+  } = props
   const [distanceFromBottom, contentRef] = useDistanceFromScreenBottom<HTMLDivElement>()
   const {
     control,
@@ -35,6 +46,8 @@ export default function BasicForm<T extends FieldValues> (props: IBasicFormProps
       isDirty
     }
   } = useForm<T>({ values: data })
+
+  const { setSnackbar } = useContext(SnackbarContext)
 
   const [successMessage, setSuccessMessage] = useState<string | undefined>(undefined)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -46,10 +59,16 @@ export default function BasicForm<T extends FieldValues> (props: IBasicFormProps
     try {
       await update(newData)
       setServerErrors([])
-      setSuccessMessage(_successMessage)
-      setTimeout(() => setSuccessMessage(undefined), 2000)
       reset(newData)
       setIsSubmitting(false)
+      setSuccessMessage(_successMessage)
+      setTimeout(() => setSuccessMessage(undefined), 2000)
+      if (successMessageMode === 'snackbar') {
+        setSnackbar({ message: _successMessage, severity: 'success' })
+      }
+      if (onSuccess) {
+        onSuccess()
+      }
     } catch (error) {
       if (error instanceof APIServerError) {
         setServerErrors(error.errors.map(({ message }) => message))
@@ -59,7 +78,7 @@ export default function BasicForm<T extends FieldValues> (props: IBasicFormProps
     } finally {
       setIsSubmitting(false)
     }
-  }, [update, reset, _successMessage, setIsSubmitting])
+  }, [update, reset, onSuccess, setIsSubmitting, _successMessage, setSnackbar, successMessageMode])
 
   const onReset = useCallback(() => {
     reset(data)
@@ -97,39 +116,59 @@ export default function BasicForm<T extends FieldValues> (props: IBasicFormProps
               </Alert>
             ))}
           </Collapse>
-          <Collapse
-            in={Boolean(successMessage)}
-            collapsedSize={0}
-          >
-            <Alert className="text-sm lg:text-base">
-              {successMessage}
-            </Alert>
-          </Collapse>
-          {mode === 'edit' && (
+          {successMessageMode === 'inline' && (
+            <Collapse
+              in={Boolean(successMessage)}
+              collapsedSize={0}
+            >
+              <Alert className="text-sm lg:text-base">
+                {successMessage}
+              </Alert>
+            </Collapse>
+          )}
+          {(mode === 'edit' || mode === 'create') && (
             <div
               className="flex flex-row bottom-0 bg-base-300 p-4 gap-4 h-[4rem]"
             >
-              <LoadingButton
-                type="submit"
-                disabled={!isDirty}
-                loading={isSubmitting}
-                loadingPosition="start"
-                startIcon={<SaveIcon />}
-                variant="contained"
-                className="text-base"
-              >
-                Save
-              </LoadingButton>
-              <Button
-                disabled={!isDirty}
-                onClick={onReset}
-                variant="contained"
-                className="text-base"
-                startIcon={<RestoreIcon />}
-                color="warning"
-              >
-                Reset
-              </Button>
+              {mode === 'edit'
+                ? (
+                  <>
+                    <LoadingButton
+                      type="submit"
+                      disabled={!isDirty}
+                      loading={isSubmitting}
+                      loadingPosition="start"
+                      startIcon={<SaveIcon />}
+                      variant="contained"
+                      className="text-base"
+                    >
+                      Save
+                    </LoadingButton>
+                    <Button
+                      disabled={!isDirty}
+                      onClick={onReset}
+                      variant="contained"
+                      className="text-base"
+                      startIcon={<RestoreIcon />}
+                      color="warning"
+                    >
+                      Reset
+                    </Button>
+                  </>
+                )
+                : (
+                  <LoadingButton
+                    type="submit"
+                    disabled={!isDirty}
+                    loading={isSubmitting}
+                    loadingPosition="start"
+                    startIcon={<SaveIcon />}
+                    variant="contained"
+                    className="text-base"
+                  >
+                    Create
+                  </LoadingButton>
+                )}
             </div>
           )}
         </form>

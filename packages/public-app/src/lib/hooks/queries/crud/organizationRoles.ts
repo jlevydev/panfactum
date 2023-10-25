@@ -1,8 +1,10 @@
 import type {
   OrganizationRolesFiltersType, OrganizationRoleSortType,
   OrganizationRolesResultType, OrganizationRolesUpdateDeltaType
+  , OrganizationRolesCreateBodyElementType
 } from '@panfactum/primary-api'
 
+import { RQCreateResourceHookFactory } from '@/lib/hooks/queries/util/RQCreateResourceHookFactory'
 import { RQDeleteResourceHookFactory } from '@/lib/hooks/queries/util/RQDeleteResourceHookFactory'
 import { RQGetResourceHookFactory } from '@/lib/hooks/queries/util/RQGetResourceHookFactory'
 import { RQUpdateResourceHookFactory } from '@/lib/hooks/queries/util/RQUpdateResourceHookFactory'
@@ -36,6 +38,17 @@ export const {
   useDeleteOne: useDeleteOneOrganizationRole,
   useDeleteMany: useDeleteManyOrganizationRole
 } = RQDeleteResourceHookFactory(
+  resource,
+  apiPath
+)
+
+export const {
+  useCreateOne: useCreateOneOrganizationRole,
+  useCreateMany: useCreateManyOrganizationRole
+} = RQCreateResourceHookFactory<
+  OrganizationRolesResultType,
+  OrganizationRolesCreateBodyElementType
+>(
   resource,
   apiPath
 )

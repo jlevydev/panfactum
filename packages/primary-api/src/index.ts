@@ -40,3 +40,5 @@ export type { DeltaType as PackagesUpdateDeltaType } from './routes/packages/upd
 export type { UpdateResultType as PackagesUpdateResultType } from './routes/packages/update'
 export type { DeltaType as OrganizationRolesUpdateDeltaType } from './routes/organizationRoles/update'
 export type { UpdateResultType as OrganizationRolesUpdateResultType } from './routes/organizationRoles/update'
+
+export type { CreateBodyElementType as OrganizationRolesCreateBodyElementType } from './routes/organizationRoles/create'
