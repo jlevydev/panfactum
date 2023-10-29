@@ -1,0 +1,22 @@
+name: CNPG PDB Patch
+on:
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+
+concurrency:
+  cancel-in-progress: true
+  group: tf-apply-development
+
+jobs:
+  patch:
+    strategy:
+      matrix:
+        environment: [ "development" ]
+    runs-on: ${{ matrix.environment }}-small
+    steps:
+      - name: "Patch cluster PDBs"
+        shell: bash
+        run: 'cnpg-pdb-patch'

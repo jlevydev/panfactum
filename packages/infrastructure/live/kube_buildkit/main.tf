@@ -17,13 +17,19 @@ locals {
   namespace   = module.namespace.namespace
   module      = var.module
   environment = var.environment
+
   labels = merge(var.kube_labels, {
     service = local.name
   })
-
   match_labels = {
-    module = local.module
+    service = local.name
+    module  = local.module
   }
+
+  scale_down_submodule = "buildkit-scaledown"
+  scale_down_labels = merge(var.kube_labels, {
+    service = local.scaledown_submodule
+  })
 
   port = 1234
 }
@@ -88,7 +94,7 @@ module "aws_permissions" {
 }
 
 /***************************************
-* Buildkit Deployment
+* Buildkit StatefulSet
 ***************************************/
 
 resource "kubernetes_service_account" "buildkit" {

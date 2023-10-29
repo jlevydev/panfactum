@@ -35,4 +35,3 @@ variable "memory_mb" {
   type        = number
 }
 
-

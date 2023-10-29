@@ -37,6 +37,7 @@ module "pod_template" {
   node_preferences  = var.node_preferences
   node_requirements = var.node_requirements
   tolerations       = var.tolerations
+  restart_policy    = var.restart_policy
 }
 
 resource "kubernetes_manifest" "deployment" {

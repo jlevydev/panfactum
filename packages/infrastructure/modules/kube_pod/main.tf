@@ -277,7 +277,7 @@ locals {
         } : k => v if v != null }
       }, module.constants.pod_anti_affinity_helm)
       topologySpreadConstraints = module.constants.topology_spread_zone
-      restartPolicy             = "OnFailure"
+      restartPolicy             = var.restart_policy
 
       ///////////////////////////
       // Storage

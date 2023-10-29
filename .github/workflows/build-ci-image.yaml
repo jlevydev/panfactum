@@ -34,3 +34,15 @@ jobs:
           tg-directory: ./environments/development/us-east-2/kube_gha_arc_runners
           target: helm_release.runner
           refresh: "false"
+
+      - uses: ./.github/actions/tf-apply-single
+        with:
+          tg-directory: ./environments/development/us-east-2/kube_cnpg_pdb_patcher
+          target: module.cronjob
+          refresh: "false"
+
+      - uses: ./.github/actions/tf-apply-single
+        with:
+          tg-directory: ./environments/development/us-east-2/kube_buildkit
+          target: module.cronjob
+          refresh: "false"

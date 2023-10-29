@@ -1,3 +1,0 @@
-source: /live/kube_cnpg_pdb_patcher
-providers:
-  kubernetes: true

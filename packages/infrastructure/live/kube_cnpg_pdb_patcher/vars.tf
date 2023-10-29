@@ -10,13 +10,13 @@ variable "schedule" {
 }
 
 variable "image_repo" {
-  description = "The image to use for the deployment"
+  description = "The image to use for the cronjob"
   type        = string
   default     = "487780594448.dkr.ecr.us-east-2.amazonaws.com/ci"
 }
 
 variable "image_version" {
-  description = "The version of the image to use for the deployment"
+  description = "The version of the image to use for the cronjob"
   type        = string
 }
 

@@ -89,6 +89,12 @@ variable "containers" {
   }))
 }
 
+variable "restart_policy" {
+  description = "The pod restart policy"
+  type        = string
+  default     = "OnFailure"
+}
+
 variable "kube_labels" {
   description = "The default labels to use for Kubernetes resources"
   type        = map(string)
