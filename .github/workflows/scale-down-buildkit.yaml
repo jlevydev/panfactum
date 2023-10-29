@@ -12,7 +12,7 @@ concurrency:
   group: scale-down-buildkit
 
 jobs:
-  patch:
+  scale-down:
     runs-on: development-small
     steps:
       - name: "Scale down buildkit"
