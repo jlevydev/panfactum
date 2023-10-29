@@ -1,0 +1,20 @@
+name: Scale Down Buildkit
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '*/15 * * * *'
+defaults:
+  run:
+    shell: bash
+
+concurrency:
+  cancel-in-progress: false
+  group: scale-down-buildkit
+
+jobs:
+  patch:
+    runs-on: development-small
+    steps:
+      - name: "Scale down buildkit"
+        shell: bash
+        run: 'scale-buildkit --attempt-scale-down 3600'
