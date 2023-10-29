@@ -90,3 +90,7 @@ output "topology_spread_zone" {
     }
   ]
 }
+
+output "ci_uid" {
+  value = 1001
+}

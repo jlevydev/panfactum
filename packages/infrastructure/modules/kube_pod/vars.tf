@@ -14,6 +14,7 @@ variable "containers" {
     minimum_memory     = optional(number, 100)      #The minimum amount of memory in megabytes
     minimum_cpu        = optional(number, 10)       # The minimum amount of cpu millicores
     run_as_root        = optional(bool, false)      # Whether to run the container as root
+    uid                = optional(number, 1000)     # user to use when running the container if not root
     linux_capabilities = optional(list(string), []) # Default is drop ALL
     readonly           = optional(bool, true)       # Whether to use a readonly file system
     env                = optional(map(string), {})  # Environment variables specific to the container

@@ -40,6 +40,7 @@ inputs = {
   arc_controller_service_account_name      = dependency.arc_systems.outputs.service_account_name
   runner_image                             = "487780594448.dkr.ecr.us-east-2.amazonaws.com/ci:${local.version_hash}"
   small_runner_config = {
+    min_replicas   = 1
     cpu_millicores = 150
     memory_mb      = 1500
     tmp_space_gb   = 20

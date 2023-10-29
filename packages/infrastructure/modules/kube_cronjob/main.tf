@@ -41,8 +41,8 @@ module "pod_template" {
 
 resource "kubernetes_manifest" "cronjob" {
   manifest = {
-    apiVersion = "batch1/v1"
-    kind       = "Cronjob"
+    apiVersion = "batch/v1"
+    kind       = "CronJob"
     metadata = {
       namespace = var.namespace
       name      = var.name
@@ -58,9 +58,6 @@ resource "kubernetes_manifest" "cronjob" {
       jobTemplate = {
         metadata = {
           labels = local.labels
-        }
-        selector = {
-          matchLabels = module.pod_template.match_labels
         }
         spec = {
           activeDeadlineSeconds   = var.timeout_seconds

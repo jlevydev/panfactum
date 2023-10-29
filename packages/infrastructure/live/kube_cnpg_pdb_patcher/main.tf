@@ -55,7 +55,12 @@ module "cronjob" {
       name    = "patcher"
       image   = var.image_repo
       version = var.image_version
-      command = ["linkerd-await", "-S", "cnpg-pdb-patch"]
+      uid     = module.constants.ci_uid
+      command = [
+        "/usr/bin/bash",
+        "-c",
+        ". /home/runner/.profile; linkerd-await -S cnpg-pdb-patch"
+      ]
     }
   ]
 }

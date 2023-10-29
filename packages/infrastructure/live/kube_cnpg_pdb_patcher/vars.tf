@@ -7,7 +7,6 @@ variable "namespace" {
 variable "schedule" {
   description = "The schedule to run this on"
   type        = string
-  default     = ""
 }
 
 variable "image_repo" {

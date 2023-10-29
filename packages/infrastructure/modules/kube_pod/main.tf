@@ -236,7 +236,7 @@ locals {
   security_context = {
     for container in var.containers : container.name => {
       runAsGroup               = container.run_as_root ? 0 : var.is_local ? 0 : 1000
-      runAsUser                = container.run_as_root ? 0 : var.is_local ? 0 : 1000
+      runAsUser                = container.run_as_root ? 0 : var.is_local ? 0 : container.uid
       runAsNonRoot             = !container.run_as_root && !var.is_local
       allowPrivilegeEscalation = container.run_as_root || var.is_local
       readOnlyRootFilesystem   = !var.is_local && container.readonly
@@ -277,6 +277,7 @@ locals {
         } : k => v if v != null }
       }, module.constants.pod_anti_affinity_helm)
       topologySpreadConstraints = module.constants.topology_spread_zone
+      restartPolicy             = "OnFailure"
 
       ///////////////////////////
       // Storage
