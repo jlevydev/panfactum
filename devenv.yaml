@@ -3,4 +3,4 @@ inputs:
   devenv:
     url: github:cachix/devenv/python-rewrite
   nixpkgs:
-    url: github:NixOS/nixpkgs/29364aef85349144f3ab312f4ade256879e09aa8
+    url: github:NixOS/nixpkgs/6608f1624a8dd9d001de8fc24baa9a2d929b0e82

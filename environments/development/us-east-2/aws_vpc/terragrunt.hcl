@@ -2,6 +2,10 @@ include "shared" {
   path = find_in_parent_folders()
 }
 
+locals {
+  eks_cluster_name = "development-primary"
+}
+
 inputs = {
   vpc_name        = "PANFACTUM_DEVELOPMENT_PRIMARY"
   vpc_cidr        = "10.0.0.0/16"
@@ -21,8 +25,8 @@ inputs = {
       public      = true
       description = "Subnet for incoming public traffic to availability zone A"
       extra_tags = {
-        "kubernetes.io/cluster/development-primary" = "shared"
-        "kubernetes.io/role/elb"                    = "1"
+        "kubernetes.io/cluster/${local.eks_cluster_name}" = "shared"
+        "kubernetes.io/role/elb"                          = "1"
       }
     },
     "PUBLIC_AZB" = {
@@ -31,8 +35,8 @@ inputs = {
       public      = true
       description = "Subnet for incoming public traffic to availability zone B"
       extra_tags = {
-        "kubernetes.io/cluster/development-primary" = "shared"
-        "kubernetes.io/role/elb"                    = "1"
+        "kubernetes.io/cluster/${local.eks_cluster_name}" = "shared"
+        "kubernetes.io/role/elb"                          = "1"
       }
     },
     "PUBLIC_AZC" = {
@@ -41,7 +45,7 @@ inputs = {
       public      = true
       description = "Subnet for incoming public traffic to availability zone C"
       extra_tags = {
-        "kubernetes.io/cluster/development-primary" = "shared"
+        "kubernetes.io/cluster/${local.eks_cluster_name}" = "shared"
       }
     },
     "PRIVATE_AZA" = {
@@ -50,8 +54,9 @@ inputs = {
       public      = false
       description = "Subnet for private nodes in availability zone A"
       extra_tags = {
-        "kubernetes.io/cluster/development-primary" = "shared"
-        "kubernetes.io/role/internal-elb"           = "1"
+        "karpenter.sh/discovery"                          = local.eks_cluster_name
+        "kubernetes.io/cluster/${local.eks_cluster_name}" = "shared"
+        "kubernetes.io/role/internal-elb"                 = "1"
       }
     },
     "DB_AZA" = {

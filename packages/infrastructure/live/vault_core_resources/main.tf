@@ -249,7 +249,7 @@ resource "vault_mount" "pki_internal" {
 resource "vault_pki_secret_backend_root_cert" "pki_internal" {
   backend              = vault_mount.pki_internal.path
   type                 = "internal"
-  common_name          = var.vault_internal_url
+  common_name          = "http://vault.vault.svc.cluster.local:8200"
   ttl                  = 60 * 60 * 24 * 365 * 10
   format               = "pem"
   private_key_format   = "der"

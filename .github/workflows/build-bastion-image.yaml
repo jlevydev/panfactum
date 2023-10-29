@@ -22,7 +22,7 @@ jobs:
 
   apply-dev:
     runs-on: development-small
-    if: ${{ github.ref }} == 'refs/heads/main'
+    if: ${{github.ref == 'refs/heads/main'}}
     timeout-minutes: 60
     concurrency:
       group: apply-dev-bastion

@@ -4,8 +4,8 @@ RUN npm i -g pnpm@8.6.12
 
 WORKDIR /code
 COPY package.json pnpm-lock.yaml .npmrc pnpm-workspace.yaml .
-COPY packages/internal-docs/package.json packages/internal-docs/pnpm-lock.yaml packages/internal-docs/
-RUN --mount=type=cache,target=/code/.pnp pnpm install --frozen-lockfile
+COPY packages/internal-docs/package.json packages/internal-docs/
+RUN --mount=type=cache,target=/code/.pnpm pnpm install --frozen-lockfile
 COPY packages/internal-docs/ packages/internal-docs/
 WORKDIR /code/packages/internal-docs
 RUN pnpm build

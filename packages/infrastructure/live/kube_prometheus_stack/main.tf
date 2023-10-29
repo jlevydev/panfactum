@@ -126,6 +126,8 @@ resource "helm_release" "prometheus_stack" {
           enabled = var.vpa_enabled
         }
 
+        priorityClassName = module.constants.cluster_important_priority_class_name
+
         // Use our custom certificates
         admissionWebhooks = {
           patch = {
@@ -142,6 +144,13 @@ resource "helm_release" "prometheus_stack" {
             }
           }
         }
+      }
+
+      //////////////////////////////////////////////////////////
+      // Prometheus Node exporter sub-chart
+      //////////////////////////////////////////////////////////
+      prometheus-node-exporter = {
+        priorityClassName = "system-node-critical"
       }
 
       //////////////////////////////////////////////////////////

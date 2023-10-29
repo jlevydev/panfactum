@@ -28,6 +28,9 @@ locals {
 
 module "constants" {
   source = "../../modules/constants"
+  matching_labels = {
+    "app.kubernetes.io/name" = "metrics-server"
+  }
 }
 
 /***************************************
@@ -61,15 +64,24 @@ resource "helm_release" "metrics_server" {
         tag        = var.metrics_server_version
       }
       commonLabels = local.labels
+      podLabels    = local.labels
+
       deploymentAnnotations = {
         "reloader.stakater.com/auto" = "true"
       }
       priorityClassName = "system-cluster-critical"
 
-      // Does not need to be highly available
-      replicaCount = 1
-      tolerations  = module.constants.spot_node_toleration_helm
-      affinity     = module.constants.spot_node_affinity_helm
+      // Should be highly available
+      replicas = 2
+      affinity = merge(
+        module.constants.controller_node_affinity_helm,
+        module.constants.pod_anti_affinity_helm
+      )
+
+      podDisruptionBudget = {
+        enabled      = true
+        minAvailable = 1
+      }
 
       args = ["--v=0"]
       livenessProbe = {

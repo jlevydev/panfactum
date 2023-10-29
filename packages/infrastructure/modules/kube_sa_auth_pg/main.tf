@@ -57,7 +57,7 @@ resource "kubernetes_manifest" "creds" {
     spec = {
       provider = "vault"
       parameters = {
-        vaultAddress = "http://vault.vault.svc.cluster.local:8200"
+        vaultAddress = "http://vault-active.vault.svc.cluster.local:8200"
         roleName     = vault_kubernetes_auth_backend_role.main.role_name
         objects = yamlencode([
           {

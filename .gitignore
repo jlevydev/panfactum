@@ -18,7 +18,7 @@ yarn-error.log
 **/.terragrunt-cache
 **/.tfstate
 
-**/.pnp
+**/.pnpm
 
 **/.eslintcache
 

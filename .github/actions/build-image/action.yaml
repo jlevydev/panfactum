@@ -24,9 +24,9 @@ runs:
         buildctl
         build
         --frontend=dockerfile.v0
-        --output "type=image,name=487780594448.dkr.ecr.us-east-2.amazonaws.com/${{ inputs.image-repo }}:${{ inputs.image-tag }},push=true"
+        --output "type=image,name=487780594448.dkr.ecr.us-east-2.amazonaws.com/${{inputs.image-repo}}:${{inputs.image-tag}},push=true"
         --local context=.
-        --local dockerfile=${{ inputs.containerfile-directory }}
+        --local dockerfile=${{inputs.containerfile-directory}}
         --opt filename=./Containerfile
-        --export-cache type=s3,region=us-east-2,bucket=buildkit-cache-41151449fc2ce51f,name=${{ inputs.image-repo }}
-        --import-cache type=s3,region=us-east-2,bucket=buildkit-cache-41151449fc2ce51f,name=${{ inputs.image-repo }}
+        --export-cache type=s3,region=us-east-2,bucket=buildkit-cache-41151449fc2ce51f,name=${{inputs.image-repo}}
+        --import-cache type=s3,region=us-east-2,bucket=buildkit-cache-41151449fc2ce51f,name=${{inputs.image-repo}}

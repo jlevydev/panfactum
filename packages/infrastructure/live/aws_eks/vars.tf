@@ -56,23 +56,24 @@ variable "coredns_version" {
 ## Node Group Configurations
 ################################################################################
 
-variable "node_groups" {
-  description = "Map of node group names to configurations"
-  type = map(object({
-    kube_version                      = string                    // the version of kubernetes to use on the node
-    instance_types                    = list(string)              // the instance size codes
-    class                             = string                    // a "class" for the nodes in the node group (used for node selectors)
-    min_nodes                         = number                    // minimum number of nodes in the group
-    max_nodes                         = number                    // maximum number of nodes in the group
-    init_nodes                        = number                    // the number of nodes in the group on first launch (ignored after launch)
-    subnets                           = list(string)              // list of names for subnets that nodes should be deployed to
-    scaling_cooldown_seconds          = number                    // number of seconds to wait between scaling events
-    health_check_grace_period_seconds = number                    // number of seconds to wait before healthchecks start failing
-    max_instance_lifetime_seconds     = number                    // maximum number of seconds that an instance is allowed to exist
-    description                       = string                    // description of the purpose of the node group
-    spot                              = optional(bool, false)     // whether the instances in this node group should be spot instances
-    taints                            = optional(map(string), {}) // A map of taint key-values for NO_SCHEDULE settings
-  }))
+variable "controller_node_count" {
+  description = "The number of controller nodes to use"
+  type        = number
+}
+
+variable "controller_node_instance_types" {
+  description = "The allowable instance types for the controller nodes"
+  type        = list(string)
+}
+
+variable "controller_node_subnets" {
+  description = "List of names for subnets that controller nodes should be deployed to"
+  type        = list(string)
+}
+
+variable "controller_node_kube_version" {
+  description = "The version of kubernetes to use on the nodes"
+  type        = string
 }
 
 variable "all_nodes_allowed_security_groups" {

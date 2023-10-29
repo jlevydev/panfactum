@@ -84,36 +84,38 @@ module "deployment" {
   service_name    = local.service
   service_account = kubernetes_service_account.service.metadata[0].name
 
-  tolerations = module.constants.spot_node_toleration
-
-  environment_variables = {
+  common_env = {
     NODE_ENV                      = local.is_local ? "development" : "production"
     NEXT_PUBLIC_API_URL           = var.primary_api_url
     NEXT_PUBLIC_MUI_X_LICENSE_KEY = var.mui_x_license_key
   }
 
-  containers = {
-    server = {
-      image   = var.image_repo
-      version = var.image_version
-      command = local.is_local ? [
-        "node_modules/.bin/next",
-        "dev",
-        "--turbo",
-        "-p", local.port
-        ] : [
-        "./entrypoint.sh",
-        "node_modules/.bin/next",
-        "start",
-        "-p", local.port
-      ]
-      readonly       = local.is_local // in our nonlocal deployment, we do env subst so it cannot be readonly
-      minimum_memory = local.minimum_memory
-      env = {
-        NODE_OPTIONS = "--max-old-space-size=${local.minimum_memory * 0.75}"
-      }
+  containers = [{
+    name    = "server"
+    image   = var.image_repo
+    version = var.image_version
+    command = local.is_local ? [
+      "node_modules/.bin/next",
+      "dev",
+      "--turbo",
+      "-p", local.port
+      ] : [
+      "./entrypoint.sh",
+      "node_modules/.bin/next",
+      "start",
+      "-p", local.port
+    ]
+    readonly       = local.is_local // in our nonlocal deployment, we do env subst so it cannot be readonly
+    minimum_memory = local.minimum_memory
+    env = {
+      NODE_OPTIONS = "--max-old-space-size=${local.minimum_memory * 0.75}"
     }
-  }
+    // Disable healthchecks when running in localdev b/c the healthchecks break
+    // when the server is compiling the code which then triggers unwanted restarts
+    healthcheck_type  = local.is_local ? null : "HTTP"
+    healthcheck_port  = local.is_local ? null : local.port
+    healthcheck_route = local.is_local ? null : local.healthcheck_route
+  }]
 
   tmp_directories = local.is_local ? {
     "/code/packages/public-app/.next" : {
@@ -121,16 +123,9 @@ module "deployment" {
     }
   } : {}
 
-  // Disable healthchecks when running in localdev b/c the healthchecks break
-  // when the server is compiling the code which then triggers unwanted restarts
-  healthcheck_type  = local.is_local ? null : "HTTP"
-  healthcheck_port  = local.port
-  healthcheck_route = local.healthcheck_route
-
   min_replicas = var.min_replicas
   max_replicas = var.max_replicas
   vpa_enabled  = var.vpa_enabled
-  ha_enabled   = var.ha_enabled
 
   ports = {
     http = {
@@ -138,7 +133,6 @@ module "deployment" {
       service_port = local.port
     }
   }
-  allow_disruptions = !local.is_local
 }
 
 module "ingress" {

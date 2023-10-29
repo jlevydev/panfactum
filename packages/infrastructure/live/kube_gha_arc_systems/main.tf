@@ -22,7 +22,8 @@ locals {
 }
 
 module "constants" {
-  source = "../../modules/constants"
+  source          = "../../modules/constants"
+  matching_labels = local.labels
 }
 
 /***************************************
@@ -64,6 +65,8 @@ resource "helm_release" "arc" {
   values = [
     yamlencode({
       replicaCount = 2
+      labels       = local.labels
+      podLabels    = local.labels // This won't work until 0.6.2
 
       serviceAccount = {
         create = false
@@ -78,22 +81,13 @@ resource "helm_release" "arc" {
         allowPrivilegeEscalation = false
       }
 
-      priorityClassName = "system-cluster-critical"
+      priorityClassName = module.constants.cluster_important_priority_class_name
 
       tolerations = module.constants.spot_node_toleration_helm
-      affinity = {
-        podAntiAffinity = {
-          requiredDuringSchedulingIgnoredDuringExecution = [{
-            topologyKey = "kubernetes.io/hostname"
-            labelSelector = {
-              matchLabels = {
-                "app.kubernetes.io/component" = "controller-manager"
-                "app.kubernetes.io/instance"  = "gha-runner-scale-set-controller"
-              }
-            }
-          }]
-        }
-      }
+      affinity = merge(
+        module.constants.controller_node_with_spot_affinity_helm,
+        module.constants.pod_anti_affinity_helm
+      )
 
       flags = {
         logLevel  = "info"
@@ -117,7 +111,7 @@ resource "kubernetes_manifest" "vpa" {
     metadata = {
       name      = "arc-controller"
       namespace = local.namespace
-      labels    = var.kube_labels
+      labels    = local.labels
     }
     spec = {
       targetRef = {
@@ -125,6 +119,25 @@ resource "kubernetes_manifest" "vpa" {
         kind       = "Deployment"
         name       = "gha-runner-scale-set-controller-gha-rs-controller"
       }
+    }
+  }
+  depends_on = [helm_release.arc]
+}
+
+resource "kubernetes_manifest" "pdb_controller" {
+  manifest = {
+    apiVersion = "policy/v1"
+    kind       = "PodDisruptionBudget"
+    metadata = {
+      name      = local.name
+      namespace = local.namespace
+      labels    = local.labels
+    }
+    spec = {
+      selector = {
+        matchLabels = local.labels
+      }
+      maxUnavailable = 1
     }
   }
   depends_on = [helm_release.arc]

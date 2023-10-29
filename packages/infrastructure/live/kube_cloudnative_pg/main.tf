@@ -22,13 +22,13 @@ locals {
   version     = var.version_tag
 
   labels = merge(var.kube_labels, {
-    service = local.name,
-    test    = "t"
+    service = local.name
   })
 }
 
 module "constants" {
-  source = "../../modules/constants"
+  source          = "../../modules/constants"
+  matching_labels = local.labels
 }
 
 /***************************************
@@ -63,13 +63,16 @@ resource "helm_release" "cnpg" {
         create = true
       }
 
-      priorityClassName = "system-cluster-critical"
+      priorityClassName = module.constants.cluster_important_priority_class_name
 
       // Does not need to be highly available
-      replicaCount = 1
-      tolerations  = module.constants.spot_node_toleration_helm
-      affinity     = module.constants.spot_node_affinity_helm
+      replicaCount = 2
+      affinity = merge(
+        module.constants.controller_node_affinity_helm,
+        module.constants.pod_anti_affinity_helm
+      )
 
+      podLabels = local.labels
       podAnnotations = {
         "reloader.stakater.com/auto" = "true"
       }
@@ -103,4 +106,23 @@ resource "kubernetes_manifest" "vpa" {
       }
     }
   }
+}
+
+resource "kubernetes_manifest" "pdb" {
+  manifest = {
+    apiVersion = "policy/v1"
+    kind       = "PodDisruptionBudget"
+    metadata = {
+      name      = local.name
+      namespace = local.namespace
+      labels    = local.labels
+    }
+    spec = {
+      selector = {
+        matchLabels = local.labels
+      }
+      maxUnavailable = 1
+    }
+  }
+  depends_on = [helm_release.cnpg]
 }

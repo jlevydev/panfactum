@@ -16,9 +16,9 @@ runs:
     - name: "Terragrunt init"
       uses: ./.github/actions/tf-init
       with:
-        tg-init-directory: ${{ inputs.tg-init-directory }}
+        tg-init-directory: ${{inputs.tg-init-directory}}
 
     - name: "Terragrunt apply"
       run: 'terragrunt run-all apply --input=false -compact-warnings --terragrunt-non-interactive --terragrunt-include-external-dependencies --terragrunt-parallelism 4'
-      working-directory: ${{ inputs.tg-directory }}
+      working-directory: ${{inputs.tg-directory}}
       shell: bash

@@ -12,39 +12,22 @@ terraform {
 }
 
 locals {
-  node_group_subnets = toset(flatten([for group, config in var.node_groups : config.subnets]))
-  vpc_id             = values(data.aws_subnet.control_plane_subnets)[0].vpc_id // a bit hacky but we can just assume all subnets are in the same aws_vpc
+  vpc_id = values(data.aws_subnet.control_plane_subnets)[0].vpc_id // a bit hacky but we can just assume all subnets are in the same aws_vpc
   common_tags = merge(local.default_tags, {
-    "k8s.io/cluster-autoscaler/${var.cluster_name}" = "owned"
-    "k8s.io/cluster-autoscaler/enabled"             = "true"
-    "kubernetes.io/cluster/${var.cluster_name}"     = "owned"
+    "kubernetes.io/cluster/${var.cluster_name}" = "owned"
   })
-  asg_tags = flatten([for group, config in var.node_groups : [
-    for tag in concat(
-      [
-        { key = "k8s.io/cluster-autoscaler/node-template/label/node.kubernetes.io/class", value = config.class },
-        { key = "k8s.io/cluster-autoscaler/node-template/label/class", value = config.class },
-        { key = "k8s.io/cluster-autoscaler/node-template/label/kubernetes.io/os", value = "linux" },
-        { key = "k8s.io/cluster-autoscaler/node-template/label/kubernetes.io/arch", value = "amd64" },
-        { key = "k8s.io/cluster-autoscaler/node-template/label/kubernetes.io/hostname", value = group },
-        { key = "k8s.io/cluster-autoscaler/node-template/label/topology.kubernetes.io/region", value = data.aws_region.region.name },
-        { key = "k8s.io/cluster-autoscaler/node-template/label/topology.kubernetes.io/zone", value = data.aws_subnet.node_groups[config.subnets[0]].availability_zone }
-      ],
-      config.spot ? [
-        { key = "k8s.io/cluster-autoscaler/node-template/label/eks.amazonaws.com/capacityType", value = "SPOT" },
-        { key = "k8s.io/cluster-autoscaler/node-template/taint/spot", value = "true:NoSchedule" }
-        ] : [
-        { key = "k8s.io/cluster-autoscaler/node-template/label/eks.amazonaws.com/capacityType", value = "ON_DEMAND" }
-      ]
-    ) : { group = group, key = tag.key, value = tag.value }
-  ]])
-
-  blacklisted_ami_ids = []
+  controller_nodes_description = "Nodes for cluster-critical components and bootstrapping processes. Not autoscaled."
 }
 
 data "aws_region" "region" {}
 module "constants" {
   source = "../../modules/constants"
+}
+module "node_settings" {
+  source           = "../../modules/kube_node_settings"
+  cluster_name     = aws_eks_cluster.cluster.name
+  cluster_ca_data  = aws_eks_cluster.cluster.certificate_authority[0].data
+  cluster_endpoint = aws_eks_cluster.cluster.endpoint
 }
 
 ##########################################################################
@@ -166,54 +149,48 @@ module "aws_cloudwatch_log_group" {
 ## Node Groups
 ##########################################################################
 data "aws_subnet" "node_groups" {
-  for_each = local.node_group_subnets
+  for_each = toset(var.controller_node_subnets)
   filter {
     name   = "tag:Name"
     values = [each.key]
   }
 }
 
-data "aws_ami_ids" "launch_template_ami" {
-  for_each   = var.node_groups
-  owners     = ["amazon"]
-  name_regex = "^amazon-eks-node-${each.value.kube_version}-.*"
-  filter {
-    name   = "architecture"
-    values = ["x86_64"]
-  }
-  filter {
-    name   = "virtualization-type"
-    values = ["hvm"]
-  }
-  filter {
-    name   = "root-device-type"
-    values = ["ebs"]
-  }
+// Latest bottlerocket image
+// See https://docs.aws.amazon.com/eks/latest/userguide/retrieve-ami-id-bottlerocket.html
+data "aws_ssm_parameter" "controller_ami" {
+  name = "/aws/service/bottlerocket/aws-k8s-${var.controller_node_kube_version}/x86_64/latest/image_id"
 }
 
-resource "aws_launch_template" "node_group" {
-  for_each    = var.node_groups
-  name_prefix = "${each.key}-"
+resource "aws_launch_template" "controller" {
+  name_prefix = "controller-"
 
-  image_id = [for id in data.aws_ami_ids.launch_template_ami[each.key].ids : id if !contains(local.blacklisted_ami_ids, id)][0]
+  image_id = data.aws_ssm_parameter.controller_ami.insecure_value
 
   default_version         = 1
   disable_api_termination = false
-  user_data = base64encode(templatefile("./user_data.bash", {
-    cluster_name = var.cluster_name
-    class        = each.value.class
-  }))
-  vpc_security_group_ids = [aws_security_group.all_nodes.id]
+  vpc_security_group_ids  = [aws_security_group.all_nodes.id]
 
   ebs_optimized = true
+  user_data     = base64encode(module.node_settings.user_data)
 
   block_device_mappings {
     device_name = "/dev/xvda"
-
     ebs {
       delete_on_termination = "true"
-      volume_size           = 200
+      volume_size           = 25
       volume_type           = "gp3"
+      encrypted             = "true"
+    }
+  }
+
+  block_device_mappings {
+    device_name = "/dev/xvdb"
+    ebs {
+      delete_on_termination = "true"
+      volume_size           = 40
+      volume_type           = "gp3"
+      encrypted             = "true"
     }
   }
 
@@ -226,15 +203,14 @@ resource "aws_launch_template" "node_group" {
   tag_specifications {
     resource_type = "instance"
     tags = merge(local.common_tags, {
-      Name                                   = "${var.cluster_name}-${each.key}"
-      description                            = each.value.description
-      eks-managed                            = "true"
-      "aws-node-termination-handler/managed" = "true"
+      Name        = "${var.cluster_name}-controller"
+      description = local.controller_nodes_description
+      eks-managed = "true"
     })
   }
 
   tags = merge(local.common_tags, {
-    description = each.value.description
+    description = local.controller_nodes_description
   })
 
   lifecycle {
@@ -242,59 +218,42 @@ resource "aws_launch_template" "node_group" {
   }
 }
 
-resource "aws_eks_node_group" "node_groups" {
-  for_each = var.node_groups
 
-  node_group_name_prefix = "${each.key}-"
+resource "aws_eks_node_group" "controllers" {
+  node_group_name_prefix = "controllers-"
   cluster_name           = var.cluster_name
   node_role_arn          = aws_iam_role.node_group.arn
-  subnet_ids             = [for subnet in each.value.subnets : data.aws_subnet.node_groups[subnet].id]
+  subnet_ids             = [for subnet in var.controller_node_subnets : data.aws_subnet.node_groups[subnet].id]
 
-  instance_types = each.value.instance_types
+  instance_types = var.controller_node_instance_types
 
   launch_template {
-    id      = aws_launch_template.node_group[each.key].id
-    version = aws_launch_template.node_group[each.key].latest_version
+    id      = aws_launch_template.controller.id
+    version = aws_launch_template.controller.latest_version
   }
   scaling_config {
-    desired_size = each.value.init_nodes
-    max_size     = each.value.max_nodes
-    min_size     = each.value.min_nodes
+    desired_size = var.controller_node_count
+    max_size     = var.controller_node_count
+    min_size     = var.controller_node_count
   }
   update_config {
     max_unavailable_percentage = 50
   }
 
-  capacity_type = each.value.spot ? "SPOT" : "ON_DEMAND"
-
+  capacity_type = "ON_DEMAND"
   tags = merge(local.common_tags, {
-    description = each.value.description
+    description = local.controller_nodes_description
   })
   labels = {
-    class = each.value.class
+    class = "controller"
   }
-  dynamic "taint" {
-    for_each = merge(
-      each.value.taints,
-      each.value.spot ? { spot = "true" } : {}
-    )
-    content {
-      key    = taint.key
-      value  = taint.value
-      effect = "NO_SCHEDULE"
-    }
-  }
-
   taint {
-    effect = "NO_EXECUTE"
+    effect = "NO_SCHEDULE"
     key    = module.constants.cilium_taint.key
     value  = "true"
   }
 
-  force_update_version = true
-
   lifecycle {
-    ignore_changes        = [scaling_config[0].desired_size]
     create_before_destroy = true
   }
 }
@@ -320,6 +279,7 @@ resource "aws_security_group" "all_nodes" {
     "Name"                                      = "${var.cluster_name}-nodes"
     "kubernetes.io/cluster/${var.cluster_name}" = "owned"
     description                                 = "Security group for all nodes in the ${var.cluster_name} EKS cluster"
+    "karpenter.sh/discovery"                    = var.cluster_name
   }
 
   lifecycle {
@@ -450,78 +410,5 @@ resource "aws_iam_openid_connect_provider" "provider" {
 
   tags = {
     description = "Gives the ${var.cluster_name} EKS cluster access to AWS roles via IRSA"
-  }
-}
-
-##########################################################################
-## Termination Events (for node termination handler)
-##########################################################################
-
-data "aws_iam_policy_document" "queue_policy" {
-  statement {
-    effect = "Allow"
-    principals {
-      identifiers = ["events.amazonaws.com", "sqs.amazonaws.com"]
-      type        = "Service"
-    }
-    actions   = ["sqs:SendMessage"]
-    resources = [aws_sqs_queue.termination_messages.arn]
-  }
-}
-
-resource "aws_sqs_queue_policy" "termination_messages" {
-  policy    = data.aws_iam_policy_document.queue_policy.json
-  queue_url = aws_sqs_queue.termination_messages.url
-}
-
-resource "aws_sqs_queue" "termination_messages" {
-  name_prefix               = "eks-node-termination-events-"
-  message_retention_seconds = 300
-  sqs_managed_sse_enabled   = true
-}
-
-data "aws_iam_policy_document" "termination_messages_assume_role" {
-  statement {
-    effect  = "Allow"
-    actions = ["sts:AssumeRole"]
-    principals {
-      identifiers = ["autoscaling.amazonaws.com"]
-      type        = "Service"
-    }
-  }
-}
-
-resource "aws_iam_role" "termination_messages" {
-  name_prefix        = "eks-node-termination-events-"
-  assume_role_policy = data.aws_iam_policy_document.termination_messages_assume_role.json
-}
-
-resource "aws_iam_role_policy_attachment" "termination_messages" {
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AutoScalingNotificationAccessRole"
-  role       = aws_iam_role.termination_messages.name
-}
-
-resource "aws_autoscaling_lifecycle_hook" "hooks" {
-  for_each                = aws_eks_node_group.node_groups
-  name                    = "eks-node-termination-events"
-  autoscaling_group_name  = each.value.resources[0].autoscaling_groups[0].name
-  lifecycle_transition    = "autoscaling:EC2_INSTANCE_TERMINATING"
-  default_result          = "CONTINUE"
-  heartbeat_timeout       = 300
-  notification_target_arn = aws_sqs_queue.termination_messages.arn
-  role_arn                = aws_iam_role.termination_messages.arn
-}
-
-##########################################################################
-## ASG Tags (for cluster autoscaler and other utilities)
-##########################################################################
-
-resource "aws_autoscaling_group_tag" "tags" {
-  count                  = length(local.asg_tags)
-  autoscaling_group_name = aws_eks_node_group.node_groups[local.asg_tags[count.index].group].resources[0].autoscaling_groups[0].name
-  tag {
-    key                 = local.asg_tags[count.index].key
-    propagate_at_launch = false
-    value               = local.asg_tags[count.index].value
   }
 }

@@ -10,7 +10,7 @@ jobs:
   test:
     runs-on: development-small
     env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
     steps:
       - name: "Test bash"
         run: 'echo "Hello World!"'

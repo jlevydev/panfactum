@@ -76,7 +76,7 @@ module "postgres" {
   pg_cluster_namespace = local.namespace
   pg_instances         = var.pg_instances
   pg_storage_gb        = var.pg_storage_gb
-  ha_enabled           = var.ha_enabled
+  backups_force_delete = local.is_local
   backups_enabled      = !local.is_local
 }
 
@@ -121,9 +121,7 @@ module "deployment" {
   service_name    = local.service
   service_account = kubernetes_service_account.service.metadata[0].name
 
-  tolerations = module.constants.spot_node_toleration
-
-  environment_variables = merge({
+  common_env = merge({
     NODE_ENV              = local.is_local ? "development" : "production"
     PG_HOSTNAME           = "${local.service}-pg-rw.${local.namespace}"
     PG_PORT               = "5432"
@@ -139,25 +137,9 @@ module "deployment" {
     env_var               = "PG_CREDS_PATH"
   }]
 
-  init_containers = {
-    init-compile = local.is_local ? {
-      image          = var.image_repo
-      version        = var.image_version
-      command        = ["scripts/compile-dev.sh", "./out", "./tsconfig.json"]
-      minimum_memory = 500
-    } : null
-    migrate = !local.is_local ? {
-      image          = var.image_repo
-      version        = var.image_version
-      command        = ["node", "out/index.js"]
-      minimum_memory = 100
-      env = {
-        FUNCTION = "db-migrate"
-      }
-    } : null
-  }
-  containers = {
-    server = {
+  containers = concat([
+    {
+      name    = "server"
       image   = var.image_repo
       version = var.image_version
       command = local.is_local ? [
@@ -170,8 +152,20 @@ module "deployment" {
       env = {
         FUNCTION = "http-server"
       }
+      healthcheck_type  = "HTTP"
+      healthcheck_port  = local.port
+      healthcheck_route = local.healthcheck_route
     }
-    compiler = local.is_local ? {
+    ], local.is_local ? [{
+      name           = "init-compile"
+      init           = true
+      image          = var.image_repo
+      version        = var.image_version
+      command        = ["scripts/compile-dev.sh", "./out", "./tsconfig.json"]
+      minimum_memory = 500
+    }] : [],
+    local.is_local ? [{
+      name    = "compiler"
       image   = var.image_repo
       version = var.image_version
       command = [
@@ -183,20 +177,29 @@ module "deployment" {
         "scripts/compile-dev.sh", "./out", "./tsconfig.json"
       ]
       minimum_memory = 500
-    } : null
-  }
+    }] : [],
+    !local.is_local ? [{
+      name           = "migrate"
+      init           = true
+      image          = var.image_repo
+      version        = var.image_version
+      command        = ["node", "out/index.js"]
+      minimum_memory = 100
+      env = {
+        FUNCTION = "db-migrate"
+      }
+    }] : []
+  )
 
   tmp_directories = local.is_local ? {
     "/code/packages/primary-api/out" = {}
     "/tmp/build"                     = {}
   } : {}
-  healthcheck_port  = local.port
-  healthcheck_route = local.healthcheck_route
+
 
   min_replicas = var.min_replicas
   max_replicas = var.max_replicas
   vpa_enabled  = var.vpa_enabled
-  ha_enabled   = var.ha_enabled
 
   ports = {
     http = {
@@ -204,7 +207,6 @@ module "deployment" {
       service_port = local.port
     }
   }
-  allow_disruptions = !local.is_local
 
   depends_on = [module.db_access]
 }

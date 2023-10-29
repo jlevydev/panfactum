@@ -109,7 +109,7 @@ resource "helm_release" "ebs_csi_driver" {
         // Does not need to be highly available
         replicaCount = 1
         tolerations  = module.constants.spot_node_toleration_helm
-        affinity     = module.constants.spot_node_affinity_helm
+        affinity     = module.constants.controller_node_affinity_helm
         serviceAccount = {
           create                       = false
           name                         = kubernetes_service_account.ebs_csi.metadata[0].name

@@ -67,6 +67,12 @@ const updateDB = async () => {
       database: PG_DATABASE
     })
 
+    // Required error handler
+    // Without this, unhandled connection errors will crash the node process
+    postgresPool.on('error', (err) => {
+      console.error('Experienced a postgres connection error', err)
+    })
+
     // Close the old connections after a minute
     // to allow running queries to complete
     const oldDB = db

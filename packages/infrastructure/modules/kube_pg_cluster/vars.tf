@@ -40,10 +40,10 @@ variable "pg_storage_gb" {
   type        = number
 }
 
-variable "ha_enabled" {
-  description = "Whether high availability parameters should be used at the tradeoff of increased cost"
+variable "backups_force_delete" {
+  description = "Whether to delete backups on destroy"
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "vpa_enabled" {

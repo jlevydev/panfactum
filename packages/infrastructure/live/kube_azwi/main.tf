@@ -58,17 +58,18 @@ resource "helm_release" "azwi" {
 
   values = [
     yamlencode({
-      azureTenantID = var.azuread_tenant_id
-
-      replicaCount = 2
-      tolerations  = module.constants.spot_node_toleration_helm
-
-      affinity = module.constants.pod_anti_affinity_helm
+      azureTenantID     = var.azuread_tenant_id
+      priorityClassName = module.constants.cluster_important_priority_class_name
+      replicaCount      = 2
+      affinity = merge(
+        module.constants.controller_node_affinity_helm,
+        module.constants.pod_anti_affinity_helm
+      )
     })
   ]
 }
 
-resource "kubernetes_manifest" "vpa_descheduler" {
+resource "kubernetes_manifest" "vpa_azwi" {
   count = var.vpa_enabled ? 1 : 0
   manifest = {
     apiVersion = "autoscaling.k8s.io/v1"

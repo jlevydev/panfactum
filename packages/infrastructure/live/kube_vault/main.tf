@@ -42,6 +42,16 @@ locals {
     submodule = local.server_submodule
   }
 
+  csi_submodule = "csi"
+  csi_labels = merge(local.labels, {
+    submodule = local.csi_submodule
+  })
+  csi_match = {
+    module    = local.module
+    submodule = local.csi_submodule
+  }
+
+
   vault_domain = "vault.${var.environment_domain}"
 }
 
@@ -183,9 +193,11 @@ resource "helm_release" "vault" {
           }
         }
         pod = {
-          priorityClassName = "system-cluster-critical"
-          tolerations       = module.constants.spot_node_toleration_helm
+          affinity    = module.constants.controller_node_affinity_helm
+          tolerations = module.constants.spot_node_toleration_helm
+          extraLabels = local.csi_labels
         }
+        priorityClassName = "system-node-critical"
       }
 
       ui = {
@@ -198,6 +210,7 @@ resource "helm_release" "vault" {
             "reloader.stakater.com/auto" = "true"
           }
         }
+        extraLabels = local.server_labels
         serviceAccount = {
           create = false,
           name   = kubernetes_service_account.vault.metadata[0].name
@@ -206,9 +219,9 @@ resource "helm_release" "vault" {
           enabled      = true
           size         = "${var.vault_storage_size_gb}Gi"
           mountPath    = "/vault/data"
-          storageClass = "ebs-standard"
+          storageClass = "ebs-standard-retained"
         }
-        affinity = {
+        affinity = merge({
           podAntiAffinity = {
             requiredDuringSchedulingIgnoredDuringExecution = [{
               labelSelector = {
@@ -217,7 +230,7 @@ resource "helm_release" "vault" {
               topologyKey : "kubernetes.io/hostname"
             }]
           }
-        }
+        }, module.constants.controller_node_affinity_helm)
         topologySpreadConstraints = [{
           maxSkew           = 1
           topologyKey       = "topology.kubernetes.io/zone"
@@ -233,16 +246,8 @@ resource "helm_release" "vault" {
           AWS_ROLE_ARN = module.aws_permissions.role_arn
         }
 
-        standalone = {
-          enabled = !var.ha_enabled
-          config = templatefile("./standalone.hcl", {
-            aws_region   = data.aws_region.region.name
-            kms_key_id   = aws_kms_key.vault.id
-            aws_role_arn = module.aws_permissions.role_arn
-          })
-        }
         ha = {
-          enabled  = var.ha_enabled
+          enabled  = true
           replicas = 3
           raft = {
             enabled   = true
@@ -317,7 +322,7 @@ module "ingress" {
   ingress_name = local.server_submodule
   ingress_configs = [{
     domains      = [local.vault_domain]
-    service      = "vault"
+    service      = "vault-active"
     service_port = 8200
   }]
   depends_on = [helm_release.vault]

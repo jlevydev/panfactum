@@ -19,12 +19,12 @@ jobs:
         timeout-minutes: 30
         with:
           image-repo: public-app
-          image-tag: ${{ github.sha }}
+          image-tag: ${{github.sha}}
           containerfile-directory: packages/public-app
 
   apply-dev:
     runs-on: development-small
-    if: ${{ github.ref }} == 'refs/heads/main'
+    if: ${{github.ref == 'refs/heads/main'}}
     timeout-minutes: 30
     concurrency:
       group: apply-dev-public-app

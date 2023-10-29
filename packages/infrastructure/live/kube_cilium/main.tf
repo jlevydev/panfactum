@@ -25,15 +25,24 @@ locals {
   module      = var.module
   version     = var.version_tag
 
-  labels = merge(var.kube_labels, {
-    service = local.name
+  base_labels = merge(var.kube_labels, {
+    customizationHash = md5(join("", [for filename in fileset(path.module, "cilium_kustomize/*") : filesha256(filename)]))
+  })
+
+  operator_labels = merge(local.base_labels, {
+    service = "operator"
+  })
+
+  agent_labels = merge(local.base_labels, {
+    service = "agent"
   })
 }
 
 data "aws_region" "region" {}
 
 module "constants" {
-  source = "../../modules/constants"
+  source          = "../../modules/constants"
+  matching_labels = local.operator_labels
 }
 
 /***************************************
@@ -46,7 +55,7 @@ module "namespace" {
   admin_groups      = ["system:admins"]
   reader_groups     = ["system:readers"]
   bot_reader_groups = ["system:bot-readers"]
-  kube_labels       = local.labels
+  kube_labels       = local.base_labels
 }
 
 /***************************************
@@ -135,9 +144,7 @@ resource "helm_release" "cilium" {
       egressMasqueradeInterfaces = "eth0"
       routingMode                = "native"
 
-      podLabels = merge(local.labels, {
-        customizationHash = md5(join("", [for filename in fileset(path.module, "cilium_kustomize/*") : filesha256(filename)]))
-      })
+      podLabels = local.base_labels
 
       policyEnforcementMode = "default"
 
@@ -163,10 +170,13 @@ resource "helm_release" "cilium" {
         hostNamespaceOnly = true
       }
 
+      nodeinit = {
+        podLabels = local.agent_labels
+      }
+
       operator = {
-        // Does not need to run in high availability mode
-        replicas = 1
-        tolerations = concat(module.constants.spot_node_toleration_helm, [
+        replicas = 2
+        tolerations = [
 
           // This is needed b/c the cilium agents on each node need the operator
           // to be running in order for them to remove this taint
@@ -176,9 +186,14 @@ resource "helm_release" "cilium" {
             value    = module.constants.cilium_taint.value
             effect   = module.constants.cilium_taint.effect
           }
-        ])
+        ]
 
-        affinity = module.constants.spot_node_affinity_helm
+        podLabels = local.operator_labels
+
+        affinity = merge(
+          module.constants.controller_node_affinity_helm,
+          module.constants.pod_anti_affinity_helm
+        )
 
         priorityClassName = "system-cluster-critical"
         extraArgs = [
@@ -211,7 +226,7 @@ resource "kubernetes_manifest" "vpa_operator" {
     metadata = {
       name      = "cilium-operator"
       namespace = local.namespace
-      labels    = local.labels
+      labels    = local.operator_labels
     }
     spec = {
       targetRef = {
@@ -221,6 +236,7 @@ resource "kubernetes_manifest" "vpa_operator" {
       }
     }
   }
+  depends_on = [helm_release.cilium]
 }
 
 resource "kubernetes_manifest" "vpa_node" {
@@ -231,7 +247,7 @@ resource "kubernetes_manifest" "vpa_node" {
     metadata = {
       name      = "cilium-nodes"
       namespace = local.namespace
-      labels    = local.labels
+      labels    = local.agent_labels
     }
     spec = {
       targetRef = {
@@ -241,4 +257,24 @@ resource "kubernetes_manifest" "vpa_node" {
       }
     }
   }
+  depends_on = [helm_release.cilium]
+}
+
+resource "kubernetes_manifest" "pdb_operator" {
+  manifest = {
+    apiVersion = "policy/v1"
+    kind       = "PodDisruptionBudget"
+    metadata = {
+      name      = "${local.name}-pdb-operator"
+      namespace = local.namespace
+      labels    = local.operator_labels
+    }
+    spec = {
+      selector = {
+        matchLabels = local.operator_labels
+      }
+      maxUnavailable = 1
+    }
+  }
+  depends_on = [helm_release.cilium]
 }

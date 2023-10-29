@@ -19,13 +19,13 @@ runs:
       uses: ./.github/actions/setup-tf-creds
 
     - name: "Terragrunt apply (module)"
-      if: ${{ inputs.target == '' }}
-      run: 'terragrunt apply --refresh=${{ inputs.refresh }} --input=false -auto-approve -compact-warnings --terragrunt-non-interactive --terragrunt-include-external-dependencies --terragrunt-fetch-dependency-output-from-state'
+      if: ${{inputs.target == ''}}
+      run: 'terragrunt apply --refresh=${{inputs.refresh}} --input=false -auto-approve -compact-warnings --terragrunt-non-interactive --terragrunt-include-external-dependencies --terragrunt-fetch-dependency-output-from-state'
       working-directory: ${{ inputs.tg-directory }}
       shell: bash
 
     - name: "Terragrunt apply (target)"
-      if: ${{ inputs.target  != '' }}
-      run: 'terragrunt apply --refresh=${{ inputs.refresh }} --target ${{ inputs.target }} --input=false -auto-approve -compact-warnings --terragrunt-non-interactive --terragrunt-include-external-dependencies --terragrunt-fetch-dependency-output-from-state'
-      working-directory: ${{ inputs.tg-directory }}
+      if: ${{inputs.target  != ''}}
+      run: 'terragrunt apply --refresh=${{inputs.refresh}} --target ${{inputs.target}} --input=false -auto-approve -compact-warnings --terragrunt-non-interactive --terragrunt-include-external-dependencies --terragrunt-fetch-dependency-output-from-state'
+      working-directory: ${{inputs.tg-directory}}
       shell: bash

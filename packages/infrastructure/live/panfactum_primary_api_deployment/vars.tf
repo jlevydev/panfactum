@@ -29,12 +29,6 @@ variable "ingress_path_prefix" {
   type        = string
 }
 
-variable "ha_enabled" {
-  description = "Whether high availability parameters should be used at the tradeoff of increased cost"
-  type        = bool
-  default     = true
-}
-
 variable "vpa_enabled" {
   description = "Whether to enable the vertical pod autoscaler"
   type        = bool

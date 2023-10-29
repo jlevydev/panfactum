@@ -5,7 +5,7 @@
 # for the build config
 { pkgs }:
 pkgs.mkTerraform {
-  version = "1.3.7";
-  hash = "sha256-z49DXJ9oYObJQWHPeuKvQ6jJtAheYuy0+QmvZ74ZbTQ";
-  vendorHash = "sha256-fviukVGBkbxFs2fJpEp/tFMymXex7NRQdcGIIA9W88k=";
+  version = "1.6.2";
+  hash = "sha256-24B8YlorL00OqmYYVM1xg5dM9hZ4enDWJ1XIGmeEAiM=";
+  vendorHash = "sha256-fIirGWt4Os2uZHo4ui7wmZEp+DRUHu/0p+cQCbUbzjc=";
 }

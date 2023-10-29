@@ -1,7 +1,7 @@
 variable "vertical_autoscaler_helm_version" {
   description = "The version of VPA helm chart to deploy"
   type        = string
-  default     = "2.3.0"
+  default     = "3.0.2"
 }
 
 variable "vpa_enabled" {

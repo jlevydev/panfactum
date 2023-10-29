@@ -34,13 +34,16 @@ locals {
 
   all_roles = toset([for domain, config in var.dns_zones : config.record_manager_role_arn])
   config = { for role in local.all_roles : role => {
+    labels           = merge(local.labels, { role : sha1(role) })
     included_domains = [for domain, config in var.dns_zones : domain if config.record_manager_role_arn == role]
     excluded_domains = [for domain, config in var.dns_zones : domain if config.record_manager_role_arn != role && length(regexall(".+\\..+\\..+", domain)) > 0] // never exclude apex domains
   } }
 }
 
 module "constants" {
-  source = "../../modules/constants"
+  for_each        = local.config
+  source          = "../../modules/constants"
+  matching_labels = each.value.labels
 }
 
 /***************************************
@@ -112,7 +115,8 @@ resource "helm_release" "external_dns" {
   values = [
     yamlencode({
       nameOverride = random_id.ids[each.key].hex
-      commonLabels = local.labels
+      commonLabels = each.value.labels
+      podLabels    = each.value.labels
       commonAnnotations = {
         "reloader.stakater.com/auto" = "true"
       }
@@ -127,12 +131,13 @@ resource "helm_release" "external_dns" {
       }
       sources = ["service", "ingress"]
 
-      // Does not need to be highly available
-      replicaCount = 1
-      tolerations  = module.constants.spot_node_toleration_helm
-      affinity     = module.constants.spot_node_affinity_helm
+      replicaCount = 2
+      affinity = merge(
+        module.constants[each.key].controller_node_affinity_helm,
+        module.constants[each.key].pod_anti_affinity_helm
+      )
 
-      priorityClassName = "system-cluster-critical"
+      priorityClassName = module.constants[each.key].cluster_important_priority_class_name
       service = {
         enabled = true
         ports = {
@@ -160,7 +165,7 @@ resource "kubernetes_manifest" "vpa" {
     metadata = {
       name      = random_id.ids[each.key].hex
       namespace = local.namespace
-      labels    = var.kube_labels
+      labels    = each.value.labels
     }
     spec = {
       targetRef = {
@@ -170,4 +175,24 @@ resource "kubernetes_manifest" "vpa" {
       }
     }
   }
+}
+
+resource "kubernetes_manifest" "pdb" {
+  for_each = local.config
+  manifest = {
+    apiVersion = "policy/v1"
+    kind       = "PodDisruptionBudget"
+    metadata = {
+      name      = "${local.name}-pdb-${each.value.labels.role}"
+      namespace = local.namespace
+      labels    = each.value.labels
+    }
+    spec = {
+      selector = {
+        matchLabels = each.value.labels
+      }
+      maxUnavailable = 1
+    }
+  }
+  depends_on = [helm_release.external_dns]
 }

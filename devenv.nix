@@ -15,6 +15,8 @@ let
     kubectx # switching between namespaces and contexts
     kustomize # tool for editing manifests programatically
     kubernetes-helm # for working with Helm charts
+    kube-capacity # for visualizing resource utilization in the cluster
+    kubectl-cnpg # for managing the cnpg postgres databases
 
     ####################################
     # Hashicorp Vault
@@ -26,7 +28,7 @@ let
     # Infrastructure-as-Code
     ####################################
     (customModule "terraform") # declarative iac tool
-    terragrunt # terraform-runner
+    (customModule "terragrunt") # terraform-runner
     (customModule "get-version-hash") # helper for the IaC tagging
     (customModule "wait-on-image") # helper for waiting on image availability
     (customModule "precommit-terragrunt-fmt") # pre-commit hook for terragrunt
@@ -65,6 +67,7 @@ let
     # AWS Utilities
     ####################################
     awscli2 # aws CLI
+    ssm-session-manager-plugin # for connecting to hardened ec2 nodes
     aws-nuke # nukes resources in aws accounts
 
     ####################################
@@ -157,6 +160,7 @@ let
     (customModule "cilium")  # for managing the cilium CNI
     hubble # for network observability
     cmctl # for working with cert-manager
+    (customModule "linkerd-await") # used to work with proxy sidecars in the kubernetes environment
     linkerd # for working with the service mesh
     k9s # kubernetes tui
 

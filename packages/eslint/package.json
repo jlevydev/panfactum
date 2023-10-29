@@ -1,16 +1,6 @@
 {
   "name": "@panfactum/eslint-config",
   "private": true,
-  "pnpm": {
-    "peerDependencyRules": {
-      "ignoreMissing": [
-        "eslint-plugin-import",
-        "eslint-plugin-n",
-        "eslint-plugin-promise",
-        "eslint"
-      ]
-    }
-  },
   "peerDependencies": {
     "@typescript-eslint/eslint-plugin": "6.5.0",
     "eslint": "8.47.0",

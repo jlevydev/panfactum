@@ -387,7 +387,18 @@ resource "helm_release" "alb_controller" {
 
       // DOES need to be highly available to avoid ingress disruptions
       replicaCount = 2
-      tolerations  = module.constants.spot_node_toleration_helm
+      affinity = merge({
+        podAntiAffinity = {
+          requiredDuringSchedulingIgnoredDuringExecution = [{
+            topologyKey = "kubernetes.io/hostname"
+            labelSelector = {
+              matchLabels = {
+                "app.kubernetes.io/name" = "aws-load-balancer-controller"
+              }
+            }
+          }]
+        }
+      }, module.constants.controller_node_affinity_helm)
 
       updateStrategy = {
         type = "RollingUpdate"
@@ -400,7 +411,7 @@ resource "helm_release" "alb_controller" {
         maxUnavailable = 1
       }
       configureDefaultAffinity = true
-      priorityClassName        = "system-cluster-critical"
+      priorityClassName        = module.constants.cluster_important_priority_class_name
       clusterName              = var.eks_cluster_name
       region                   = data.aws_region.main.name
       vpcId                    = var.vpc_id
@@ -782,7 +793,7 @@ resource "helm_release" "nginx_ingress" {
         terminationGracePeriodSeconds = local.deregistration_delay + local.nginx_base_timeout * 3
 
         allowSnippetAnnotations = true
-        priorityClassName       = "system-cluster-critical"
+        priorityClassName       = module.constants.cluster_important_priority_class_name
         ingressClassResource = {
           enabled = true
           default = false
@@ -944,7 +955,7 @@ module "bastion" {
   min_replicas        = 2
   max_replicas        = 2
   tolerations         = module.constants.spot_node_toleration
-  priority_class_name = "system-cluster-critical"
+  priority_class_name = module.constants.cluster_important_priority_class_name
 
   healthcheck_port = var.bastion_port
   healthcheck_type = "TCP"

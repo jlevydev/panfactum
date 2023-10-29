@@ -468,6 +468,11 @@ resource "helm_release" "linkerd" {
 
   values = [
     yamlencode({
+      controllerLogLevel = "info"
+
+      controllerReplicas        = 2
+      enablePodAntiAffinity     = true
+      enablePodDisruptionBudget = true
 
       # Was never able to get the CNI to work.
       # Given the additional downside of this breaking init containers,
@@ -484,7 +489,7 @@ resource "helm_release" "linkerd" {
       podLabels = local.linkerd_labels
 
       priorityClassName = "system-cluster-critical"
-
+      nodeAffinity      = module.constants.controller_node_affinity_helm.nodeAffinity
 
       policyValidator = {
         externalSecret = true

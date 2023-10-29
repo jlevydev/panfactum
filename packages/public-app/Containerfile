@@ -7,10 +7,10 @@ RUN npm i -g pnpm@8.6.12
 USER 1000
 WORKDIR /code
 COPY --chown=1000 package.json pnpm-lock.yaml .npmrc pnpm-workspace.yaml .
-COPY --chown=1000 packages/public-app/package.json packages/public-app/pnpm-lock.yaml packages/public-app/
+COPY --chown=1000 packages/public-app/package.json packages/public-app/
 COPY --chown=1000 packages/eslint/ packages/eslint/
 COPY --chown=1000 packages/primary-api/ packages/primary-api/
-RUN --mount=type=cache,id=pnpm,target=/code/.pnp,uid=1000,gid=1000 pnpm install --frozen-lockfile
+RUN --mount=type=cache,id=pnpm,target=/code/.pnpm,uid=1000,gid=1000 pnpm install --frozen-lockfile
 
 # Build
 COPY --chown=1000 packages/public-app/ packages/public-app/

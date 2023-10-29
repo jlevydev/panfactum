@@ -77,9 +77,26 @@ resource "helm_release" "vpa" {
       priorityClassName = "system-cluster-critical"
 
       recommender = {
-        replicaCount = 1
-        tolerations  = module.constants.spot_node_toleration_helm
-        affinity     = module.constants.spot_node_affinity_helm
+        // We need two or the admission controller won't work if this is down
+        // and then this might not be able to launch itself
+        replicaCount = 2
+        affinity = merge({
+          podAntiAffinity = {
+            requiredDuringSchedulingIgnoredDuringExecution = [{
+              labelSelector = {
+                matchLabels = {
+                  "app.kubernetes.io/name"      = "vpa"
+                  "app.kubernetes.io/component" = "recommender"
+                }
+              }
+              topologyKey : "kubernetes.io/hostname"
+            }]
+          }
+        }, module.constants.controller_node_affinity_helm)
+
+        podDisruptionBudget = {
+          minAvailable = 1
+        }
 
         extraArgs = {
           // Better packing
@@ -98,10 +115,24 @@ resource "helm_release" "vpa" {
       }
 
       updater = {
-        // Does not need to be highly available
-        replicaCount = 1
-        tolerations  = module.constants.spot_node_toleration_helm
-        affinity     = module.constants.spot_node_affinity_helm
+        replicaCount = 2
+        affinity = merge({
+          podAntiAffinity = {
+            requiredDuringSchedulingIgnoredDuringExecution = [{
+              labelSelector = {
+                matchLabels = {
+                  "app.kubernetes.io/name"      = "vpa"
+                  "app.kubernetes.io/component" = "updater"
+                }
+              }
+              topologyKey : "kubernetes.io/hostname"
+            }]
+          }
+        }, module.constants.controller_node_affinity_helm)
+
+        podDisruptionBudget = {
+          minAvailable = 1
+        }
 
         extraArgs = {
           "min-replicas" = 0 // We don't care b/c we use pdbs
@@ -110,40 +141,24 @@ resource "helm_release" "vpa" {
       }
 
       admissionController = {
-        // Does not need to be super highly available
-        // but we do need at least 2 otherwise we may get stuck in a loop
+        // We do need at least 2 otherwise we may get stuck in a loop
         // b/c if this pod goes down, it cannot apply the appropriate
         // resource requirements when it comes back up and then the
         // updater will take it down again
         replicaCount = 2
-        tolerations  = module.constants.spot_node_toleration_helm
-        affinity = merge(
-          module.constants.spot_node_affinity_helm,
-          {
-            podAntiAffinity = {
-              preferredDuringSchedulingIgnoredDuringExecution = [{
-                weight = 100
-                podAffinityTerm = {
-                  labelSelector = {
-                    matchExpressions = [
-                      {
-                        key      = "app.kubernetes.io/component"
-                        operator = "In"
-                        values   = ["admission-controller"]
-                      },
-                      {
-                        key      = "app.kubernetes.io/instance"
-                        operator = "In"
-                        values   = ["vertical-pod-autoscaler"]
-                      }
-                    ]
-                  }
-                  topologyKey = "kubernetes.io/hostname"
+        affinity = merge({
+          podAntiAffinity = {
+            requiredDuringSchedulingIgnoredDuringExecution = [{
+              labelSelector = {
+                matchLabels = {
+                  "app.kubernetes.io/name"      = "vpa"
+                  "app.kubernetes.io/component" = "admission-controller"
                 }
-              }]
-            }
+              }
+              topologyKey : "kubernetes.io/hostname"
+            }]
           }
-        )
+        }, module.constants.controller_node_affinity_helm)
 
         podDisruptionBudget = {
           minAvailable = 1

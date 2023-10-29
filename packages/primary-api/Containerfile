@@ -6,9 +6,9 @@ RUN npm i -g pnpm@8.6.12
 # Install Dependencies
 WORKDIR /code
 COPY package.json pnpm-lock.yaml .npmrc pnpm-workspace.yaml .
-COPY packages/primary-api/package.json packages/primary-api/pnpm-lock.yaml packages/primary-api/
+COPY packages/primary-api/package.json packages/primary-api/
 COPY packages/eslint/ packages/eslint/
-RUN --mount=type=cache,target=/code/.pnp pnpm install --frozen-lockfile
+RUN --mount=type=cache,target=/code/.pnpm pnpm install --frozen-lockfile
 
 # Execute the build
 # TODO: We need to implement rollup or another bundler in order to improve image sizes

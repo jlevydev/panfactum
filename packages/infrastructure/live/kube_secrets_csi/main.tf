@@ -67,13 +67,13 @@ resource "helm_release" "secrets_csi_driver" {
         crds = {
           enabled = true
         }
-        tolerations = module.constants.spot_node_toleration_helm
         daemonsetAnnotations = {
           "reloader.stakater.com/auto" = "true"
         }
         podAnnotations = {
           "linkerd.io/inject" = "enabled"
         }
+        priorityClassName = "system-node-critical"
       }
       logVerbosity         = 2
       logFormatJSON        = true
@@ -94,7 +94,7 @@ resource "kubernetes_manifest" "vpa" {
     metadata = {
       name      = "secrets-csi-secrets-store-csi-driver"
       namespace = local.namespace
-      labels    = var.kube_labels
+      labels    = local.labels
     }
     spec = {
       targetRef = {

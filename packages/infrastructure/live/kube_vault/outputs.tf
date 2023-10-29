@@ -3,5 +3,5 @@ output "vault_url" {
 }
 
 output "vault_internal_url" {
-  value = "http://${local.name}.${local.namespace}.svc.cluster.local:8200"
+  value = "http://vault-active.${local.namespace}.svc.cluster.local:8200"
 }

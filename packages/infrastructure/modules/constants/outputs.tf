@@ -9,35 +9,35 @@ output "spot_node_toleration_helm" {
 
 output "cilium_taint" {
   value = {
-    key    = "ignore-taint.cluster-autoscaler.kubernetes.io/cilium-not-ready"
+    key    = "node.cilium.io/agent-not-ready"
     value  = "true"
-    effect = "NoExecute"
-  }
-}
-
-output "spot_node_toleration" {
-  value = {
-    spot = {
-      operator = "Equal"
-      value    = "true"
-      effect   = "NoSchedule"
-    }
+    effect = "NoSchedule"
   }
 }
 
 output "spot_node_affinity_helm" {
   value = {
     nodeAffinity = {
-      preferredDuringSchedulingIgnoredDuringExecution = [{
-        weight = 1
-        preference = {
-          matchExpressions = [{
-            key      = "node.kubernetes.io/class"
-            operator = "In"
-            values   = ["default-spot", "large-spot"]
-          }]
-        }
-      }]
+      preferredDuringSchedulingIgnoredDuringExecution = [local.prefer_spot]
+    }
+  }
+}
+
+output "controller_node_affinity_helm" {
+  value = {
+    nodeAffinity = {
+      preferredDuringSchedulingIgnoredDuringExecution = [local.prefer_controller]
+    }
+  }
+}
+
+output "controller_node_with_spot_affinity_helm" {
+  value = {
+    nodeAffinity = {
+      preferredDuringSchedulingIgnoredDuringExecution = [
+        local.prefer_controller,
+        local.prefer_spot
+      ]
     }
   }
 }
@@ -60,7 +60,7 @@ output "spot_node_preferences" {
     "node.kubernetes.io/class" = {
       weight   = 1
       operator = "In"
-      values   = ["default-spot", "large-spot"]
+      values   = ["spot"]
     }
   }
 }
@@ -68,4 +68,25 @@ output "spot_node_preferences" {
 
 output "database_priority_class_name" {
   value = "database"
+}
+
+output "default_priority_class_name" {
+  value = "default"
+}
+
+output "cluster_important_priority_class_name" {
+  value = "cluster-important"
+}
+
+output "topology_spread_zone" {
+  value = [
+    {
+      maxSkew           = 1
+      topologyKey       = "topology.kubernetes.io/zone"
+      whenUnsatisfiable = "DoNotSchedule"
+      labelSelector = {
+        matchLabels = var.matching_labels
+      }
+    }
+  ]
 }

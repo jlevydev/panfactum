@@ -1,0 +1,3 @@
+source: /live/kube_karpenter_provisioners
+providers:
+  kubernetes: true

@@ -22,7 +22,8 @@ locals {
 }
 
 module "constants" {
-  source = "../../modules/constants"
+  source          = "../../modules/constants"
+  matching_labels = local.labels
 }
 
 /***************************************
@@ -63,12 +64,17 @@ resource "helm_release" "descheduler" {
         tag = var.descheduler_version
       }
       commonLabels         = local.labels
+      podLabels            = local.labels
       deschedulingInterval = "30m"
 
-      // Does not need to run in high availability mode
-      replicas    = 1
-      tolerations = module.constants.spot_node_toleration_helm
-      affinity    = module.constants.spot_node_affinity_helm
+      replicas = 2
+      affinity = merge(
+        module.constants.controller_node_affinity_helm,
+        module.constants.pod_anti_affinity_helm
+      )
+      leaderElection = {
+        enabled = true
+      }
 
       deschedulerPolicy = {
         maxNoOfPodsToEvictPerNode      = 10
@@ -115,7 +121,7 @@ resource "helm_release" "descheduler" {
           }
         }
       }
-      priorityClassName = "system-cluster-critical"
+      priorityClassName = module.constants.cluster_important_priority_class_name
 
       // TODO: This is incorrect; it needs to be on the deployment,
       // but we will have to use kustomize as a variable is not exposed
@@ -149,70 +155,23 @@ resource "kubernetes_manifest" "vpa_descheduler" {
       }
     }
   }
-}
-
-/***************************************
-* Proportional Autoscaler (since the descheduler cannot run in single node clusters)
-***************************************/
-
-resource "helm_release" "proportional" {
-  namespace  = local.namespace
-  name       = "descheduler-proportional-autoscaler"
-  repository = "https://kubernetes-sigs.github.io/cluster-proportional-autoscaler/"
-  chart      = "cluster-proportional-autoscaler"
-  // version = ? no version listed on website
-  recreate_pods   = true
-  cleanup_on_fail = true
-  wait            = true
-  wait_for_jobs   = true
-
-  values = [
-    yamlencode({
-      // Does not need to run in high availability mode
-      replicas    = 1
-      tolerations = module.constants.spot_node_toleration_helm
-      affinity    = module.constants.spot_node_affinity_helm
-
-      fullnameOverride = "descheduler-autoscaler"
-
-      config = {
-        ladder = {
-          nodesToReplicas = [
-            [1, 0],
-            [2, 1] // only scale to one if there are at least 2 nodes
-          ]
-        }
-      }
-      options = {
-        namespace = local.namespace
-        target    = "deployment/descheduler"
-      }
-
-      priorityClassName = "system-cluster-critical"
-      podAnnotations = {
-        "reloader.stakater.com/auto" = "true"
-      }
-    })
-  ]
   depends_on = [helm_release.descheduler]
 }
 
-resource "kubernetes_manifest" "vpa_descheduler_autoscaler" {
-  count = var.vpa_enabled ? 1 : 0
+resource "kubernetes_manifest" "pdb" {
   manifest = {
-    apiVersion = "autoscaling.k8s.io/v1"
-    kind       = "VerticalPodAutoscaler"
+    apiVersion = "policy/v1"
+    kind       = "PodDisruptionBudget"
     metadata = {
-      name      = "descheduler-autoscaler"
+      name      = "${local.name}-pdb"
       namespace = local.namespace
-      labels    = var.kube_labels
+      labels    = local.labels
     }
     spec = {
-      targetRef = {
-        apiVersion = "apps/v1"
-        kind       = "Deployment"
-        name       = "descheduler-autoscaler"
+      selector = {
+        matchLabels = local.labels
       }
+      maxUnavailable = 1
     }
   }
   depends_on = [helm_release.descheduler]

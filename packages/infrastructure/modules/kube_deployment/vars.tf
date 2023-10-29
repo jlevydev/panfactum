@@ -22,17 +22,24 @@ variable "deployment_update_type" {
 
 variable "tolerations" {
   description = "A list of tolerations for the pods"
-  type = map(object({
+  type = list(object({
+    key      = string
     operator = string
     value    = string
     effect   = string
   }))
-  default = {}
+  default = []
 }
 
 variable "node_preferences" {
   description = "Node label preferences for the pods"
   type        = map(object({ weight = number, operator = string, values = list(string) }))
+  default     = {}
+}
+
+variable "node_requirements" {
+  description = "Node label requirements for the pods"
+  type        = map(list(string))
   default     = {}
 }
 
@@ -42,7 +49,7 @@ variable "secrets" {
   default     = {}
 }
 
-variable "environment_variables" {
+variable "common_env" {
   description = "Key pair values of the environment variables for each container"
   type        = map(string)
   default     = {}
@@ -58,12 +65,6 @@ variable "max_replicas" {
   description = "The maximum number of instances of the service"
   type        = number
   default     = 10
-}
-
-variable "ha_enabled" {
-  description = "Whether high availability parameters should be used at the tradeoff of increased cost"
-  type        = bool
-  default     = true
 }
 
 variable "vpa_enabled" {
@@ -82,53 +83,24 @@ variable "ports" {
   default = {}
 }
 
-variable "healthcheck_port" {
-  description = "The port for healthchecks"
-  type        = number
-}
-
-variable "healthcheck_route" {
-  description = "The route to use for http healthchecks"
-  type        = string
-  default     = "/health-check"
-}
-
-variable "healthcheck_type" {
-  description = "The type of healthcheck to use (TCP or HTTP)"
-  type        = string
-  default     = "HTTP"
-}
-
 variable "containers" {
-  description = "A map of container names to configurations to add to the deployment"
-  type = map(object({
-    image                        = string
-    version                      = string
-    command                      = list(string)
-    minimum_memory               = optional(number, 100)      #The minimum amount of memory in megabytes
-    minimum_cpu                  = optional(number, 10)       # The minimum amount of cpu millicores
-    run_as_root                  = optional(bool, false)      # Whether to run the container as root
-    linux_capabilities           = optional(list(string), []) # Default is drop ALL
-    readonly                     = optional(bool, true)       # Whether to use a readonly file system
-    env                          = optional(map(string), {})  # Environment variables specific to the container
-    healthcheck_interval_seconds = optional(number, 1)        # Number of seconds between each probe
-  }))
-}
-
-variable "init_containers" {
-  description = "A map of init container names to configurations to add to the deployment"
-  type = map(object({
+  description = "A list of container configurations for the pod"
+  type = list(object({
+    name               = string
+    init               = optional(bool, false)
     image              = string
     version            = string
     command            = list(string)
-    minimum_memory     = optional(number, 50)       #The minimum amount of memory in megabytes
+    minimum_memory     = optional(number, 100)      #The minimum amount of memory in megabytes
     minimum_cpu        = optional(number, 10)       # The minimum amount of cpu millicores
     run_as_root        = optional(bool, false)      # Whether to run the container as root
     linux_capabilities = optional(list(string), []) # Default is drop ALL
     readonly           = optional(bool, true)       # Whether to use a readonly file system
     env                = optional(map(string), {})  # Environment variables specific to the container
+    healthcheck_port   = optional(number, null)     # The number of the port for the healthcheck
+    healthcheck_type   = optional(string, null)     # Either HTTP or TCP
+    healthcheck_route  = optional(string, null)     # The route if using HTTP healthchecks
   }))
-  default = {}
 }
 
 variable "kube_labels" {
@@ -182,10 +154,4 @@ variable "dynamic_secrets" {
     env_var               = string // name of the env var that will have a path to the secret mount
   }))
   default = []
-}
-
-variable "allow_disruptions" {
-  description = "True iff disruptions of pods should be allowed"
-  type        = bool
-  default     = true
 }

@@ -21,13 +21,35 @@ locals {
   module      = var.module
   version     = var.version_tag
 
-  labels = merge(var.kube_labels, {
+  base_labels = var.kube_labels
+
+  controller_labels = merge(local.base_labels, {
     service = local.name
+  })
+  webhook_labels = merge(local.base_labels, {
+    service = "${local.name}-webhook"
+  })
+  ca_injector_labels = merge(local.base_labels, {
+    service = "${local.name}-ca-injector"
+  })
+  trust_manager_labels = merge(local.base_labels, {
+    service = "${local.name}-trust-manager"
   })
 }
 
-module "constants" {
-  source = "../../modules/constants"
+module "constants_controller" {
+  source          = "../../modules/constants"
+  matching_labels = local.controller_labels
+}
+
+module "constants_webhook" {
+  source          = "../../modules/constants"
+  matching_labels = local.webhook_labels
+}
+
+module "constants_ca_injector" {
+  source          = "../../modules/constants"
+  matching_labels = local.ca_injector_labels
 }
 
 /***************************************
@@ -40,7 +62,7 @@ module "namespace" {
   admin_groups      = ["system:admins"]
   reader_groups     = ["system:readers"]
   bot_reader_groups = ["system:bot-readers"]
-  kube_labels       = local.labels
+  kube_labels       = local.controller_labels
 }
 
 /***************************************
@@ -51,7 +73,7 @@ resource "kubernetes_service_account" "cert_manager" {
   metadata {
     name      = local.name
     namespace = local.namespace
-    labels    = local.labels
+    labels    = local.controller_labels
   }
 }
 
@@ -70,13 +92,17 @@ resource "helm_release" "cert_manager" {
     yamlencode({
       installCRDs = true
       global = {
-        commonLabels      = local.labels
-        priorityClassName = "system-cluster-critical"
+        commonLabels      = local.base_labels
+        priorityClassName = module.constants_controller.cluster_important_priority_class_name
       }
+
       // Does not need to be highly available
-      replicaCount = 1
-      tolerations  = module.constants.spot_node_toleration_helm
-      affinity     = module.constants.spot_node_affinity_helm
+      replicaCount = 2
+      podLabels    = local.controller_labels
+      affinity = merge(
+        module.constants_controller.controller_node_affinity_helm,
+        module.constants_controller.pod_anti_affinity_helm
+      )
 
       livenessProbe = {
         enabled = true
@@ -90,17 +116,23 @@ resource "helm_release" "cert_manager" {
         fsGroup = 1001
       }
       webhook = {
-        replicaCount = 1
+        replicaCount = 2
         extraArgs    = ["--v=0"]
-        tolerations  = module.constants.spot_node_toleration_helm
-        affinity     = module.constants.spot_node_affinity_helm
+        podLabels    = local.webhook_labels
+        affinity = merge(
+          module.constants_webhook.controller_node_affinity_helm,
+          module.constants_webhook.pod_anti_affinity_helm
+        )
       }
       cainjector = {
         enabled      = true
-        replicaCount = 1
+        replicaCount = 2
         extraArgs    = ["--v=0"]
-        tolerations  = module.constants.spot_node_toleration_helm
-        affinity     = module.constants.spot_node_affinity_helm
+        podLabels    = local.ca_injector_labels
+        affinity = merge(
+          module.constants_ca_injector.controller_node_affinity_helm,
+          module.constants_ca_injector.pod_anti_affinity_helm
+        )
       }
     })
   ]
@@ -114,7 +146,7 @@ resource "kubernetes_manifest" "vpa_controller" {
     metadata = {
       name      = "jetstack-cert-manager"
       namespace = local.namespace
-      labels    = var.kube_labels
+      labels    = local.controller_labels
     }
     spec = {
       targetRef = {
@@ -134,7 +166,7 @@ resource "kubernetes_manifest" "vpa_cainjector" {
     metadata = {
       name      = "jetstack-cert-manager-cainjector"
       namespace = local.namespace
-      labels    = var.kube_labels
+      labels    = local.ca_injector_labels
     }
     spec = {
       targetRef = {
@@ -154,7 +186,7 @@ resource "kubernetes_manifest" "vpa_webhook" {
     metadata = {
       name      = "jetstack-cert-manager-webhook"
       namespace = local.namespace
-      labels    = var.kube_labels
+      labels    = local.webhook_labels
     }
     spec = {
       targetRef = {
@@ -164,6 +196,63 @@ resource "kubernetes_manifest" "vpa_webhook" {
       }
     }
   }
+}
+
+resource "kubernetes_manifest" "pdb_controller" {
+  manifest = {
+    apiVersion = "policy/v1"
+    kind       = "PodDisruptionBudget"
+    metadata = {
+      name      = "${local.name}-pdb"
+      namespace = local.namespace
+      labels    = local.controller_labels
+    }
+    spec = {
+      selector = {
+        matchLabels = local.controller_labels
+      }
+      maxUnavailable = 1
+    }
+  }
+  depends_on = [helm_release.cert_manager]
+}
+
+resource "kubernetes_manifest" "pdb_webhook" {
+  manifest = {
+    apiVersion = "policy/v1"
+    kind       = "PodDisruptionBudget"
+    metadata = {
+      name      = "${local.name}-pdb-webhook"
+      namespace = local.namespace
+      labels    = local.webhook_labels
+    }
+    spec = {
+      selector = {
+        matchLabels = local.webhook_labels
+      }
+      maxUnavailable = 1
+    }
+  }
+  depends_on = [helm_release.cert_manager]
+}
+
+resource "kubernetes_manifest" "pdb_ca_injector" {
+  manifest = {
+    apiVersion = "policy/v1"
+    kind       = "PodDisruptionBudget"
+    metadata = {
+      name      = "${local.name}-pdb-ca-injector"
+      namespace = local.namespace
+      labels    = local.ca_injector_labels
+    }
+    spec = {
+      selector = {
+        matchLabels = local.ca_injector_labels
+      }
+      maxUnavailable = 1
+    }
+  }
+  depends_on = [helm_release.cert_manager]
 }
 
 /***************************************
@@ -194,9 +283,8 @@ resource "helm_release" "trust_manager" {
 
       // Does not need to be highly available
       replicaCount = 1
-      tolerations  = module.constants.spot_node_toleration_helm
-      affinity     = module.constants.spot_node_affinity_helm
-
+      tolerations  = module.constants_controller.spot_node_toleration_helm
+      affinity     = module.constants_controller.controller_node_with_spot_affinity_helm
     })
   ]
 

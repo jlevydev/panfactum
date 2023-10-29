@@ -62,10 +62,10 @@ module "deployment" {
   namespace       = local.namespace
   service_name    = local.service
   service_account = kubernetes_service_account.main.metadata[0].name
-  tolerations     = module.constants.spot_node_toleration
   kube_labels     = local.labels
-  containers = {
-    server = {
+  containers = [
+    {
+      name    = "server"
       image   = var.image_repo
       version = var.image_version
       command = local.is_local ? [
@@ -76,9 +76,12 @@ module "deployment" {
         "-h",
         "0.0.0.0"
       ] : []
-      minimum_memory = local.is_local ? 400 : 25
+      minimum_memory    = local.is_local ? 400 : 25
+      healthcheck_type  = "HTTP"
+      healthcheck_port  = local.port
+      healthcheck_route = local.healthcheck_route
     }
-  }
+  ]
   tmp_directories = local.is_local ? {
     "/home/node/.npm"                          = {}
     "/code/packages/internal-docs/.docusaurus" = {}
@@ -86,8 +89,6 @@ module "deployment" {
     "/var/cache/nginx" = {}
     "/var/run"         = {}
   }
-  healthcheck_port  = local.port
-  healthcheck_route = local.healthcheck_route
 
   ports = {
     http = {
@@ -96,11 +97,9 @@ module "deployment" {
     }
   }
 
-  min_replicas      = var.min_replicas
-  max_replicas      = var.max_replicas
-  vpa_enabled       = var.vpa_enabled
-  ha_enabled        = var.ha_enabled
-  allow_disruptions = !local.is_local
+  min_replicas = var.min_replicas
+  max_replicas = var.max_replicas
+  vpa_enabled  = var.vpa_enabled
 }
 
 module "ingress" {

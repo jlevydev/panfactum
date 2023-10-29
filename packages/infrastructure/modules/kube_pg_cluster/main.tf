@@ -50,7 +50,7 @@ module "s3_bucket" {
   versioning_enabled              = false
   audit_log_enabled               = true
   intelligent_transitions_enabled = false // db operator takes care of garbage collection
-  force_destroy                   = !var.ha_enabled
+  force_destroy                   = var.backups_force_delete
 }
 
 data "aws_iam_policy_document" "s3_access" {
@@ -191,6 +191,7 @@ resource "kubernetes_manifest" "postgres_cluster" {
       imageName             = "ghcr.io/cloudnative-pg/postgresql:${var.pg_version}"
       instances             = var.pg_instances
       primaryUpdateStrategy = "unsupervised"
+      primaryUpdateMethod   = "switchover"
 
       superuserSecret = {
         name = kubernetes_secret.superuser.metadata[0].name
@@ -246,7 +247,7 @@ resource "kubernetes_manifest" "postgres_cluster" {
       topologySpreadConstraints = [{
         maxSkew           = 1
         topologyKey       = "topology.kubernetes.io/zone"
-        whenUnsatisfiable = var.ha_enabled ? "DoNotSchedule" : "ScheduleAnyway"
+        whenUnsatisfiable = "DoNotSchedule"
         labelSelector = {
           matchLabels = {
             pg-cluster = local.cluster-label
@@ -258,7 +259,7 @@ resource "kubernetes_manifest" "postgres_cluster" {
         // Ensures that the postgres cluster instances are never scheduled on the same node
         enablePodAntiAffinity = true
         topologyKey           = "kubernetes.io/hostname"
-        podAntiAffinityType   = var.ha_enabled ? "required" : "preferred"
+        podAntiAffinityType   = "required"
       }
 
       storage = {

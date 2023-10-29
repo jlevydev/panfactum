@@ -95,7 +95,7 @@ variable "eks_cluster_name" {
 variable "vault_internal_address" {
   description = "The address of the vault cluster for this CI runner"
   type        = string
-  default     = "http://vault.vault.svc.cluster.local:8200"
+  default     = "http://vault-active.vault.svc.cluster.local:8200"
 }
 
 variable "public_outbound_ips" {
