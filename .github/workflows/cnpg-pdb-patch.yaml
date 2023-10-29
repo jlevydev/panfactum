@@ -1,14 +1,15 @@
 name: CNPG PDB Patch
 on:
   workflow_dispatch:
-
+  schedule:
+    - cron: '0 * * * *'
 defaults:
   run:
     shell: bash
 
 concurrency:
-  cancel-in-progress: true
-  group: tf-apply-development
+  cancel-in-progress: false
+  group: cnpg-pdb-patch
 
 jobs:
   patch:
