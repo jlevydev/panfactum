@@ -52,10 +52,10 @@ module "cronjob" {
   kube_labels     = var.kube_labels
   containers = [
     {
-      name    = "deleter"
+      name    = "patcher"
       image   = var.image_repo
       version = var.image_version
-      command = []
+      command = ["linkerd-await", "-S", "cnpg-pdb-patch"]
     }
   ]
 }

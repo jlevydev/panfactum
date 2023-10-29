@@ -17,6 +17,7 @@ let
     kubernetes-helm # for working with Helm charts
     kube-capacity # for visualizing resource utilization in the cluster
     kubectl-cnpg # for managing the cnpg postgres databases
+    (customModule "linkerd-await") # used to work with proxy sidecars in the kubernetes environment
 
     ####################################
     # Hashicorp Vault
@@ -126,6 +127,12 @@ let
     nodePackages.typescript # Typescipt compiler (tsc)
     nodePackages.ts-node # Typescript execution environment and repl
     (customModule "precommit-node-deps")
+
+    ####################################
+    # Postgres Management
+    ####################################
+    (customModule "cnpg-pdb-patch") # patches all pdbs created by the cnpg operator
+
   ];
 
   local_dev_packages = with pkgs; [
@@ -160,7 +167,6 @@ let
     (customModule "cilium")  # for managing the cilium CNI
     hubble # for network observability
     cmctl # for working with cert-manager
-    (customModule "linkerd-await") # used to work with proxy sidecars in the kubernetes environment
     linkerd # for working with the service mesh
     k9s # kubernetes tui
 

@@ -954,29 +954,12 @@ module "bastion" {
 
   min_replicas        = 2
   max_replicas        = 2
-  tolerations         = module.constants.spot_node_toleration
+  tolerations         = module.constants.spot_node_toleration_helm
   priority_class_name = module.constants.cluster_important_priority_class_name
 
-  healthcheck_port = var.bastion_port
-  healthcheck_type = "TCP"
-
-  init_containers = {
-    // SSHD requires that root be the only
-    // writer to /run/sshd and the private host key
-    permissions = {
-      image   = var.bastion_image
-      version = var.bastion_image_version
-      command = [
-        "/usr/bin/bash",
-        "-c",
-        "cp /etc/ssh/host/id_rsa /run/sshd/id_rsa && chmod -R 700 /run/sshd"
-      ]
-      run_as_root = true
-    }
-  }
-
-  containers = {
-    bastion = {
+  containers = [
+    {
+      name    = "bastion"
       image   = var.bastion_image
       version = var.bastion_image_version
       command = [
@@ -991,8 +974,24 @@ module "bastion" {
       ]
       run_as_root        = true                               // SSHD requires root to run
       linux_capabilities = ["SYS_CHROOT", "SETGID", "SETUID"] // capabilities to allow sshd's sandboxing functionality
+      healthcheck_port   = var.bastion_port
+      healthcheck_type   = "TCP"
+    },
+    // SSHD requires that root be the only
+    // writer to /run/sshd and the private host key
+    {
+      name    = "permission-init"
+      init    = true
+      image   = var.bastion_image
+      version = var.bastion_image_version
+      command = [
+        "/usr/bin/bash",
+        "-c",
+        "cp /etc/ssh/host/id_rsa /run/sshd/id_rsa && chmod -R 700 /run/sshd"
+      ]
+      run_as_root = true
     }
-  }
+  ]
 
   secret_mounts = {
     "${kubernetes_secret.bastion_ca.metadata[0].name}"   = "/etc/ssh/vault"

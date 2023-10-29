@@ -1,7 +1,7 @@
 variable "namespace" {
   description = "The namespace to deploy kubernetes resources into"
   type        = string
-  default     = "cnpg-deleter"
+  default     = "cnpg-pdb-patcher"
 }
 
 variable "schedule" {

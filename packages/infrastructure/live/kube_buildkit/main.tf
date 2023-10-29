@@ -284,3 +284,21 @@ resource "kubernetes_horizontal_pod_autoscaler_v2" "autoscaler" {
     }
   }
 }
+
+resource "kubernetes_manifest" "pdb" {
+  manifest = {
+    apiVersion = "policy/v1"
+    kind       = "PodDisruptionBudget"
+    metadata = {
+      name      = local.name
+      namespace = local.namespace
+      labels    = local.labels
+    }
+    spec = {
+      selector = {
+        matchLabels = local.match_labels
+      }
+      maxUnavailable = 0
+    }
+  }
+}
