@@ -89,11 +89,12 @@ let
     git-lfs # stores binary files in git host
 
     ####################################
-    # Github
+    # CI / CD
     ####################################
     gh # github cli
     actionlint # gha linter
     (customModule "get-buildkit-address") # Helper used to get the buildkit address to use for building images
+    (customModule "scale-buildkit") # Helper used for autoscaling buildkit
 
     ####################################
     # Container Utilities

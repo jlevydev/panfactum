@@ -13,10 +13,17 @@ inputs:
 runs:
   using: "composite"
   steps:
+#    - name: "Turn on buildkit"
+#      shell: bash
+#      run: 'scale-buildkit --turn-on'
 
     - name: "Select buildkit daemon"
       shell: bash
       run: 'echo "BUILDKIT_HOST=$(get-buildkit-address)" >> "$GITHUB_ENV"'
+
+#    - name: "Record build time"
+#      shell: bash
+#      run: 'scale-buildkit --record-build-time'
 
     - name: "Build image"
       shell: bash
