@@ -23,7 +23,7 @@ runs:
 
     - name: "Record build time"
       shell: bash
-      run: 'scale-buildkit --record-build-time'
+      run: 'scale-buildkit --record-build'
 
     - name: "Build image"
       shell: bash
