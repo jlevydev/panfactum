@@ -304,6 +304,9 @@ resource "kubernetes_manifest" "postgres_cluster" {
       status = "True"
     }
   }
+  field_manager {
+    force_conflicts = true
+  }
 
   depends_on = [
     module.server_certs,

@@ -16,7 +16,7 @@ podman_build(
      "src",
      "scripts",
      "public",
-     "next.config.js",
+     "next.config.mjs",
      "postcss.config.js",
      "tailwind.config.js",
      ".eslintrc.js",

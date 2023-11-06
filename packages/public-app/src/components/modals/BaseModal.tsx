@@ -19,7 +19,7 @@ export default memo(function BaseModal (props: IBaseModalProps) {
       id={`${name}-modal`}
     >
       <div
-        className="bg-base-100 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] lg:w-fit lg:max-w-[70vw] p-4 overflow-y-scroll"
+        className="bg-gray-light absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] lg:w-fit lg:max-w-[70vw] p-4 overflow-y-scroll"
         style={{
           maxHeight: '80vh'
         }}

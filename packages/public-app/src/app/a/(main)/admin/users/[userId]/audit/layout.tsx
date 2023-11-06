@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import React, { memo } from 'react'
 
-import TabNavigation from '@/components/layout/tabs/TabNavigation'
+import TabNavigation from '@/components/layout/app/tabs/AppTabNavigation'
 
 const TABS = [
   {

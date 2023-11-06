@@ -116,4 +116,9 @@ variable "aad_group" {
   description = "The group the GHA runner service principal should join"
   type        = string
 }
+variable "extra_env_secrets" {
+  description = "A key-value mapping of extra secret environment variables for the runner pods"
+  type        = map(string)
+  default     = {}
+}
 

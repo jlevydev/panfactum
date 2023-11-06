@@ -84,6 +84,8 @@ module "deployment" {
   service_name    = local.service
   service_account = kubernetes_service_account.service.metadata[0].name
 
+  deployment_update_type = local.is_local ? "Recreate" : "RollingUpdate" // Speeds things up when we need to tilt redeploy
+
   common_env = {
     NODE_ENV                      = local.is_local ? "development" : "production"
     NEXT_PUBLIC_API_URL           = var.primary_api_url
@@ -97,7 +99,6 @@ module "deployment" {
     command = local.is_local ? [
       "node_modules/.bin/next",
       "dev",
-      "--turbo",
       "-p", local.port
       ] : [
       "./entrypoint.sh",

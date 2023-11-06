@@ -35,5 +35,6 @@ runs:
         --local context=.
         --local dockerfile=${{inputs.containerfile-directory}}
         --opt filename=./Containerfile
+        --secret id=MUI_X_LICENSE_KEY
         --export-cache type=s3,region=us-east-2,bucket=buildkit-cache-41151449fc2ce51f,name=${{inputs.image-repo}}
         --import-cache type=s3,region=us-east-2,bucket=buildkit-cache-41151449fc2ce51f,name=${{inputs.image-repo}}

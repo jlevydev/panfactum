@@ -13,6 +13,7 @@ TARGET=${2:-production}
   podman build \
     -t "487780594448.dkr.ecr.us-east-2.amazonaws.com/public-app:$TAG" \
     --target "$TARGET" \
+    --secret id=MUI_X_LICENSE_KEY,env=MUI_X_LICENSE_KEY \
     -f packages/public-app/Containerfile \
     .
 )

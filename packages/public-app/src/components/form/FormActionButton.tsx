@@ -15,7 +15,7 @@ export default function FormActionButton (props: IFormActionButtonProps) {
     actionType = 'normal',
     ...buttonProps
   } = props
-  const background = props.disabled ? 'bg-base-300' : actionType === 'danger' ? 'bg-red' : 'bg-primary'
+  const background = props.disabled ? 'bg-gray-dark' : actionType === 'danger' ? 'bg-red' : 'bg-primary'
   const text = props.disabled ? 'text-secondary' : 'text-white'
   return (
     <DefaultTooltipLazy title={tooltipText}>

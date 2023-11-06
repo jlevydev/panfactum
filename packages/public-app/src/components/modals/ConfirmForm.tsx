@@ -65,7 +65,7 @@ export default memo(function ConfirmForm (props: IConfirmFormProps) {
       />
       <Button
         disabled={!isConfirmValueCorrect}
-        className={`${isConfirmValueCorrect ? 'bg-primary' : 'bg-base-300'}`}
+        className={`${isConfirmValueCorrect ? 'bg-primary' : 'bg-gray-dark'}`}
         variant="contained"
         onClick={handleClick}
       >

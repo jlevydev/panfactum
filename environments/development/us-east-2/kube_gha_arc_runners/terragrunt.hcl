@@ -7,6 +7,8 @@ locals {
   version_hash = include.shared.locals.version_hash
   runner_image = "487780594448.dkr.ecr.us-east-2.amazonaws.com/ci:${local.version_hash}"
   environment  = include.shared.locals.environment_vars.environment
+  license_keys = yamldecode(sops_decrypt_file("${get_terragrunt_dir()}/license_keys.development.yaml"))
+  github_app   = yamldecode(sops_decrypt_file("${get_terragrunt_dir()}/github_app.development.yaml"))
 }
 
 dependency "arc_systems" {
@@ -35,7 +37,7 @@ inputs = {
   github_config_url                        = "https://github.com/panfactum"
   github_app_id                            = "379858"
   github_app_installation_id               = "41013864"
-  github_app_private_key                   = yamldecode(sops_decrypt_file("${get_terragrunt_dir()}/github_app.development.yaml")).private_key
+  github_app_private_key                   = local.github_app.private_key
   arc_controller_service_account_namespace = dependency.arc_systems.outputs.namespace
   arc_controller_service_account_name      = dependency.arc_systems.outputs.service_account_name
   runner_image                             = "487780594448.dkr.ecr.us-east-2.amazonaws.com/ci:${local.version_hash}"
@@ -58,4 +60,7 @@ inputs = {
   gha_runner_max_replicas = 50
   tf_lock_table           = include.shared.locals.environment_vars.tf_state_lock_table
   aad_group               = "ci_${local.environment}"
+  extra_env_secrets = {
+    MUI_X_LICENSE_KEY = local.license_keys.mui_x
+  }
 }

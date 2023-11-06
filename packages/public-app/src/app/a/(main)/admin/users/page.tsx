@@ -8,7 +8,7 @@ import type { BulkActionComponent } from '@/components/datagrid/ActionToolbar'
 import BulkActionButton from '@/components/datagrid/BulkActionButton'
 import DataGrid from '@/components/datagrid/DataGrid'
 import type { CustomColDef } from '@/components/datagrid/types'
-import MainListLayout from '@/components/layout/secondary/MainListLayout'
+import MainListLayout from '@/components/layout/app/secondary/MainListLayout'
 import ChangeUsersStatusModal from '@/components/modals/ChangeUsersStatusModal'
 import { useGetListUser } from '@/lib/hooks/queries/crud/users'
 

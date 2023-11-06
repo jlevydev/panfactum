@@ -19,6 +19,7 @@ WORKDIR packages/public-app
 FROM development as production
 COPY --chown=1000 packages/public-app/src/entrypoint.sh entrypoint.sh
 ENTRYPOINT ["/code/packages/public-app/entrypoint.sh"]
-RUN npx next build
+RUN --mount=type=secret,id=MUI_X_LICENSE_KEY,target=/run/secrets/MUI_X_LICENSE_KEY,uid=1000,gid=1000 \
+ NEXT_PUBLIC_MUI_X_LICENSE_KEY=$(cat /run/secrets/MUI_X_LICENSE_KEY) npx next build
 
 # TODO: Create an actual production build without all the dev dependencies

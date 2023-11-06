@@ -4,8 +4,8 @@ import type { ReactNode } from 'react'
 import React, { memo, useCallback, useMemo, useState } from 'react'
 
 import FormActionButton from '@/components/form/FormActionButton'
-import SingleItemLayoutWithAside from '@/components/layout/secondary/SingleItemLayoutWithAside'
-import TabNavigation from '@/components/layout/tabs/TabNavigation'
+import SingleItemLayoutWithAside from '@/components/layout/app/secondary/SingleItemLayoutWithAside'
+import TabNavigation from '@/components/layout/app/tabs/AppTabNavigation'
 import ChangeOrgsStatusModal from '@/components/modals/ChangeOrgsStatusModal'
 import { useGetOneOrganization } from '@/lib/hooks/queries/crud/organizations'
 

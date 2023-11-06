@@ -248,7 +248,7 @@ export default GenericMemo(function ActionToolbar<ResultType extends CRUDResultT
         {onCreate && <GridToolbarCreateButton onCreate={onCreate}/> }
       </div>
       <div
-        className="absolute bottom-0 w-full z-10 bg-base-100 ease-in-out transition-all flex justify-between overflow-hidden items-center"
+        className="absolute bottom-0 w-full z-10 bg-gray-light ease-in-out transition-all flex justify-between overflow-hidden items-center"
         style={{ height: selectedIds.length === 0 ? '0px' : (isXL ? '4rem' : '2.25rem') }}
       >
         <div className="h-full flex items-center px-4">

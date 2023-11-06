@@ -167,6 +167,15 @@ resource "kubernetes_secret" "github_app" {
     github_app_private_key     = var.github_app_private_key
   }
 }
+resource "kubernetes_secret" "secrets" {
+  metadata {
+    name      = "runner-secrets"
+    namespace = local.namespace
+    labels    = local.labels
+  }
+  data = var.extra_env_secrets
+}
+
 
 resource "helm_release" "runner" {
   for_each        = local.runners
@@ -242,7 +251,7 @@ resource "helm_release" "runner" {
               }
             }
 
-            env = [
+            env = concat([
               {
                 name  = "CI",
                 value = "true"
@@ -299,7 +308,18 @@ resource "helm_release" "runner" {
                 name  = "ACTIONS_RUNNER_REQUIRE_JOB_CONTAINER"
                 value = "false"
               }
-            ]
+              ],
+              [for k, v in var.extra_env_secrets : {
+                name = k
+                valueFrom = {
+                  secretKeyRef = {
+                    name     = kubernetes_secret.secrets.metadata[0].name
+                    key      = k
+                    optional = false
+                  }
+                }
+              }]
+            )
             resources = {
               requests = {
                 cpu    = "${each.value.cpu_millicores}m"

@@ -1,6 +1,8 @@
 import './globals.css'
 import type { ReactNode } from 'react'
 
+import ThemeRegistry from '@/components/ThemeRegistry'
+
 import { kanit } from './font'
 
 export const metadata = {
@@ -12,13 +14,15 @@ export default function RootLayout (
   { children } : {children: ReactNode}
 ) {
   return (
-    <html lang="en">
-      <body
-        id="root"
-        className={`${kanit.className}`}
-      >
-        {children}
-      </body>
-    </html>
+    <ThemeRegistry options={{ key: 'mui' }}>
+      <html lang="en">
+        <body
+          id="root"
+          className={`${kanit.className} overflow-visible w-screen`}
+        >
+          {children}
+        </body>
+      </html>
+    </ThemeRegistry>
   )
 }

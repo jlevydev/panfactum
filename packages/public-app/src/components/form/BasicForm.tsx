@@ -128,7 +128,7 @@ export default function BasicForm<T extends FieldValues> (props: IBasicFormProps
           )}
           {(mode === 'edit' || mode === 'create') && (
             <div
-              className="flex flex-row bottom-0 bg-base-300 p-4 gap-4 h-[4rem]"
+              className="flex flex-row bottom-0 bg-gray-dark p-4 gap-4 h-[4rem]"
             >
               {mode === 'edit'
                 ? (

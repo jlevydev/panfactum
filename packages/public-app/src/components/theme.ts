@@ -1,8 +1,61 @@
-import type { Components, Theme } from '@mui/material'
+import type { Components, Theme as MUITheme } from '@mui/material'
 import { createTheme } from '@mui/material'
 
 import tailwindTheme from '../../theme'
 import { kanit } from '../app/font'
+
+/************************************************
+ * Hardcoded values -
+ * When possible, we use hardcoded values for customizing
+ * css as it enables us to improve rendering performance
+ * **********************************************/
+
+/* eslint-disable @typescript-eslint/prefer-literal-enum-member */
+export enum BREAKPOINT {
+  XS = 0,
+  SM = tailwindTheme.screens.sm,
+  MD = tailwindTheme.screens.md,
+  LG = tailwindTheme.screens.lg,
+  XL = tailwindTheme.screens.xl
+}
+/* eslint-enable @typescript-eslint/prefer-literal-enum-member */
+
+export const WEB_NAVBAR_HEIGHT_REM = 2.9
+export const WEB_NAVBAR_BORDER_WIDTH_PX = 4
+export const WEB_TABBAR_HEIGHT_REM = 2.2
+export const WEB_TABBAR_BORDER_WIDTH_PX = 2
+export const WEB_FOOTER_HEIGHT_REM = 10
+export const WEB_ARTICLE_MAX_WIDTH_PX = 1280
+export const WEB_ARTICLE_SIDEBAR_WIDTH_PX = 240
+
+/************************************************
+ * Provide typings for the theme objects
+ * including our extra theme properties
+ * **********************************************/
+
+interface CustomTheme {
+  extraColors: {
+    gray: {
+      light: string
+      dark: string
+    };
+  };
+}
+
+declare module '@mui/material/styles' {
+  interface Theme extends CustomTheme{}
+
+  // allow configuration using `createTheme`
+  interface ThemeOptions extends CustomTheme {}
+}
+
+declare module '@emotion/react' {
+  export interface Theme extends MUITheme {}
+}
+
+/************************************************
+ * MUI Theme that the Actual MUI Framework uses
+ * **********************************************/
 
 export const theme = createTheme({
   typography: {
@@ -11,7 +64,8 @@ export const theme = createTheme({
   },
   palette: {
     primary: {
-      main: tailwindTheme.colors.primary
+      main: tailwindTheme.colors.primary,
+      light: tailwindTheme.colors.neutral
     },
     secondary: {
       main: tailwindTheme.colors.secondary
@@ -23,30 +77,22 @@ export const theme = createTheme({
       main: tailwindTheme.colors.red
     }
   },
+  extraColors: {
+    gray: {
+      light: tailwindTheme.colors['gray-light'],
+      dark: tailwindTheme.colors['gray-dark']
+    }
+  },
   breakpoints: {
     values: {
-      xs: 0,
-      sm: tailwindTheme.screens.sm,
-      md: tailwindTheme.screens.md,
-      lg: tailwindTheme.screens.lg,
-      xl: tailwindTheme.screens.xl
+      xs: BREAKPOINT.XS,
+      sm: BREAKPOINT.SM,
+      md: BREAKPOINT.MD,
+      lg: BREAKPOINT.LG,
+      xl: BREAKPOINT.XL
     }
   },
   components: {
-    MuiDrawer: {
-      defaultProps: {
-        sx: { width: '500px' }
-      }
-    },
-    RaDatagrid: {
-      styleOverrides: {
-        root: {
-          '& .RaDatagrid-expandedPanel': {
-            backgroundColor: '#f8f8f8'
-          }
-        }
-      }
-    },
     MuiCssBaseline: {
       styleOverrides: `
         @font-face {
@@ -57,5 +103,5 @@ export const theme = createTheme({
         }
       `
     }
-  } as Components<Omit<Theme, 'components'>>
+  } as Components<Omit<MUITheme, 'components'>>
 })

@@ -1,0 +1,72 @@
+import MarkdownAlert from "@/components/markdown/MarkdownAlert";
+
+import AWSImage from './AWSImage'
+import UsersImage from './UsersImage'
+
+# Identity Provider
+
+<MarkdownAlert severity={'info'}>We do not use any other Azure or Microsoft products; however, in the future we may want to put status monitoring utilities in an AAD
+    subscription.</MarkdownAlert>
+
+We use [Azure Active Directory](https://www.microsoft.com/en-us/security/business/identity-access/microsoft-entra-id)
+(now Microsoft Entra ID) as our root identity provider.
+
+AAD was chosen for its wide support of identity protocols for the low per-user price point.
+
+## User Management
+
+Users are configured manually in AAD:
+
+<UsersImage/>
+
+Every user must meet the following configuration parameters:
+
+- First and Last Name must be set
+- Email must be either `[firstName]@panfactum.com` or `[firstName]_[lastName]@panfactum.com`
+
+See the following guides for user activities:
+
+- [Adding new users](/company/engineering/guides/access-control/new-user-setup)
+
+## Service Provider Integrations
+
+All of our downstream service providers connect to AAD via SSO. Where possible, this is configured via Terraform.
+However, there are some SSO integrations that had to be setup manually due to limitations with the AAD Terraform
+provider. We call out some of the manual configurations below.
+
+### Google Cloud
+
+The Google Cloud SSO is handled by the "G Suite Connector by Microsoft" and is setup according to the
+official guide [here](https://learn.microsoft.com/en-us/entra/identity/saas-apps/google-apps-tutorial).
+
+However, due to limitations with that app, we utilize "Google Cloud Directory Sync" provided by Google
+for user and group provisioning and de-provisioning. The setup instructions are provided [here](https://apps.google.com/supportwidget/articlehome?hl=en&article_url=https%3A%2F%2Fsupport.google.com%2Fa%2Fanswer%2F10616183%3Fhl%3Den&assistant_id=generic-unu&product_context=10616183&product_name=UnuFlow&trigger_context=a).
+
+We have some notable settings:
+
+- Users are synced based on their membership in the `gsuite_users` group. Membership should be automatically
+  granted after an RBAC role assignment.
+
+- All **Microsoft 365** groups are synced to Google and provided group email addresses. AAD security groups are ignored.
+
+- All users and emails have their internal AAD email domain (`@Panfactum.onmicrosoft.com`) replaced with the Panfactum email
+  domain (`@panfactum.com`) as Google is the primary email hosting provider.
+
+### AWS
+
+The AWS SSO via SAML and SCIM is handled via the "AWS IAM Identity Center" AAD enterprise application.
+This is setup according to this [guide](https://learn.microsoft.com/en-us/entra/identity/saas-apps/aws-single-sign-on-tutorial).
+
+The only users and groups that are provisioned in AWS are those that are assigned to one of the role groups who have
+access to AWS. Those role groups can be found here:
+
+<AWSImage/>
+
+
+
+
+
+
+
+
+

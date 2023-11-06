@@ -45,4 +45,5 @@ variable "image_version" {
 variable "mui_x_license_key" {
   description = "The license key used for the MUI pro plan assets"
   type        = string
+  default     = ""
 }

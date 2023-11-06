@@ -77,9 +77,12 @@ resource "helm_release" "vpa" {
       priorityClassName = "system-cluster-critical"
 
       recommender = {
-        // We need two or the admission controller won't work if this is down
-        // and then this might not be able to launch itself
-        replicaCount = 2
+        // ONLY 1 of these should be running at a time
+        // b/c there is no leader-election: https://github.com/kubernetes/autoscaler/issues/5481
+        // However, that creates a potential issue with memory consumption as if this pod
+        // OOMs, then it won't be recorded and then bumped up. As a result, we have to tune this
+        // pods memory floor carefully and give it plenty of headroom.
+        replicaCount = 1
         affinity = merge({
           podAntiAffinity = {
             requiredDuringSchedulingIgnoredDuringExecution = [{
@@ -94,17 +97,10 @@ resource "helm_release" "vpa" {
           }
         }, module.constants.controller_node_affinity_helm)
 
-        podDisruptionBudget = {
-          minAvailable = 1
-        }
-
         extraArgs = {
           // Better packing
           "pod-recommendation-min-cpu-millicores" = 2
           "pod-recommendation-min-memory-mb"      = 10
-
-          // Make very responsive if OOM occurs
-          "oom-bump-up-ratio" = "2.0"
 
           // Lower half-life so we have better intra-day scaling
           "cpu-histogram-decay-half-life"    = "2h0m0s"
@@ -114,8 +110,11 @@ resource "helm_release" "vpa" {
         }
       }
 
+
       updater = {
-        replicaCount = 2
+        // ONLY 1 of these should be running at a time
+        // b/c there is no leader-election: https://github.com/kubernetes/autoscaler/issues/5481
+        replicaCount = 1
         affinity = merge({
           podAntiAffinity = {
             requiredDuringSchedulingIgnoredDuringExecution = [{
@@ -129,10 +128,6 @@ resource "helm_release" "vpa" {
             }]
           }
         }, module.constants.controller_node_affinity_helm)
-
-        podDisruptionBudget = {
-          minAvailable = 1
-        }
 
         extraArgs = {
           "min-replicas" = 0 // We don't care b/c we use pdbs
@@ -226,6 +221,14 @@ resource "kubernetes_manifest" "vpa_recommender" {
       labels    = local.labels
     }
     spec = {
+      resourcePolicy = {
+        containerPolicies = [{
+          containerName = "vpa"
+          minAllowed = {
+            memory = "100Mi"
+          }
+        }]
+      }
       targetRef = {
         apiVersion = "apps/v1"
         kind       = "Deployment"

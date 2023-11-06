@@ -1,0 +1,16 @@
+# Roles
+
+We utilize Role-based Access Control (RBAC) to control permissions inside our various internal systems.
+
+Roles are assigned via "role groups" in AAD. A role group is any AAD security group prefixed with `rbac_`.
+
+All permissions in the ecosystem should be derived from assignment to these roles (outside of services that require
+non-SSO root accounts for system provisioning).
+
+Currently, we have the following roles:
+
+| Role      | Description |
+| :---        |:----   |
+| `rbac_superusers`      | Root access to all systems       |
+| `rbac_engineering_admins`   | Has read and write access to all engineering systems        |
+| `rbac_engineers`   | Has read access to all engineering systems. Has write access to the development environment.        |

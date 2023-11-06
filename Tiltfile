@@ -15,7 +15,6 @@ if k8s_context() != 'development-primary':
 default_registry (REGISTRY)
 update_settings ( max_parallel_updates = 3 , k8s_upsert_timeout_secs = 900 , suppress_unused_image_warnings = None )
 
-include('./packages/internal-docs/Tiltfile')
 include('./packages/primary-api/Tiltfile')
 include('./packages/public-app/Tiltfile')
 

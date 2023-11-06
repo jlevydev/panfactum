@@ -3,7 +3,7 @@
 import { memo } from 'react'
 
 import RoleEdit from '@/components/commonPages/roles/RoleEdit'
-import SingleItemLayoutWithAside from '@/components/layout/secondary/SingleItemLayoutWithAside'
+import SingleItemLayoutWithAside from '@/components/layout/app/secondary/SingleItemLayoutWithAside'
 import { useGetOneOrganizationRole } from '@/lib/hooks/queries/crud/organizationRoles'
 
 interface PageProps {

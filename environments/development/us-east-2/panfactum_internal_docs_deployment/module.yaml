@@ -1,3 +1,0 @@
-source: live/panfactum_internal_docs_deployment
-providers:
-  kubernetes: true

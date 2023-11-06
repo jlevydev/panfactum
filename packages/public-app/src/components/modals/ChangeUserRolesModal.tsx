@@ -95,7 +95,7 @@ export default function ChangeUserRolesModal (props: IProps) {
               <TableRow
                 key={roleId}
                 sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-                className="hover:bg-base-100 cursor-pointer"
+                className="hover:bg-gray-light cursor-pointer"
                 onClick={() => {
                   if (roleId !== currentRoleId) {
                     mutate({

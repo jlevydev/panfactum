@@ -121,6 +121,8 @@ module "deployment" {
   service_name    = local.service
   service_account = kubernetes_service_account.service.metadata[0].name
 
+  deployment_update_type = local.is_local ? "Recreate" : "RollingUpdate" // Speeds things up when we need to tilt redeploy
+
   common_env = merge({
     NODE_ENV              = local.is_local ? "development" : "production"
     PG_HOSTNAME           = "${local.service}-pg-rw.${local.namespace}"
@@ -148,7 +150,7 @@ module "deployment" {
         "--delay", "0.25",
         "out/index.js"
       ] : ["node", "out/index.js"]
-      minimum_memory = local.is_local ? 500 : 100
+      minimum_memory = local.is_local ? 500 : 10
       env = {
         FUNCTION = "http-server"
       }
@@ -184,7 +186,7 @@ module "deployment" {
       image          = var.image_repo
       version        = var.image_version
       command        = ["node", "out/index.js"]
-      minimum_memory = 100
+      minimum_memory = 10
       env = {
         FUNCTION = "db-migrate"
       }
